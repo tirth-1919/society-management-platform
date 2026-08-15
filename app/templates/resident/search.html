@@ -1,0 +1,8 @@
+﻿{% extends "base.html" %}
+{% block title %}Search Â· Society SaaS{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">Find your records</p><h1>Search</h1><p>Search your bills by month or bill number, payments by transaction ID, and receipts by receipt number.</p></div></div>
+<form class="search-page-form" method="get"><label for="resident-search">Search</label><div><input id="resident-search" name="q" value="{{ term }}" minlength="2" placeholder="e.g. BILL-2026, TXN-123, RCPT-1" autofocus><button class="btn btn-primary">Search</button></div></form>
+{% if term %}<div class="results-grid"><section class="card"><h2 class="card-title">Bills</h2>{% for b in bills %}<p><strong>{{ b.bill_number }}</strong><br><small>{{ b.billing_month }} Â· ₹{{ '{:,.2f}'.format(b.remaining_amount) }} remaining</small></p>{% else %}<p class="muted">No matching bills.</p>{% endfor %}</section><section class="card"><h2 class="card-title">Payments</h2>{% for p in payments %}<p><strong>{{ p.transaction_id }}</strong><br><small>₹{{ '{:,.2f}'.format(p.amount_paid) }} Â· {{ p.payment_date.strftime('%d %b %Y') }}</small></p>{% else %}<p class="muted">No matching payments.</p>{% endfor %}</section><section class="card"><h2 class="card-title">Receipts</h2>{% for r in receipts %}<p><strong>{{ r.receipt_number }}</strong><br><a href="{{ url_for('payments.download_receipt', payment_id=r.payment_id) }}">Download receipt</a></p>{% else %}<p class="muted">No matching receipts.</p>{% endfor %}</section></div>{% endif %}
+{% endblock %}
+

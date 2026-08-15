@@ -1,0 +1,293 @@
+"""
+Society Management SaaS - Database Seeder
+Run with: python seed.py
+
+from app.utils import utcnow
+from datetime import date, timedelta
+import sys
+from dotenv import load_dotenv
+from app import create_app
+from app.models import db
+from app.models.tenant import Society, Building, Flat
+from app.models.user import User, Role
+from app.models.resident import Resident
+from app.models.billing import MaintenanceConfig, MaintenanceBill
+from app.models.complaint import ComplaintCategory, Complaint
+from app.models.facility import Facility
+from app.models.operations import Staff
+from app.models.communication import Notice
+sys.stdout.reconfigure(encoding="utf-8")
+load_dotenv()
+app = create_app()
+with app.app_context():
+    db.create_all()
+    print("[OK] Database tables created/verified.")
+    # --------------------------------------------------
+    # SUPER ADMIN (Admin Portal login: admin / Admin@123)
+    admin_user = User.query.filter(
+        (User.username == "admin") | (User.mobile == "9000000000")
+    ).first()
+    if not admin_user:
+        admin_user = User(
+            username="admin",
+            full_name="Super Admin",
+            mobile="9000000000",
+            email="admin@societysaas.in",
+            role=Role.SUPER_ADMIN,
+            society_id=None,
+            account_status="ACTIVE",
+            is_active=True,
+        )
+        admin_user.set_password("Admin@123")
+        db.session.add(admin_user)
+        db.session.commit()
+        print("[OK] Super Admin created: username=admin  password=Admin@123")
+    else:
+        admin_user.username = "admin"
+        admin_user.account_status = "ACTIVE"
+        admin_user.is_active = True
+        print("[OK] Super Admin updated: username=admin  password=Admin@123")
+    # SOCIETY
+    society = Society.query.filter_by(registration_number="MH-2024-001").first()
+    if not society:
+        society = Society(
+            name="Sunrise Heights",
+            registration_number="MH-2024-001",
+            address="Plot 12, Sector 7, Andheri West",
+            city="Mumbai",
+            state="Maharashtra",
+            pincode="400053",
+            phone="022-12345678",
+            email="info@sunriseheights.in",
+        db.session.add(society)
+        print(f"[OK] Society: {society.name} (ID={society.id})")
+    # SOCIETY ADMIN
+    if not User.query.filter_by(mobile="9100000001").first():
+        adm = User(
+            full_name="Ramesh Sharma",
+            mobile="9100000001",
+            email="ramesh@sunriseheights.in",
+            role=Role.SOCIETY_ADMIN,
+            society_id=society.id,
+        adm.set_password("Admin@1234")
+        db.session.add(adm)
+        print("[OK] Society Admin: mobile=9100000001  password=Admin@1234")
+    # BUILDINGS (Wings)
+    buildings = []
+    for wing in ["Wing A", "Wing B", "Wing C"]:
+        b = Building.query.filter_by(society_id=society.id, name=wing).first()
+        if not b:
+            b = Building(
+                society_id=society.id, name=wing, floors_count=4, total_flats=4
+            )
+            db.session.add(b)
+            db.session.commit()
+        buildings.append(b)
+    print(f"[OK] Wings: {[b.name for b in buildings]}")
+    # FLATS (4 per wing)
+    flat_configs = [
+        ("101", 1, "2BHK", 1050.0),
+        ("201", 2, "2BHK", 1050.0),
+        ("301", 3, "3BHK", 1500.0),
+        ("401", 4, "3BHK", 1500.0),
+    ]
+    all_flats = []
+    for bldg in buildings:
+        prefix = bldg.name.split()[-1]  # A, B, C
+        for flat_no, floor, ftype, area in flat_configs:
+            full_num = f"{prefix}-{flat_no}"
+            f = Flat.query.filter_by(building_id=bldg.id, flat_number=full_num).first()
+            if not f:
+                f = Flat(
+                    society_id=society.id,
+                    building_id=bldg.id,
+                    flat_number=full_num,
+                    floor_number=floor,
+                    flat_type=ftype,
+                    area_sqft=area,
+                    occupancy_status="Occupied",
+                )
+                db.session.add(f)
+                db.session.commit()
+            all_flats.append(f)
+    print(f"[OK] {len(all_flats)} Flats created.")
+    # RESIDENTS + USERS
+    resident_seeds = [
+        ("Amit Verma", "9800000001", "amit@example.com", "Owner"),
+        ("Priya Mehta", "9800000002", "priya@example.com", "Owner"),
+        ("Suresh Patel", "9800000003", "suresh@example.com", "Tenant"),
+        ("Kavita Singh", "9800000004", "kavita@example.com", "Owner"),
+        ("Rajesh Kumar", "9800000005", "rajesh@example.com", "Tenant"),
+        ("Sunita Joshi", "9800000006", "sunita@example.com", "Owner"),
+    for i, (name, mobile, email, rtype) in enumerate(resident_seeds):
+        if not User.query.filter_by(mobile=mobile).first():
+            u = User(
+                full_name=name,
+                mobile=mobile,
+                email=email,
+                role=Role.RESIDENT,
+                society_id=society.id,
+                is_active=True,
+            u.set_password("Resident@123")
+            db.session.add(u)
+            flat = all_flats[i] if i < len(all_flats) else all_flats[0]
+            r = Resident(
+                flat_id=flat.id,
+                user_id=u.id,
+                resident_type=rtype,
+                occupancy_status="Active",
+                move_in_date=date(2023, 1, 1),
+                is_primary=True,
+            db.session.add(r)
+    print("[OK] Residents created (password=Resident@123).")
+    # MAINTENANCE CONFIG
+    mc = MaintenanceConfig.query.filter_by(society_id=society.id).first()
+    if not mc:
+        mc = MaintenanceConfig(
+            base_rate_per_sqft=3.5,
+            fixed_monthly_rate=1500.0,
+            due_day_of_month=10,
+            grace_period_days=5,
+            late_fee_per_month=500.0,
+            billing_cycle="Monthly",
+        db.session.add(mc)
+        print("[OK] Maintenance config: Rs.1,500 fixed monthly rate.")
+    # MAINTENANCE BILLS (last 3 months)
+    today = date.today()
+    for flat in all_flats[:6]:
+        resident = Resident.query.filter_by(flat_id=flat.id).first()
+        for months_ago in range(3, 0, -1):
+            bill_date = today.replace(day=1) - timedelta(days=30 * months_ago)
+            billing_month_str = bill_date.strftime("%Y-%m")
+            exists = MaintenanceBill.query.filter_by(
+                flat_id=flat.id, billing_month=billing_month_str
+            ).first()
+            if not exists:
+                amt = mc.fixed_monthly_rate
+                paid = months_ago == 3
+                bill = MaintenanceBill(
+                    bill_number=f"BILL-{flat.id}-{billing_month_str}",
+                    flat_id=flat.id,
+                    resident_id=resident.id if resident else None,
+                    billing_month=billing_month_str,
+                    base_amount=amt,
+                    total_amount=amt,
+                    amount_paid=amt if paid else 0.0,
+                    remaining_amount=0.0 if paid else amt,
+                    due_date=bill_date.replace(day=mc.due_day_of_month),
+                    status="Paid" if paid else "Pending",
+                db.session.add(bill)
+    db.session.commit()
+    print("[OK] Maintenance bills created for 3 months.")
+    # COMPLAINT CATEGORIES
+    for cat_name in [
+        "Plumbing",
+        "Electrical",
+        "Lift",
+        "Security",
+        "Housekeeping",
+        "Noise",
+        "Parking",
+        "Common Area",
+    ]:
+        if not ComplaintCategory.query.filter_by(name=cat_name).first():
+            db.session.add(ComplaintCategory(name=cat_name))
+    # Sample complaints  (Complaint has no category_id; uses category string)
+    residents_list = Resident.query.filter_by(society_id=society.id).all()
+    if residents_list and not Complaint.query.filter_by(society_id=society.id).first():
+        sample_cats = ["Plumbing", "Electrical", "Lift"]
+        for i, res in enumerate(residents_list[:3]):
+            db.session.add(
+                Complaint(
+                    ticket_number=f"TKT-{society.id}-{i + 1:04d}",
+                    flat_id=res.flat_id,
+                    resident_id=res.id,
+                    category=sample_cats[i],
+                    title=f"Sample Complaint #{i + 1}",
+                    description="Demo complaint for testing.",
+                    priority="Medium",
+                    status="Submitted",
+    print("[OK] Complaint categories & sample complaints created.")
+    # FACILITIES (Facility has no facility_type or booking_fee — use hourly_rate)
+    facilities_data = [
+        ("Clubhouse", 50, 0.0, False),
+        ("Swimming Pool", 30, 0.0, False),
+        ("Gymnasium", 20, 0.0, False),
+        ("Banquet Hall", 100, 500.0, True),
+        ("Tennis Court", 10, 100.0, True),
+    for fname, cap, rate, approval in facilities_data:
+        if not Facility.query.filter_by(society_id=society.id, name=fname).first():
+                Facility(
+                    name=fname,
+                    capacity=cap,
+                    hourly_rate=rate,
+                    is_active=True,
+                    requires_approval=approval,
+    print("[OK] Facilities seeded.")
+    # STAFF (uses role_type, phone, salary_amount, joining_date)
+    staff_data = [
+        ("Ramu Kaka", "Security", "9900000001", 15000.0),
+        ("Ganesh Sweep", "Housekeeping", "9900000002", 12000.0),
+        ("Suresh Gate", "Security", "9900000003", 15000.0),
+        ("Maintenance Man", "Plumber", "9900000004", 18000.0),
+    for sname, srole, sphone, salary in staff_data:
+        if not Staff.query.filter_by(society_id=society.id, phone=sphone).first():
+                Staff(
+                    full_name=sname,
+                    role_type=srole,
+                    phone=sphone,
+                    salary_amount=salary,
+                    status="Active",
+                    joining_date=date(2023, 6, 1),
+    print("[OK] Staff seeded.")
+    # NOTICES (uses content, created_by_id, publish_date — not body/created_by/published_at)
+    if not Notice.query.filter_by(society_id=society.id).first():
+        admin_user = User.query.filter_by(
+            role=Role.SOCIETY_ADMIN, society_id=society.id
+        ).first()
+        notices = [
+            (
+                "Annual General Meeting",
+                "The AGM for FY 2024-25 is scheduled on 15th September at 6 PM in the Clubhouse.",
+                "Meeting",
+                "Normal",
+            ),
+                "Maintenance Due Reminder",
+                "All residents are reminded to pay monthly maintenance by the 10th to avoid penalty.",
+                "Maintenance",
+                "High",
+                "Water Supply Disruption",
+                "Water supply will be interrupted on Sunday from 10 AM - 2 PM for pipeline maintenance.",
+                "Water",
+                "Urgent",
+        ]
+        for title, content, ntype, priority in notices:
+                Notice(
+                    title=title,
+                    content=content,
+                    notice_type=ntype,
+                    priority=priority,
+                    created_by_id=admin_user.id if admin_user else 1,
+                    publish_date=utcnow(),
+    print("[OK] Notices seeded.")
+    # SECURITY GUARD
+    if not User.query.filter_by(mobile="9700000001").first():
+        guard = User(
+            full_name="Gate Security",
+            mobile="9700000001",
+            email="guard@sunriseheights.in",
+            role=Role.SECURITY,
+        guard.set_password("Guard@1234")
+        db.session.add(guard)
+        print("[OK] Security Guard: mobile=9700000001  password=Guard@1234")
+    print("\n" + "=" * 60)
+    print("DATABASE SEEDED SUCCESSFULLY!")
+    print("=" * 60)
+    print()
+    print("LOGIN CREDENTIALS")
+    print("  Super Admin   : mobile=9000000000  password=Admin@1234")
+    print("  Society Admin : mobile=9100000001  password=Admin@1234")
+    print("  Resident 1    : mobile=9800000001  password=Resident@123")
+    print("  Security Guard: mobile=9700000001  password=Guard@1234")
+    print("Run the app :  python run.py")
+    print("Open browser:  http://127.0.0.1:5000")

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Document Center · Society SaaS{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">Society documents</p><h1>Document Center</h1><p>Rules, forms, and notices published by your society office.</p></div></div>
+<section class="card"><div class="table-responsive"><table class="data-table"><thead><tr><th>Title</th><th>Category</th><th>Uploaded</th><th>Action</th></tr></thead><tbody>
+{% for doc in documents %}<tr>
+  <td><strong>{{ doc.title }}</strong></td>
+  <td><span class="badge badge-info">{{ doc.category }}</span></td>
+  <td>{{ doc.created_at.strftime('%d %b %Y') }}</td>
+  <td><a class="btn btn-secondary btn-small" href="{{ url_for('resident.download_document', doc_id=doc.id) }}"><i class="fa-solid fa-download" aria-hidden="true"></i> Download</a></td>
+</tr>
+{% else %}<tr><td colspan="4" class="empty-cell"><i class="fa-regular fa-folder-open" aria-hidden="true"></i><strong>No documents yet</strong><span>Society rules and forms will appear here when published.</span></td></tr>{% endfor %}
+</tbody></table></div></section>
+{% endblock %}

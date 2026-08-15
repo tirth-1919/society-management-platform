@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}New Support Request · Society SaaS{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">Contact support</p><h1>Create Support Request</h1></div></div>
+<section class="card" style="max-width:560px;">
+  <form method="post" class="stack-form" novalidate>
+    <label for="subject">Subject
+      <input id="subject" name="subject" value="{{ form.subject or '' }}" required maxlength="150" aria-required="true">
+    </label>
+    <label for="category">Category
+      <select id="category" name="category" aria-required="true">
+        {% for c in categories %}<option value="{{ c }}" {{ 'selected' if form.category == c }}>{{ c }}</option>{% endfor %}
+      </select>
+    </label>
+    <label for="message">Message
+      <textarea id="message" name="message" rows="6" required aria-required="true">{{ form.message or '' }}</textarea>
+    </label>
+    <div class="bill-detail-actions">
+      <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i> Submit</button>
+      <a class="btn btn-secondary" href="{{ url_for('resident.support_list') }}">Cancel</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

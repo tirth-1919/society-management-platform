@@ -1,0 +1,40 @@
+﻿{% extends "base.html" %}
+{% block title %}Financial Analytics - Reports{% endblock %}
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <h2>Financial & Collection Analytics</h2>
+    <a href="{{ url_for('reports.export_residents') }}" class="btn btn-secondary"><i class="fa-solid fa-file-csv"></i> Export Resident CSV</a>
+</div>
+
+<div class="metrics-grid">
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--success);"><i class="fa-solid fa-cash-register"></i></div>
+        <div>
+            <div class="metric-val">₹{{ "{:,.2f}".format(total_collected) }}</div>
+            <div class="metric-lbl">Total Dues Collected</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(239, 68, 68, 0.15); color: var(--danger);"><i class="fa-solid fa-hourglass-half"></i></div>
+        <div>
+            <div class="metric-val">₹{{ "{:,.2f}".format(total_pending) }}</div>
+            <div class="metric-lbl">Total Outstanding Dues</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(79, 70, 229, 0.15); color: var(--primary);"><i class="fa-solid fa-receipt"></i></div>
+        <div>
+            <div class="metric-val">₹{{ "{:,.2f}".format(summary.total_expense) }}</div>
+            <div class="metric-lbl">Approved Society Expenses</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(6, 182, 212, 0.15); color: var(--secondary);"><i class="fa-solid fa-wallet"></i></div>
+        <div>
+            <div class="metric-val">₹{{ "{:,.2f}".format(summary.net_surplus) }}</div>
+            <div class="metric-lbl">Net Financial Operating Surplus</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}System Health & Backups - Society SaaS{% endblock %}
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <h2>System Health & Disaster Recovery</h2>
+    <form action="{{ url_for('system.backups') }}" method="POST" style="margin:0;">
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-database"></i> Trigger DB Backup Now</button>
+    </form>
+</div>
+
+<div class="metrics-grid">
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--success);"><i class="fa-solid fa-heart-pulse"></i></div>
+        <div>
+            <div class="metric-val">{{ health.status }}</div>
+            <div class="metric-lbl">App Core Status</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(79, 70, 229, 0.15); color: var(--primary);"><i class="fa-solid fa-hard-drive"></i></div>
+        <div>
+            <div class="metric-val">{{ health.disk_free_mb }} MB</div>
+            <div class="metric-lbl">Free Disk Space</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(6, 182, 212, 0.15); color: var(--secondary);"><i class="fa-solid fa-database"></i></div>
+        <div>
+            <div class="metric-val">{{ health.database }}</div>
+            <div class="metric-lbl">Database Health</div>
+        </div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <div class="card">
+        <h3>Database Backup Log Archives</h3>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Filename</th>
+                        <th>Created Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in backups %}
+                    <tr>
+                        <td><strong>{{ b.filename }}</strong></td>
+                        <td>{{ b.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td><span class="badge badge-success">{{ b.status }}</span></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="3" style="text-align: center;">No backups generated yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Recent Security & System Audit Logs</h3>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Action</th>
+                        <th>Details</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in audit_logs %}
+                    <tr>
+                        <td><strong>{{ a.action }}</strong></td>
+                        <td>{{ a.details }}</td>
+                        <td>{{ a.created_at.strftime('%H:%M:%S') }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="3" style="text-align: center;">No audit log records found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

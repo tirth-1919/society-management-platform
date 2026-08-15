@@ -1,0 +1,74 @@
+﻿{% extends "base.html" %}
+{% block title %}Accounting & Expense Vouchers{% endblock %}
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <h2>Expense Vouchers & Accounting</h2>
+    <a href="{{ url_for('accounting.ledger') }}" class="btn btn-secondary"><i class="fa-solid fa-book"></i> General Ledger</a>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
+    <div class="card">
+        <h3>Record Expense Voucher</h3>
+        <form action="{{ url_for('accounting.vouchers') }}" method="POST" style="margin-top: 16px;">
+            <div style="margin-bottom: 16px;">
+                <label style="font-weight: 600;">Expense Category</label>
+                <select name="category" required style="width: 100%; padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary);">
+                    <option value="Electricity">Electricity</option>
+                    <option value="Water">Water Supply</option>
+                    <option value="Security">Security Agency</option>
+                    <option value="Cleaning">Cleaning & Waste</option>
+                    <option value="Lift">Lift AMC & Repair</option>
+                    <option value="Repairs">General Maintenance</option>
+                    <option value="Salary">Staff Salary</option>
+                </select>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label style="font-weight: 600;">Amount (INR)</label>
+                <input type="number" step="0.01" name="amount" required style="width: 100%; padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary);">
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label style="font-weight: 600;">Payee Name</label>
+                <input type="text" name="payee_name" required placeholder="Vendor / Staff Name" style="width: 100%; padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary);">
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label style="font-weight: 600;">Description</label>
+                <textarea name="description" rows="2" required style="width: 100%; padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary);"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;"><i class="fa-solid fa-file-signature"></i> Post Voucher</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3>Approved Vouchers Roster</h3>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Voucher No</th>
+                        <th>Category</th>
+                        <th>Payee</th>
+                        <th>Amount</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in vouchers %}
+                    <tr>
+                        <td><strong>{{ v.voucher_number }}</strong></td>
+                        <td>{{ v.category }}</td>
+                        <td>{{ v.payee_name }}</td>
+                        <td><strong style="color: var(--danger);">₹{{ "{:,.2f}".format(v.amount) }}</strong></td>
+                        <td>{{ v.expense_date }}</td>
+                        <td><span class="badge badge-success">{{ v.status }}</span></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" style="text-align: center;">No expense vouchers recorded.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

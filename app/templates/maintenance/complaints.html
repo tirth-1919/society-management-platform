@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Complaints Desk - Society SaaS{% endblock %}
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <h2>Complaints & Helpdesk</h2>
+    <a href="{{ url_for('complaints.create_complaint') }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> New Complaint Ticket</a>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Ticket No</th>
+                    <th>Category</th>
+                    <th>Title</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in complaints %}
+                <tr>
+                    <td><strong>{{ c.ticket_number }}</strong></td>
+                    <td>{{ c.category }}</td>
+                    <td>{{ c.title }}</td>
+                    <td><span class="badge badge-warning">{{ c.priority }}</span></td>
+                    <td><span class="badge badge-info">{{ c.status }}</span></td>
+                    <td>{{ c.created_at.strftime('%Y-%m-%d') }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" style="text-align: center;">No complaint tickets registered.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

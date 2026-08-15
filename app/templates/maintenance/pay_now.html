@@ -1,0 +1,126 @@
+﻿{% extends "base.html" %}
+{% block title %}Pay Bill {{ bill.bill_number }} Â· Society SaaS{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">Maintenance payment</p><h1>Pay Maintenance Bill</h1><p>{{ bill.bill_number }} Â· {{ bill.billing_month }}</p></div></div>
+<div class="pay-wrap">
+  <section class="card">
+    <h2 class="card-title">Payment summary</h2>
+    <dl class="payment-summary">
+      <dt>Bill number</dt><dd>{{ bill.bill_number }}</dd>
+      <dt>Billing month</dt><dd>{{ bill.billing_month }}</dd>
+      <dt>Maintenance</dt><dd>₹{{ '{:,.2f}'.format(bill.base_amount) }}</dd>
+      <dt>Late fee</dt><dd>₹{{ '{:,.2f}'.format(bill.late_fee) }}</dd>
+      <dt>Total bill amount</dt><dd>₹{{ '{:,.2f}'.format(bill.total_amount) }}</dd>
+      <dt>Already paid</dt><dd>₹{{ '{:,.2f}'.format(bill.amount_paid) }}</dd>
+      <div class="total-line"><span>Amount payable</span><span>₹{{ '{:,.2f}'.format(bill.remaining_amount) }}</span></div>
+    </dl>
+  </section>
+
+  {% if not razorpay_configured %}
+  <div class="dev-mode-notice"><i class="fa-solid fa-flask"></i><div>This environment uses the development mock payment provider. No real money moves â€” a live gateway requires provider credentials to be configured by the society office.</div></div>
+  {% endif %}
+
+  <section class="card">
+    <h2 class="card-title">Choose amount &amp; method</h2>
+    <form id="pay-form" method="POST" action="{{ url_for('payments.pay_bill', bill_id=bill.id) }}">
+      <input type="hidden" name="idempotency_key" value="{{ idempotency_key }}">
+      <label style="font-weight:600; font-size:13px; display:block; margin-bottom:6px;">Payment amount (INR)</label>
+      <input type="number" step="0.01" name="amount_to_pay" max="{{ bill.remaining_amount }}" min="0.01"
+             value="{{ bill.remaining_amount }}" required
+             style="width:100%; padding:12px; border-radius:var(--radius-md); border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:16px; font-weight:700; margin-bottom:6px;">
+      <small style="color:var(--text-secondary); display:block; margin-bottom:18px;">Partial payment supported, up to ₹{{ '{:,.2f}'.format(bill.remaining_amount) }}.</small>
+
+      <label style="font-weight:600; font-size:13px; display:block; margin-bottom:6px;">Payment method</label>
+      <div class="method-grid">
+        <label class="method-tile selected"><input type="radio" name="payment_method" value="UPI" checked><i class="fa-solid fa-qrcode"></i> UPI / QR</label>
+        <label class="method-tile"><input type="radio" name="payment_method" value="Card"><i class="fa-regular fa-credit-card"></i> Debit / Credit card</label>
+        <label class="method-tile"><input type="radio" name="payment_method" value="Online"><i class="fa-solid fa-building-columns"></i> Net banking</label>
+        <label class="method-tile"><input type="radio" name="payment_method" value="Cash"><i class="fa-solid fa-hand-holding-dollar"></i> Cash to office</label>
+      </div>
+
+      <button type="button" id="review-payment-btn" class="btn btn-primary" style="width:100%; justify-content:center; padding:14px;">
+        <i class="fa-solid fa-lock"></i> Review &amp; pay
+      </button>
+    </form>
+  </section>
+</div>
+
+<!-- Confirmation modal -->
+<div class="modal-backdrop" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title" hidden>
+  <div class="modal-box">
+    <h3 id="confirm-modal-title">Confirm payment</h3>
+    <p class="muted">Bill: {{ bill.bill_number }}</p>
+    <div class="modal-amount" id="modal-amount">₹0.00</div>
+    <p class="muted" id="modal-method"></p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary" id="cancel-payment-btn">Cancel</button>
+      <button type="button" class="btn btn-primary" id="confirm-payment-btn"><i class="fa-solid fa-check"></i> Confirm payment</button>
+    </div>
+    <div class="processing-note" id="processing-note" style="display:none;">
+      <i class="fa-solid fa-spinner"></i> Processing payment&hellip; please do not close this window.
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const form = document.getElementById('pay-form');
+  const amountInput = form.querySelector('input[name="amount_to_pay"]');
+  const methodTiles = form.querySelectorAll('.method-tile');
+  const reviewBtn = document.getElementById('review-payment-btn');
+  const modal = document.getElementById('confirm-modal');
+  const modalAmount = document.getElementById('modal-amount');
+  const modalMethod = document.getElementById('modal-method');
+  const cancelBtn = document.getElementById('cancel-payment-btn');
+  const confirmBtn = document.getElementById('confirm-payment-btn');
+  const processingNote = document.getElementById('processing-note');
+  let submitted = false;
+
+  methodTiles.forEach(tile => tile.addEventListener('click', () => {
+    methodTiles.forEach(t => t.classList.remove('selected'));
+    tile.classList.add('selected');
+  }));
+
+  reviewBtn.addEventListener('click', () => {
+    if (!form.reportValidity()) return;
+    const amt = parseFloat(amountInput.value || '0');
+    const methodEl = form.querySelector('input[name="payment_method"]:checked');
+    modalAmount.textContent = '₹' + amt.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    modalMethod.textContent = 'via ' + (methodEl ? methodEl.parentElement.textContent.trim() : 'UPI');
+    modal.hidden = false;
+    modal.classList.add('open');
+    cancelBtn.focus();
+  });
+
+  function closeModal() {
+    modal.hidden = true;
+    modal.classList.remove('open');
+    reviewBtn.focus();
+  }
+
+  cancelBtn.addEventListener('click', closeModal);
+  modal.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !submitted) closeModal();
+    if (e.key === 'Tab') {
+      // Simple two-item focus trap between Cancel and Confirm.
+      const focusables = [cancelBtn, confirmBtn];
+      const idx = focusables.indexOf(document.activeElement);
+      e.preventDefault();
+      const next = e.shiftKey ? (idx <= 0 ? 1 : idx - 1) : (idx === 1 ? 0 : 1);
+      focusables[next].focus();
+    }
+  });
+
+  confirmBtn.addEventListener('click', () => {
+    if (submitted) return;
+    submitted = true;
+    confirmBtn.setAttribute('disabled', 'disabled');
+    cancelBtn.setAttribute('disabled', 'disabled');
+    confirmBtn.innerHTML = '<i class="fa-solid fa-spinner"></i> Processing&hellip;';
+    processingNote.style.display = 'flex';
+    form.submit();
+  });
+})();
+</script>
+{% endblock %}
+

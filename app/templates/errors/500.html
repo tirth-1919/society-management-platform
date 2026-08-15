@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}500 Internal Server Error{% endblock %}
+{% block content %}
+<div style="max-width: 500px; margin: 60px auto; text-align: center;">
+    <div style="font-size: 64px; color: var(--danger); margin-bottom: 16px;"><i class="fa-solid fa-triangle-exclamation"></i></div>
+    <h2>500 Internal Server Error</h2>
+    <p style="color: var(--text-secondary); margin-bottom: 24px;">An internal server error occurred. The incident has been logged.</p>
+    <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">Return to Dashboard</a>
+</div>
+{% endblock %}

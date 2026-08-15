@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+
+{% block title %}Create Account — Resident Registration{% endblock %}
+
+{% block content %}
+<div style="min-height: 80vh; display: flex; align-items: center; justify-content: center; padding: 32px 24px;">
+  <div style="width: 100%; max-width: 580px;">
+
+    <!-- Header -->
+    <div style="text-align: center; margin-bottom: 28px;">
+      <div style="
+        width: 64px; height: 64px; border-radius: 16px;
+        background: linear-gradient(135deg, #10b981, #06b6d4);
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 14px auto; font-size: 26px; color: #fff;
+        box-shadow: 0 8px 24px rgba(16,185,129,0.35);">
+        <i class="fa-solid fa-user-plus"></i>
+      </div>
+      <h1 style="font-size: 24px; font-weight: 800; margin: 0;">Create Resident Account</h1>
+      <p style="color: var(--text-secondary); margin-top: 6px; font-size: 14px;">
+        Register for resident membership in your society
+      </p>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div style="
+            padding: 12px 16px; border-radius: 10px; margin-bottom: 16px;
+            background: {% if category == 'danger' %}#fee2e2{% elif category == 'success' %}#dcfce7{% else %}#eff6ff{% endif %};
+            color: {% if category == 'danger' %}#991b1b{% elif category == 'success' %}#166534{% else %}#1e40af{% endif %};
+            border-left: 4px solid {% if category == 'danger' %}#ef4444{% elif category == 'success' %}#22c55e{% else %}#3b82f6{% endif %};
+            font-size: 14px;">
+            <i class="fa-solid fa-{% if category == 'danger' %}circle-exclamation{% elif category == 'success' %}circle-check{% else %}circle-info{% endif %}"></i>
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="card" style="padding: 36px; border-radius: 18px; box-shadow: 0 20px 60px rgba(0,0,0,0.12);">
+      <form action="{{ url_for('auth.register') }}" method="POST" id="register-form">
+
+        <!-- Progress Steps -->
+        <div style="display: flex; gap: 6px; margin-bottom: 28px;">
+          <div style="flex:1; height:4px; border-radius:4px; background: linear-gradient(90deg, #10b981, #06b6d4);"></div>
+          <div style="flex:1; height:4px; border-radius:4px; background: linear-gradient(90deg, #10b981, #06b6d4);"></div>
+          <div style="flex:1; height:4px; border-radius:4px; background: var(--border-color);"></div>
+        </div>
+
+        <!-- Section 1: Personal Info -->
+        <div style="margin-bottom: 10px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-secondary);">
+          <i class="fa-solid fa-user"></i> Personal Information
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+          <div>
+            <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Full Name *</label>
+            <input type="text" name="full_name" required placeholder="John Doe" id="reg-fullname"
+              style="width:100%; padding:11px 14px; border-radius:9px; border:1.5px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:14px; box-sizing:border-box;"
+              onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='var(--border-color)'">
+          </div>
+          <div>
+            <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Mobile Number *</label>
+            <input type="tel" name="mobile" required placeholder="9876543210" id="reg-mobile"
+              style="width:100%; padding:11px 14px; border-radius:9px; border:1.5px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:14px; box-sizing:border-box;"
+              onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='var(--border-color)'">
+          </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Email Address <span style="color:var(--text-secondary);">(Optional)</span></label>
+          <input type="email" name="email" placeholder="john@example.com" id="reg-email"
+            style="width:100%; padding:11px 14px; border-radius:9px; border:1.5px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:14px; box-sizing:border-box;"
+            onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='var(--border-color)'">
+        </div>
+
+        <!-- Divider -->
+        <div style="height:1px; background:var(--border-color); margin: 20px 0;"></div>
+        <div style="margin-bottom: 10px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-secondary);">
+          <i class="fa-solid fa-building"></i> Location Selection (Wing → Block → Flat Number)
+        </div>
+
+        <!-- Society Dropdown -->
+        <div style="margin-bottom: 16px;">
+          <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Society *</label>
+          <select name="society_id" id="society-select" required onchange="loadWings(this.value)"
+            style="width:100%; padding:11px 14px; border-radius:9px; border:1.5px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:14px; box-sizing:border-box;">
+            <option value="">— Select Your Society —</option>
+            {% for soc in societies %}
+            <option value="{{ soc.id }}">{{ soc.name }} — {{ soc.city }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Wing -> Block -> Flat Number cascading selects -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+          <div>
+            <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Wing *</label>
+            <select name="building_id" id="wing-select" required onchange="loadBlocks(this.value)"
+              style="width:100%; padding:11px 10px; border-radius:9px; border:1.5px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:13px; box-sizing:border-box;">
+              <option value="">— Select Wing —</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Block *</label>
+            <select name="block_id" id="block-select" onchange="loadFlats(this.value)"
+              style="width:100%; padding:11px 10px; border-radius:9px; border:1.5px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:13px; box-sizing:border-box;">
+              <option value="">— Select Block —</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Flat Number *</label>
+            <select name="flat_id" id="flat-select" required
+              style="width:100%; padding:11px 10px; border-radius:9px; border:1.5px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:13px; box-sizing:border-box;">
+              <option value="">— Select Flat —</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Occupancy Type -->
+        <div style="margin-bottom: 20px;">
+          <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 10px;">Occupancy Type *</label>
+          <div style="display: flex; gap: 12px;">
+            {% for val, label, icon in [('OWNER','Owner','fa-house'),('TENANT','Tenant','fa-key'),('FAMILY_MEMBER','Family Member','fa-people-roof')] %}
+            <label style="flex:1; cursor:pointer;">
+              <input type="radio" name="occupancy_type" value="{{ val }}" {% if val == 'OWNER' %}checked{% endif %} style="display:none;" class="occ-radio" onclick="selectOccupancy(this)">
+              <div class="occ-btn" data-val="{{ val }}" style="
+                padding: 10px 8px; border-radius: 10px; border: 2px solid var(--border-color);
+                text-align: center; font-size: 12px; font-weight: 600; transition: all 0.2s;
+                {% if val == 'OWNER' %}border-color: #10b981; background: rgba(16,185,129,0.1); color: #10b981;{% endif %}">
+                <i class="fa-solid {{ icon }}" style="display:block; font-size:18px; margin-bottom:5px;"></i>
+                {{ label }}
+              </div>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Divider -->
+        <div style="height:1px; background:var(--border-color); margin: 20px 0;"></div>
+        <div style="margin-bottom: 10px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-secondary);">
+          <i class="fa-solid fa-lock"></i> Security
+        </div>
+
+        <!-- Password -->
+        <div style="margin-bottom: 28px;">
+          <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Password *</label>
+          <div style="position:relative;">
+            <input type="password" name="password" id="reg-password" required placeholder="Create a strong password"
+              style="width:100%; padding:11px 48px 11px 14px; border-radius:9px; border:1.5px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:14px; box-sizing:border-box;"
+              onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='var(--border-color)'">
+            <button type="button" onclick="togglePwd('reg-password', this)"
+              style="position:absolute; right:14px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--text-secondary);">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+          <div style="font-size:12px; color:var(--text-secondary); margin-top:6px;">
+            <i class="fa-solid fa-circle-info"></i> Your password is hashed securely and never stored in plain text.
+          </div>
+        </div>
+
+        <button type="submit" id="reg-submit-btn"
+          style="width:100%; padding:14px; border-radius:10px; border:none; cursor:pointer;
+                 background: linear-gradient(135deg, #10b981, #06b6d4); color:#fff;
+                 font-size:15px; font-weight:700; box-shadow:0 4px 16px rgba(16,185,129,0.35); transition:all 0.2s;">
+          <i class="fa-solid fa-paper-plane"></i> Submit Registration
+        </button>
+
+        <div style="text-align:center; margin-top:18px; font-size:13px; color:var(--text-secondary);">
+          Already registered? <a href="{{ url_for('auth.login') }}" style="color:var(--primary); font-weight:600;">Sign In</a>
+        </div>
+      </form>
+    </div>
+
+    <!-- Info Box -->
+    <div style="margin-top:16px; background:var(--bg-surface); border-radius:12px; padding:14px 16px; border-left:4px solid #f59e0b; font-size:13px; color:var(--text-secondary);">
+      <i class="fa-solid fa-clock-rotate-left" style="color:#f59e0b;"></i>
+      After submission, your request will be reviewed by the society administrator. You will be notified once approved.
+    </div>
+  </div>
+</div>
+
+<script>
+function togglePwd(inputId, btn) {
+  const input = document.getElementById(inputId);
+  const icon = btn.querySelector('i');
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.className = 'fa-solid fa-eye-slash';
+  } else {
+    input.type = 'password';
+    icon.className = 'fa-solid fa-eye';
+  }
+}
+
+function selectOccupancy(radio) {
+  document.querySelectorAll('.occ-btn').forEach(btn => {
+    btn.style.borderColor = 'var(--border-color)';
+    btn.style.background = 'transparent';
+    btn.style.color = 'var(--text-primary)';
+  });
+  const active = document.querySelector(`.occ-btn[data-val="${radio.value}"]`);
+  if (active) {
+    active.style.borderColor = '#10b981';
+    active.style.background = 'rgba(16,185,129,0.1)';
+    active.style.color = '#10b981';
+  }
+}
+
+let currentSocietyId = null;
+let currentWingId = null;
+
+async function loadWings(societyId) {
+  currentSocietyId = societyId;
+  const wSel = document.getElementById('wing-select');
+  const bSel = document.getElementById('block-select');
+  const fSel = document.getElementById('flat-select');
+
+  wSel.innerHTML = '<option value="">— Loading Wings... —</option>';
+  bSel.innerHTML = '<option value="">— Select Block —</option>';
+  fSel.innerHTML = '<option value="">— Select Flat —</option>';
+
+  if (!societyId) {
+    wSel.innerHTML = '<option value="">— Select Wing —</option>';
+    return;
+  }
+
+  try {
+    const r = await fetch(`/api/buildings?society_id=${societyId}`);
+    const data = await r.json();
+    wSel.innerHTML = '<option value="">— Select Wing —</option>';
+    (data.buildings || []).forEach(b => {
+      wSel.innerHTML += `<option value="${b.id}">${b.name}</option>`;
+    });
+  } catch(e) {
+    wSel.innerHTML = '<option value="">— Error loading wings —</option>';
+  }
+}
+
+async function loadBlocks(wingId) {
+  currentWingId = wingId;
+  const bSel = document.getElementById('block-select');
+  const fSel = document.getElementById('flat-select');
+
+  bSel.innerHTML = '<option value="">— Loading Blocks... —</option>';
+  fSel.innerHTML = '<option value="">— Select Flat —</option>';
+
+  if (!wingId) {
+    bSel.innerHTML = '<option value="">— Select Block —</option>';
+    return;
+  }
+
+  try {
+    const r = await fetch(`/api/blocks?building_id=${wingId}&society_id=${currentSocietyId || ''}`);
+    const data = await r.json();
+    const blocks = data.blocks || [];
+
+    if (blocks.length > 0) {
+      bSel.innerHTML = '<option value="">— Select Block —</option>';
+      blocks.forEach(blk => {
+        bSel.innerHTML += `<option value="${blk.id}">${blk.name}</option>`;
+      });
+    } else {
+      // If no blocks defined for this wing (legacy data), load flats directly for the wing
+      bSel.innerHTML = '<option value="">— No Blocks (Direct) —</option>';
+      loadFlatsByWing(wingId);
+    }
+  } catch(e) {
+    bSel.innerHTML = '<option value="">— Error loading blocks —</option>';
+  }
+}
+
+async function loadFlats(blockId) {
+  const fSel = document.getElementById('flat-select');
+  fSel.innerHTML = '<option value="">— Loading Flats... —</option>';
+
+  if (!blockId) {
+    if (currentWingId) {
+      loadFlatsByWing(currentWingId);
+    } else {
+      fSel.innerHTML = '<option value="">— Select Flat —</option>';
+    }
+    return;
+  }
+
+  try {
+    const r = await fetch(`/api/flats?block_id=${blockId}`);
+    const data = await r.json();
+    const flats = data.flats || [];
+
+    if (flats.length > 0) {
+      fSel.innerHTML = '<option value="">— Select Flat Number —</option>';
+      flats.forEach(f => {
+        fSel.innerHTML += `<option value="${f.id}">${f.flat_number}</option>`;
+      });
+    } else if (currentWingId) {
+      loadFlatsByWing(currentWingId);
+    } else {
+      fSel.innerHTML = '<option value="">— No Flats Available —</option>';
+    }
+  } catch(e) {
+    fSel.innerHTML = '<option value="">— Error loading flats —</option>';
+  }
+}
+
+async function loadFlatsByWing(wingId) {
+  const fSel = document.getElementById('flat-select');
+  try {
+    const r = await fetch(`/api/flats?building_id=${wingId}`);
+    const data = await r.json();
+    fSel.innerHTML = '<option value="">— Select Flat Number —</option>';
+    (data.flats || []).forEach(f => {
+      fSel.innerHTML += `<option value="${f.id}">${f.flat_number}</option>`;
+    });
+  } catch(e) {
+    fSel.innerHTML = '<option value="">— Error loading flats —</option>';
+  }
+}
+</script>
+{% endblock %}

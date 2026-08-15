@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block title %}Payment Failed · Society SaaS{% endblock %}
+{% block content %}
+<section class="payment-result card failure-result" role="alert"><i class="fa-solid fa-circle-xmark" aria-hidden="true"></i><p class="eyebrow">Payment not completed</p><h1>Payment Failed</h1><p>Your payment could not be completed. No successful payment or receipt was created.</p><div class="bill-detail-actions"><a class="btn btn-primary" href="{{ url_for('payments.pay_bill', bill_id=bill.id) }}">Retry Payment</a><a class="btn btn-secondary" href="{{ url_for('resident.bills') }}">Choose Another Method</a><a class="btn btn-secondary" href="{{ url_for('resident.bills') }}">Back to Bills</a></div></section>
+{% endblock %}

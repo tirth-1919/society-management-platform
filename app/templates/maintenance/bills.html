@@ -1,0 +1,60 @@
+﻿{% extends "base.html" %}
+{% block title %}Maintenance Bills - Society SaaS{% endblock %}
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <h2>Society Maintenance Bills</h2>
+    {% if session.role in ['Super Admin', 'Society Admin'] %}
+    <form action="{{ url_for('payments.generate_bills') }}" method="POST" style="margin:0;">
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-calculator"></i> Run Auto-Billing</button>
+    </form>
+    {% endif %}
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Bill Number</th>
+                    <th>Flat</th>
+                    <th>Month</th>
+                    <th>Base Charge</th>
+                    <th>Late Fee</th>
+                    <th>Total Bill</th>
+                    <th>Paid</th>
+                    <th>Remaining</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in bills %}
+                <tr>
+                    <td><strong>{{ b.bill_number }}</strong></td>
+                    <td>{{ b.flat.flat_number if b.flat else 'N/A' }}</td>
+                    <td>{{ b.billing_month }}</td>
+                    <td>₹{{ "{:,.2f}".format(b.base_amount) }}</td>
+                    <td>₹{{ "{:,.2f}".format(b.late_fee) }}</td>
+                    <td>₹{{ "{:,.2f}".format(b.total_amount) }}</td>
+                    <td>₹{{ "{:,.2f}".format(b.amount_paid) }}</td>
+                    <td><strong style="color: var(--danger);">₹{{ "{:,.2f}".format(b.remaining_amount) }}</strong></td>
+                    <td>
+                        <span class="badge badge-{{ 'success' if b.status == 'Paid' else ('warning' if b.status == 'Partially Paid' else 'danger') }}">
+                            {{ b.status }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if b.remaining_amount > 0 %}
+                        <a href="{{ url_for('payments.pay_bill', bill_id=b.id) }}" class="btn btn-primary" style="padding: 4px 10px; font-size: 12px;">Pay Dues</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="10" style="text-align: center;">No bills available. Your maintenance bills will appear here when issued.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

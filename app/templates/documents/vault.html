@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Document Vault - Society SaaS{% endblock %}
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <h2>Secure Document Vault</h2>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
+    <div class="card">
+        <h3>Upload Document</h3>
+        <form action="{{ url_for('documents.upload') }}" method="POST" enctype="multipart/form-data" style="margin-top: 16px;">
+            <div style="margin-bottom: 16px;">
+                <label style="font-weight: 600;">Title</label>
+                <input type="text" name="title" required placeholder="e.g. Society Bye-Laws PDF" style="width: 100%; padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary);">
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label style="font-weight: 600;">Category</label>
+                <select name="category" style="width: 100%; padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary);">
+                    <option value="Society Registration">Society Registration</option>
+                    <option value="Vendor Contracts">Vendor Contracts</option>
+                    <option value="Audit Reports">Audit Reports</option>
+                    <option value="Resident Proofs">Resident Proofs</option>
+                </select>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label style="font-weight: 600;">Select File</label>
+                <input type="file" name="file" required style="width: 100%; padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary);">
+            </div>
+            <div style="margin-bottom: 16px; display:flex; align-items:center; gap:8px;">
+                <input type="checkbox" id="resident-visible" name="access_level" value="RESIDENT_PUBLIC" style="width:auto;">
+                <label for="resident-visible" style="font-weight: 600; margin:0;">Visible to residents (Document Center)</label>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;"><i class="fa-solid fa-cloud-arrow-up"></i> Upload to Vault</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3>Vault File Archive</h3>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Visibility</th>
+                        <th>File Size</th>
+                        <th>Uploaded Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in documents %}
+                    <tr>
+                        <td><strong>{{ d.title }}</strong></td>
+                        <td>{{ d.category }}</td>
+                        <td><span class="badge {{ 'badge-success' if d.access_level == 'RESIDENT_PUBLIC' else 'badge-secondary' }}">{{ 'Resident-visible' if d.access_level == 'RESIDENT_PUBLIC' else 'Admin only' }}</span></td>
+                        <td>{{ (d.file_size_bytes / 1024) | round(1) }} KB</td>
+                        <td>{{ d.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            <a href="{{ url_for('documents.download', doc_id=d.id) }}" class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;">
+                                <i class="fa-solid fa-download"></i> Download
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" style="text-align: center;">No document files uploaded to vault.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

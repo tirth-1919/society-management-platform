@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ req.subject }} · Society SaaS{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">Support request</p><h1>{{ req.subject }}</h1></div><span class="badge {{ 'badge-success' if req.status == 'RESOLVED' else ('badge-secondary' if req.status == 'CLOSED' else ('badge-info' if req.status == 'IN_PROGRESS' else 'badge-warning')) }}">{{ req.status|replace('_',' ')|title }}</span></div>
+<section class="card bill-detail">
+  <dl class="details-list">
+    <dt>Category</dt><dd>{{ req.category }}</dd>
+    <dt>Created</dt><dd>{{ req.created_at.strftime('%d %b %Y, %I:%M %p') }}</dd>
+    <dt>Last updated</dt><dd>{{ req.updated_at.strftime('%d %b %Y, %I:%M %p') }}</dd>
+  </dl>
+  <hr>
+  <p style="white-space:pre-wrap;">{{ req.message }}</p>
+  <div class="bill-detail-actions"><a class="btn btn-secondary" href="{{ url_for('resident.support_list') }}">Back to requests</a></div>
+</section>
+{% endblock %}

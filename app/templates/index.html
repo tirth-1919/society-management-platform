@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Society Management SaaS — Resident Portal{% endblock %}
+
+{% block content %}
+<div style="min-height: 80vh; display:flex; align-items:center; justify-content:center; padding: 24px;">
+  <div style="width:100%; max-width:960px; text-align:center;">
+
+    <!-- Hero -->
+    <div style="
+      font-size: clamp(32px, 5vw, 54px); font-weight: 900;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: 16px; line-height: 1.15;">
+      Society Management &amp;<br>Maintenance Platform
+    </div>
+    <p style="font-size: 17px; color: var(--text-secondary); max-width: 600px; margin: 0 auto 40px auto; line-height: 1.7;">
+      Automated billing, visitor security, complaints management, document vault, and AI-powered insights — all in one platform.
+    </p>
+
+    <!-- Action Buttons -->
+    <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin-bottom: 56px;">
+      <a href="{{ url_for('auth.login') }}" id="signin-btn"
+        style="display:inline-flex; align-items:center; gap:10px; padding:16px 36px; border-radius:12px;
+               background:linear-gradient(135deg, var(--primary), var(--secondary)); color:#fff;
+               font-weight:700; font-size:16px; text-decoration:none;
+               box-shadow:0 8px 24px rgba(79,70,229,0.35); transition:all 0.2s;"
+        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 12px 32px rgba(79,70,229,0.45)';"
+        onmouseout="this.style.transform=''; this.style.boxShadow='0 8px 24px rgba(79,70,229,0.35)';">
+        <i class="fa-solid fa-right-to-bracket"></i> Resident Sign In
+      </a>
+      <a href="{{ url_for('auth.register') }}" id="register-hero-btn"
+        style="display:inline-flex; align-items:center; gap:10px; padding:16px 36px; border-radius:12px;
+               border:2px solid var(--primary); color:var(--primary); background:transparent;
+               font-weight:700; font-size:16px; text-decoration:none; transition:all 0.2s;"
+        onmouseover="this.style.background='var(--primary)'; this.style.color='#fff'; this.style.transform='translateY(-2px)';"
+        onmouseout="this.style.background='transparent'; this.style.color='var(--primary)'; this.style.transform='';">
+        <i class="fa-solid fa-user-plus"></i> Create New Account
+      </a>
+    </div>
+
+    <!-- Feature Cards -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:20px; text-align:left;">
+      {% for icon, color, bg, title, desc in [
+        ('fa-building', '#4f46e5', 'rgba(79,70,229,0.1)', 'Multi-Society', 'Complete tenant isolation'),
+        ('fa-calculator', '#10b981', 'rgba(16,185,129,0.1)', 'Auto Billing', 'Late fee engine & receipts'),
+        ('fa-shield-halved', '#06b6d4', 'rgba(6,182,212,0.1)', 'Visitor Security', 'Gate pass & approval flow'),
+        ('fa-robot', '#f59e0b', 'rgba(245,158,11,0.1)', 'AI Assistant', 'Natural language Q&A'),
+      ] %}
+      <div class="card" style="padding:20px; border-radius:14px; transition:transform 0.2s, box-shadow 0.2s;"
+        onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 12px 32px rgba(0,0,0,0.12)';"
+        onmouseout="this.style.transform=''; this.style.boxShadow='';">
+        <div style="width:44px; height:44px; border-radius:12px; background:{{ bg }}; display:flex; align-items:center; justify-content:center; margin-bottom:14px; font-size:20px; color:{{ color }};">
+          <i class="fa-solid {{ icon }}"></i>
+        </div>
+        <div style="font-weight:700; font-size:15px; margin-bottom:4px;">{{ title }}</div>
+        <div style="font-size:13px; color:var(--text-secondary);">{{ desc }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Admin Portal Note -->
+    <div style="margin-top:36px; padding:14px 20px; background:rgba(124,58,237,0.08); border:1px dashed rgba(124,58,237,0.3); border-radius:12px; font-size:13px; color:var(--text-secondary);">
+      <i class="fa-solid fa-user-shield" style="color:#7c3aed;"></i>
+      Society administrators? Open the Admin Portal using its separately assigned local or ngrok address.
+    </div>
+  </div>
+</div>
+{% endblock %}

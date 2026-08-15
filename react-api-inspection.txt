@@ -1,0 +1,563 @@
+﻿
+========== frontend\src\App.jsx ==========
+
+import { useState } from 'react'
+
+function App() {
+  const [residents, setResidents] = useState([])
+  const [bills, setBills] = useState([])
+  const [message, setMessage] = useState('')
+
+  const loadResidents = async () => {
+    try {
+      setMessage('Loading residents...')
+
+      const response = await fetch('/api/v1/residents', {
+        credentials: 'include'
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+
+      const data = await response.json()
+      setResidents(Array.isArray(data) ? data : [])
+      setMessage('Residents loaded from Flask successfully.')
+    } catch (error) {
+      console.error(error)
+      setMessage(`Residents error: ${error.message}`)
+    }
+  }
+
+  const loadBills = async () => {
+    try {
+      setMessage('Loading bills...')
+
+      const response = await fetch('/api/v1/bills', {
+        credentials: 'include'
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+
+      const data = await response.json()
+      setBills(Array.isArray(data) ? data : [])
+      setMessage('Bills loaded from Flask successfully.')
+    } catch (error) {
+      console.error(error)
+      setMessage(`Bills error: ${error.message}`)
+    }
+  }
+
+  return (
+    <div className="app">
+      <header>
+        <h1>Society Maintenance</h1>
+        <p>React + Flask + MySQL</p>
+      </header>
+
+      <section className="connection">
+        <h2>Backend Connection</h2>
+        <p>
+          React is connected to Flask through the Vite proxy.
+        </p>
+
+        <div className="buttons">
+          <button onClick={loadResidents}>
+            Load Residents
+          </button>
+
+          <button onClick={loadBills}>
+            Load Bills
+          </button>
+        </div>
+
+        {message && <p className="message">{message}</p>}
+      </section>
+
+      {residents.length > 0 && (
+        <section>
+          <h2>Residents</h2>
+
+          <div className="cards">
+            {residents.map((resident) => (
+              <div className="card" key={resident.id}>
+                <h3>{resident.full_name}</h3>
+                <p>Mobile: {resident.mobile || '-'}</p>
+                <p>Email: {resident.email || '-'}</p>
+                <p>Type: {resident.resident_type || '-'}</p>
+                <p>Status: {resident.occupancy_status || '-'}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {bills.length > 0 && (
+        <section>
+          <h2>Maintenance Bills</h2>
+
+          <div className="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Bill No.</th>
+                  <th>Month</th>
+                  <th>Total</th>
+                  <th>Paid</th>
+                  <th>Remaining</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {bills.map((bill) => (
+                  <tr key={bill.id}>
+                    <td>{bill.bill_number}</td>
+                    <td>{bill.billing_month}</td>
+                    <td>₹{bill.total_amount}</td>
+                    <td>₹{bill.amount_paid}</td>
+                    <td>₹{bill.remaining_amount}</td>
+                    <td>{bill.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+    </div>
+  )
+}
+
+export default App
+
+========== frontend\src\main.jsx ==========
+
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App.jsx'
+import './index.css'
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+)
+
+========== frontend\src\App.css ==========
+
+.counter {
+  font-size: 16px;
+  padding: 5px 10px;
+  border-radius: 5px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 2px solid transparent;
+  transition: border-color 0.3s;
+  margin-bottom: 24px;
+
+  &:hover {
+    border-color: var(--accent-border);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+.hero {
+  position: relative;
+
+  .base,
+  .framework,
+  .vite {
+    inset-inline: 0;
+    margin: 0 auto;
+  }
+
+  .base {
+    width: 170px;
+    position: relative;
+    z-index: 0;
+  }
+
+  .framework,
+  .vite {
+    position: absolute;
+  }
+
+  .framework {
+    z-index: 1;
+    top: 34px;
+    height: 28px;
+    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
+      scale(1.4);
+  }
+
+  .vite {
+    z-index: 0;
+    top: 107px;
+    height: 26px;
+    width: auto;
+    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
+      scale(0.8);
+  }
+}
+
+#center {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  place-content: center;
+  place-items: center;
+  flex-grow: 1;
+
+  @media (max-width: 1024px) {
+    padding: 32px 20px 24px;
+    gap: 18px;
+  }
+}
+
+#next-steps {
+  display: flex;
+  border-top: 1px solid var(--border);
+  text-align: left;
+
+  & > div {
+    flex: 1 1 0;
+    padding: 32px;
+    @media (max-width: 1024px) {
+      padding: 24px 20px;
+    }
+  }
+
+  .icon {
+    margin-bottom: 16px;
+    width: 22px;
+    height: 22px;
+  }
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+#docs {
+  border-right: 1px solid var(--border);
+
+  @media (max-width: 1024px) {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+#next-steps ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  gap: 8px;
+  margin: 32px 0 0;
+
+  .logo {
+    height: 18px;
+  }
+
+  a {
+    color: var(--text-h);
+    font-size: 16px;
+    border-radius: 6px;
+    background: var(--social-bg);
+    display: flex;
+    padding: 6px 12px;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: box-shadow 0.3s;
+
+    &:hover {
+      box-shadow: var(--shadow);
+    }
+    .button-icon {
+      height: 18px;
+      width: 18px;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    margin-top: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+
+    li {
+      flex: 1 1 calc(50% - 8px);
+    }
+
+    a {
+      width: 100%;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+  }
+}
+
+#spacer {
+  height: 88px;
+  border-top: 1px solid var(--border);
+  @media (max-width: 1024px) {
+    height: 48px;
+  }
+}
+
+.ticks {
+  position: relative;
+  width: 100%;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: -4.5px;
+    border: 5px solid transparent;
+  }
+
+  &::before {
+    left: 0;
+    border-left-color: var(--border);
+  }
+  &::after {
+    right: 0;
+    border-right-color: var(--border);
+  }
+}
+
+========== frontend\src\index.css ==========
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f7fb;
+  color: #172033;
+}
+
+.app {
+  max-width: 1200px;
+  margin: auto;
+  padding: 30px;
+}
+
+header {
+  background: #1769e0;
+  color: white;
+  padding: 30px;
+  border-radius: 14px;
+  margin-bottom: 25px;
+}
+
+header h1 {
+  margin: 0 0 8px;
+}
+
+.connection,
+section {
+  background: white;
+  padding: 25px;
+  border-radius: 14px;
+  margin-bottom: 25px;
+  box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
+}
+
+.buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+button {
+  border: 0;
+  padding: 12px 20px;
+  border-radius: 8px;
+  background: #1769e0;
+  color: white;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+.message {
+  margin-top: 18px;
+  font-weight: bold;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+.card {
+  border: 1px solid #e1e7ef;
+  border-radius: 10px;
+  padding: 18px;
+}
+
+.card h3 {
+  margin-top: 0;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 12px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+}
+
+th {
+  background: #f1f5f9;
+}
+
+========== app\routes\api.py ==========
+
+from flask import Blueprint, abort, jsonify, request, session
+from app.models import db, Resident, MaintenanceBill, User, Building, Flat
+from app.services.ai_service import AIService
+from app.services.search_service import SearchService
+
+api_bp = Blueprint("api", __name__, url_prefix="/api/v1")
+
+# â”€â”€ Public endpoints used by registration form (no auth required) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+# Also register at /api/buildings so the register.html form can call it
+
+
+def _buildings_response():
+    society_id = request.args.get("society_id")
+    if not society_id:
+        return jsonify({"buildings": []}), 200
+    buildings = (
+        Building.query.filter_by(society_id=int(society_id))
+        .order_by(Building.name)
+        .all()
+    )
+    return jsonify({"buildings": [{"id": b.id, "name": b.name} for b in buildings]})
+
+
+def _flats_response():
+    building_id = request.args.get("building_id")
+    if not building_id:
+        return jsonify({"flats": []}), 200
+    flats = (
+        Flat.query.filter_by(building_id=int(building_id))
+        .order_by(Flat.flat_number)
+        .all()
+    )
+    return jsonify(
+        {"flats": [{"id": f.id, "flat_number": f.flat_number} for f in flats]}
+    )
+
+
+@api_bp.route("/residents", methods=["GET"])
+def get_residents():
+    user = db.session.get(User, session.get("user_id"))
+    if not user or user.role == "Resident":
+        abort(403)
+    society_id = session.get("society_id")
+    if not society_id:
+        return jsonify({"error": "society_id required"}), 400
+
+    residents = Resident.query.filter_by(society_id=int(society_id)).all()
+    return jsonify(
+        [
+            {
+                "id": r.id,
+                "full_name": r.full_name,
+                "mobile": r.mobile,
+                "email": r.email,
+                "resident_type": r.resident_type,
+                "occupancy_status": r.occupancy_status,
+            }
+            for r in residents
+        ]
+    )
+
+
+@api_bp.route("/bills", methods=["GET"])
+def get_bills():
+    user = db.session.get(User, session.get("user_id"))
+    if not user:
+        abort(401)
+    society_id = session.get("society_id")
+    if not society_id:
+        return jsonify({"error": "society_id required"}), 400
+
+    query = MaintenanceBill.query.filter_by(society_id=int(society_id))
+    if user.role == "Resident":
+        resident = Resident.query.filter_by(
+            user_id=user.id, society_id=society_id, is_primary=True
+        ).first()
+        if not resident:
+            abort(403)
+        query = query.filter_by(resident_id=resident.id)
+    bills = query.all()
+    return jsonify(
+        [
+            {
+                "id": b.id,
+                "bill_number": b.bill_number,
+                "billing_month": b.billing_month,
+                "total_amount": b.total_amount,
+                "amount_paid": b.amount_paid,
+                "remaining_amount": b.remaining_amount,
+                "status": b.status,
+            }
+            for b in bills
+        ]
+    )
+
+
+@api_bp.route("/ai/query", methods=["POST"])
+def ai_query():
+    user = db.session.get(User, session.get("user_id"))
+    if not user:
+        abort(401)
+    prompt = (
+        request.json.get("prompt", "")
+        if request.is_json
+        else request.form.get("prompt", "")
+    )
+    if not prompt:
+        return jsonify({"error": "Prompt required"}), 400
+
+    answer = AIService.answer_query(user, prompt)
+    return jsonify({"prompt": prompt, "response": answer})
+
+
+@api_bp.route("/search", methods=["GET"])
+def global_search():
+    user = db.session.get(User, session.get("user_id"))
+    if not user:
+        abort(401)
+    if user.role == "Resident":
+        abort(403)
+    society_id = session.get("society_id")
+    query_str = request.args.get("q", "")
+    res = SearchService.global_search(int(society_id), query_str)
+    return jsonify(res)
