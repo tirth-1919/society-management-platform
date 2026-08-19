@@ -9,7 +9,6 @@ from app.models import (
     User,
     Role,
     MaintenanceBill,
-    Payment,
     BackupLog,
 )
 from app.services.society_health_service import SocietyHealthService

@@ -1,11 +1,7 @@
 import re
-from datetime import date
-from sqlalchemy.exc import IntegrityError
 from app.models import (
     db,
     Flat,
-    Building,
-    Block,
     Resident,
     PropertyOccupancyHistory,
     AuditLog,

@@ -105,7 +105,7 @@ class SearchService:
                                 "id": p.id,
                                 "title": f"Payment #{p.transaction_id or p.id}",
                                 "subtitle": f"₹{p.amount_paid:,.2f} via {p.payment_method or 'Online'} ({p.status})",
-                                "url": f"/payments/payment_history",
+                                "url": "/payments/payment_history",
                                 "icon": "fa-receipt"
                             }
                             for p in own_payments
@@ -133,7 +133,7 @@ class SearchService:
                                 "id": r.id,
                                 "title": f"Receipt #{r.receipt_number}",
                                 "subtitle": f"Generated: {r.generated_at.strftime('%Y-%m-%d') if r.generated_at else ''}",
-                                "url": f"/resident/receipts",
+                                "url": "/resident/receipts",
                                 "icon": "fa-receipt"
                             }
                             for r in own_receipts

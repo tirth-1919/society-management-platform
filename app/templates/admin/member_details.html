@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Member Details — Admin Portal{% endblock %}
+{% block content %}
+<div style="max-width:1200px; margin:32px auto; padding:0 16px;">
+  <div
+    style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; gap:12px; flex-wrap:wrap;">
+    <div>
+      <h1 style="font-size:24px; font-weight:800; margin:0;"><i class="fa-solid fa-id-card"
+          style="color:var(--primary);"></i> Member Details</h1>
+      <p style="color:var(--text-secondary); margin:4px 0 0; font-size:14px;">Approved active members in your society
+      </p>
+    </div>
+  </div>
+  <div class="card" style="padding:16px; margin-bottom:20px;">
+    <form method="GET" action="{{ url_for('admin.member_details') }}"
+      style="display:flex; gap:12px; align-items:flex-end;">
+      <div style="flex:1;"><label
+          style="font-size:11px; text-transform:uppercase; color:var(--text-secondary); font-weight:600;">Search
+          Member</label><input type="text" name="q" value="{{ search_q or '' }}" placeholder="Name, mobile, or email..."
+          class="form-control"></div>
+      <button type="submit" class="btn btn-primary" style="height:38px;"><i class="fa-solid fa-magnifying-glass"></i>
+        Search</button>
+    </form>
+  </div>
+  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr)); gap:18px;">
+    {% for member in members %}
+    {% set approval = approvals.get(member.user_id) %}
+    <div class="card" style="padding:22px;">
+      <div
+        style="display:flex; justify-content:space-between; gap:12px; border-bottom:1px solid var(--border-color); padding-bottom:14px; margin-bottom:16px;">
+        <div>
+          <h2 style="font-size:18px; margin:0;">{{ member.full_name }}</h2>
+          <div style="color:var(--text-secondary); margin-top:4px;">{{ member.flat.property_key if member.flat else
+            'Flat not assigned' }}</div>
+        </div>
+        <span
+          style="height:max-content; padding:4px 10px; border-radius:14px; background:rgba(16,185,129,.15); color:#059669; font-size:11px; font-weight:700;">ACTIVE</span>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; font-size:13px;">
+        <div><b>Name</b><br>{{ member.full_name }}</div>
+        <div><b>Email</b><br>{{ member.email or '—' }}</div>
+        <div><b>Mobile</b><br>{{ member.mobile }}</div>
+        <div><b>Society</b><br>{{ member.society.name if member.society else '—' }}</div>
+        <div><b>Block</b><br>{{ member.flat.block.name if member.flat and member.flat.block else
+          (member.flat.building.name if member.flat and member.flat.building else '—') }}</div>
+        <div><b>Flat</b><br>{{ member.flat_number if member.flat else '—' }}</div>
+        <div><b>Floor</b><br>{{ member.flat.floor_number if member.flat else '—' }}</div>
+        <div><b>Member Type</b><br>{{ member.resident_type }}</div>
+        <div><b>Registration Date</b><br>{{ approval.created_at.strftime('%d %b %Y') if approval and approval.created_at
+          else '—' }}</div>
+        <div><b>Approval Date</b><br>{{ approval.approved_at.strftime('%d %b %Y') if approval and approval.approved_at
+          else '—' }}</div>
+        <div><b>Approved By</b><br>{{ approval.approved_by.full_name if approval and approval.approved_by else '—' }}
+        </div>
+        <div><b>Account Status</b><br>{{ member.user.account_status }}</div>
+      </div>
+      <div style="margin-top:18px; text-align:right;"><a
+          href="{{ url_for('admin.resident_profile', resident_id=member.id) }}" class="btn btn-secondary"
+          style="font-size:12px;"><i class="fa-solid fa-eye"></i> View Full Details</a></div>
+    </div>
+    {% else %}<div class="card" style="padding:32px; text-align:center; color:var(--text-secondary); grid-column:1/-1;">
+      No approved members found.</div>{% endfor %}
+  </div>
+</div>
+{% endblock %}

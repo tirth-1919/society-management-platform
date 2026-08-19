@@ -1,15 +1,12 @@
-from datetime import datetime, date
+from datetime import datetime
 from sqlalchemy import func
 from app.models import (
     db,
     Payment,
     PaymentReceipt,
     MaintenanceBill,
-    Resident,
     PaymentReconciliationIssue,
     RefundRequest,
-    WebhookLog,
-    AccountLedger,
     AuditLog,
 )
 from app.services.receipt_service import ReceiptService

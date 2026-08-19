@@ -799,7 +799,7 @@ class BillingService:
         Generates itemized financial ledger statement for a resident.
         Shows Opening Balance, Charges, Late Fees, Payments, Refunds, Advance, and Closing Balance.
         """
-        from app.models import Payment, RefundRequest
+        from app.models import Payment
 
         resident = db.session.get(Resident, resident_id)
         if not resident:

@@ -9,7 +9,6 @@ from app.models import (
     Resident,
     User,
     Role,
-    PropertyOccupancyHistory,
 )
 from app.services.property_lifecycle_service import PropertyLifecycleService
 
@@ -147,6 +146,7 @@ def test_property_lifecycle_sequential_occupants(app, prop_society):
             move_in_date=date(2026, 7, 1),
             admin_user=admin,
         )
+        assert occ_b is not None
         assert flat.occupancy_status == "Occupied"
         assert res_b.occupancy_status == "Active"
         assert res_b.advance_balance == 0.0

@@ -1,7 +1,5 @@
-import pytest
-from app.models import db, User, Society, Resident, Building, Flat, MaintenanceBill, Notice, Role
+from app.models import db, User, Society, Resident, Flat, Role
 from app.services.search_service import SearchService
-from app.utils import utcnow
 
 def test_command_search_service_categories_and_limits(app):
     with app.app_context():

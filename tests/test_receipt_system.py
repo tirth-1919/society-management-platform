@@ -1,7 +1,5 @@
 import os
-from pathlib import Path
 import pytest
-from flask import current_app
 from app.models import db, User, Resident, Role, Society, Flat, MaintenanceBill, Payment, PaymentReceipt
 from app.services.receipt_service import ReceiptService
 from app.utils import utcnow
@@ -105,6 +103,7 @@ def test_receipt_missing_pdf_regeneration(app, test_data):
     with app.app_context():
         payment_id = test_data["payment_id"]
         pdf_path = ReceiptService.generate_pdf_receipt(payment_id)
+        assert os.path.exists(pdf_path)
 
         receipt = PaymentReceipt.query.filter_by(payment_id=payment_id).first()
         rcpt_num = receipt.receipt_number
@@ -146,7 +145,8 @@ def test_stale_database_path_repair(app, test_data):
     """TEST 4: Receipt row contains old/stale absolute path -> Application repairs location."""
     with app.app_context():
         payment_id = test_data["payment_id"]
-        pdf_path = ReceiptService.generate_pdf_receipt(payment_id)
+        initial_pdf = ReceiptService.generate_pdf_receipt(payment_id)
+        assert os.path.exists(initial_pdf)
 
         # Inject stale/invalid path into DB
         stale_path = r"C:\Users\HP\Downloads\6\app\instance\documents\RCPT-999-OLD.pdf"

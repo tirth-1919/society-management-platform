@@ -115,11 +115,14 @@ def register():
         mobile = AuthService.normalize_mobile(request.form.get("mobile", ""))
         email = request.form.get("email", "").strip() or None
         society_id = int(request.form.get("society_id"))
-        building_id = int(request.form.get("building_id"))
-        block_id = (
-            int(request.form.get("block_id")) if request.form.get("block_id") else None
-        )
         flat_id = int(request.form.get("flat_id"))
+        flat_obj = Flat.query.filter_by(id=flat_id, society_id=society_id).first()
+
+        building_id_raw = request.form.get("building_id")
+        block_id_raw = request.form.get("block_id")
+
+        building_id = int(building_id_raw) if building_id_raw else (flat_obj.building_id if flat_obj else None)
+        block_id = flat_obj.block_id if (flat_obj and flat_obj.block_id) else (int(block_id_raw) if block_id_raw else None)
         occupancy_type = request.form.get("occupancy_type", "OWNER")
         password = request.form.get("password", "").strip()
 
@@ -164,6 +167,12 @@ def register():
             flash(f"Registration failed: {str(e)}", "danger")
 
     societies = Society.query.all()
+    for soc in societies:
+        try:
+            from app.services.tenant_service import TenantService
+            TenantService.ensure_default_blocks_and_flats(soc.id)
+        except Exception:
+            pass
     return render_template("auth/register.html", societies=societies)
 
 

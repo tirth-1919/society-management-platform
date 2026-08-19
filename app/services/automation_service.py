@@ -2,14 +2,13 @@ import json
 import time
 import uuid
 import traceback
-from datetime import datetime, timedelta
+from datetime import timedelta
 from app.models import (
     db,
     AutomationRule,
     AutomationExecution,
     AutomationFailure,
     AuditLog,
-    Society,
 )
 from app.utils import utcnow
 
@@ -40,11 +39,21 @@ class AutomationService:
         execution_id = f"exec_{uuid.uuid4().hex[:12]}"
         now = utcnow()
 
-        # Check concurrency lock: is there an active RUNNING execution for this job in the last 10 minutes?
+        # Check concurrency lock: is there an active RUNNING execution for this job in the last 10 minutes,
+        # or a COMPLETED execution within cooldown window?
+        cooldown_sec = 60
+        if rule_id:
+            rule = db.session.get(AutomationRule, rule_id)
+            if rule and rule.cooldown_seconds is not None:
+                cooldown_sec = rule.cooldown_seconds
+
         existing_running = AutomationExecution.query.filter(
             AutomationExecution.automation_name == action_type,
-            AutomationExecution.status == "RUNNING",
-            AutomationExecution.start_time >= now - timedelta(minutes=10),
+            (
+                (AutomationExecution.status == "RUNNING") & (AutomationExecution.start_time >= now - timedelta(minutes=10))
+            ) | (
+                (AutomationExecution.status == "COMPLETED") & (AutomationExecution.start_time >= now - timedelta(seconds=cooldown_sec))
+            )
         )
         if society_id:
             existing_running = existing_running.filter(
@@ -54,7 +63,7 @@ class AutomationService:
             return {
                 "success": False,
                 "status": "LOCKED",
-                "message": f"Job {action_type} is already running. Duplicate concurrent execution prevented.",
+                "message": f"Job {action_type} is already running or in cooldown. Duplicate concurrent execution prevented.",
                 "execution_id": None,
             }
 
@@ -80,6 +89,10 @@ class AutomationService:
             "records_created": 0,
             "records_updated": 0,
             "records_skipped": 0,
+            "scanned": 0,
+            "created": 0,
+            "updated": 0,
+            "skipped": 0,
         }
 
         try:
@@ -89,10 +102,18 @@ class AutomationService:
 
             job_output = handler(society_id=society_id, params=params, executed_by=executed_by)
             if isinstance(job_output, dict):
-                result_stats["records_scanned"] = job_output.get("scanned", job_output.get("records_scanned", 0))
-                result_stats["records_created"] = job_output.get("created", job_output.get("records_created", 0))
-                result_stats["records_updated"] = job_output.get("updated", job_output.get("records_updated", 0))
-                result_stats["records_skipped"] = job_output.get("skipped", job_output.get("records_skipped", 0))
+                scanned = job_output.get("scanned", job_output.get("records_scanned", 0))
+                created = job_output.get("created", job_output.get("records_created", 0))
+                updated = job_output.get("updated", job_output.get("records_updated", 0))
+                skipped = job_output.get("skipped", job_output.get("records_skipped", 0))
+                result_stats["records_scanned"] = scanned
+                result_stats["records_created"] = created
+                result_stats["records_updated"] = updated
+                result_stats["records_skipped"] = skipped
+                result_stats["scanned"] = scanned
+                result_stats["created"] = created
+                result_stats["updated"] = updated
+                result_stats["skipped"] = skipped
                 if "warnings" in job_output and job_output["warnings"]:
                     warnings = job_output["warnings"] if isinstance(job_output["warnings"], list) else [job_output["warnings"]]
                 if "errors" in job_output and job_output["errors"]:
@@ -213,7 +234,7 @@ class AutomationService:
             from app.models import PreApprovedPass
             def _expire(society_id, params, executed_by):
                 q = PreApprovedPass.query.filter(
-                    PreApprovedPass.is_used == False,
+                    PreApprovedPass.is_used.is_(False),
                     PreApprovedPass.expected_date < utcnow().date(),
                 )
                 if society_id:
@@ -229,7 +250,7 @@ class AutomationService:
             from app.services.billing_service import BillingService
             from app.services.notification_service import NotificationService
             from app.services.payment_service import PaymentService
-            from app.models import Resident, User, DefaulterFollowUp, DefaulterStateTransition, MaintenanceBill
+            from app.models import Resident, DefaulterFollowUp, DefaulterStateTransition, MaintenanceBill
 
             def _recovery(society_id, params, executed_by):
                 defaulters = BillingService.get_defaulters_list(society_id=society_id)
@@ -248,7 +269,7 @@ class AutomationService:
                     user = res.user
                     risk = d["risk_level"]
                     stage = d["stage"]
-                    
+
                     # Get the primary bill for context
                     bill = MaintenanceBill.query.filter(
                         MaintenanceBill.resident_id == res_id,
@@ -304,7 +325,7 @@ class AutomationService:
                                 notes=f"Automated recovery engine flagged resident with {d['pending_months_count']} unpaid month(s).",
                             )
                             created += 1
-                    
+
                     if bill:
                         bill.status = stage
                         db.session.add(bill)

@@ -136,7 +136,6 @@ def test_admin_approve_and_reject_flow(client, app):
         u1_updated = db.session.get(User, req1_updated.user_id)
         assert u1_updated.account_status == "ACTIVE"
         assert u1_updated.is_active is True
-
     # Test Reject
     res_rej = client.post(
         f"/admin/registrations/{req2_id}/reject",

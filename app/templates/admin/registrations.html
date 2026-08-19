@@ -58,7 +58,7 @@
             <th style="padding:14px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:12px; text-transform:uppercase; letter-spacing:0.5px; border-bottom:2px solid var(--border-color);">Name</th>
             <th style="padding:14px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:12px; text-transform:uppercase; letter-spacing:0.5px; border-bottom:2px solid var(--border-color);">Mobile / Email</th>
             <th style="padding:14px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:12px; text-transform:uppercase; letter-spacing:0.5px; border-bottom:2px solid var(--border-color);">Society</th>
-            <th style="padding:14px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:12px; text-transform:uppercase; letter-spacing:0.5px; border-bottom:2px solid var(--border-color);">Building</th>
+            <th style="padding:14px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:12px; text-transform:uppercase; letter-spacing:0.5px; border-bottom:2px solid var(--border-color);">Block</th>
             <th style="padding:14px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:12px; text-transform:uppercase; letter-spacing:0.5px; border-bottom:2px solid var(--border-color);">Flat</th>
             <th style="padding:14px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:12px; text-transform:uppercase; letter-spacing:0.5px; border-bottom:2px solid var(--border-color);">Occupancy</th>
             <th style="padding:14px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:12px; text-transform:uppercase; letter-spacing:0.5px; border-bottom:2px solid var(--border-color);">Submitted</th>
@@ -90,13 +90,13 @@
               <div style="font-weight:600;">{{ reg.society.name }}</div>
             </td>
 
-            <!-- Building -->
-            <td style="padding:14px 16px;">{{ reg.building.name }}</td>
+            <!-- Block -->
+            <td style="padding:14px 16px;">{{ reg.building.name if reg.building else (reg.block.name if reg.block else '—') }}</td>
 
-            <!-- Property / Flat -->
+            <!-- Flat Number -->
             <td style="padding:14px 16px;">
               <span style="background:var(--bg-primary); border:1px solid var(--border-color); padding:4px 8px; border-radius:6px; font-weight:700; font-size:12px; color:var(--text-primary);">
-                {{ reg.flat.property_key if reg.flat else reg.flat_id }}
+                {{ reg.flat.flat_number if reg.flat else reg.flat_id }}
               </span>
             </td>
 
@@ -132,7 +132,7 @@
             <!-- Actions -->
             <td style="padding:14px 16px;">
               <!-- VIEW -->
-              <a href="{{ url_for('auth.registration_status', registration_id=reg.id) }}" target="_blank"
+              <a href="{{ url_for('admin.registration_detail', id=reg.id) }}"
                 style="display:inline-flex; align-items:center; gap:5px; padding:5px 10px; border-radius:7px; border:1px solid var(--border-color); color:var(--text-secondary); text-decoration:none; font-size:12px; font-weight:600; margin-bottom:6px;"
                 title="View registration details">
                 <i class="fa-solid fa-eye"></i> VIEW

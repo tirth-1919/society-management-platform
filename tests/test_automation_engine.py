@@ -1,8 +1,6 @@
 import pytest
-from datetime import datetime, timedelta
 from app.models import (
     db,
-    AutomationRule,
     AutomationExecution,
     AutomationFailure,
     Society,

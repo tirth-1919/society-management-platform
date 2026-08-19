@@ -1,5 +1,5 @@
 import pytest
-from datetime import date, timedelta
+from datetime import timedelta
 from app import create_app
 from app.models import (
     db,
@@ -11,11 +11,6 @@ from app.models import (
     Role,
     Resident,
     MaintenanceBill,
-    Payment,
-    PaymentReceipt,
-    NotificationLog,
-    DefaulterFollowUp,
-    PaymentDispute,
     AccountLedger,
 )
 from app.services.billing_service import BillingService

@@ -79,13 +79,13 @@
         <!-- Divider -->
         <div style="height:1px; background:var(--border-color); margin: 20px 0;"></div>
         <div style="margin-bottom: 10px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-secondary);">
-          <i class="fa-solid fa-building"></i> Location Selection (Wing → Block → Flat Number)
+          <i class="fa-solid fa-building"></i> Location Selection (Block → Flat Number)
         </div>
 
         <!-- Society Dropdown -->
         <div style="margin-bottom: 16px;">
           <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Society *</label>
-          <select name="society_id" id="society-select" required onchange="loadWings(this.value)"
+          <select name="society_id" id="society-select" required onchange="loadBlocks(this.value)"
             style="width:100%; padding:11px 14px; border-radius:9px; border:1.5px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:14px; box-sizing:border-box;">
             <option value="">— Select Your Society —</option>
             {% for soc in societies %}
@@ -94,27 +94,21 @@
           </select>
         </div>
 
-        <!-- Wing -> Block -> Flat Number cascading selects -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-          <div>
-            <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Wing *</label>
-            <select name="building_id" id="wing-select" required onchange="loadBlocks(this.value)"
-              style="width:100%; padding:11px 10px; border-radius:9px; border:1.5px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:13px; box-sizing:border-box;">
-              <option value="">— Select Wing —</option>
-            </select>
-          </div>
+        <!-- Block -> Flat Number cascading selects -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
           <div>
             <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Block *</label>
-            <select name="block_id" id="block-select" onchange="loadFlats(this.value)"
+            <select name="building_id" id="block-select" required onchange="onBlockChange(this.value)"
               style="width:100%; padding:11px 10px; border-radius:9px; border:1.5px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:13px; box-sizing:border-box;">
               <option value="">— Select Block —</option>
             </select>
+            <input type="hidden" name="block_id" id="hidden-block-id" value="">
           </div>
           <div>
             <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Flat Number *</label>
             <select name="flat_id" id="flat-select" required
               style="width:100%; padding:11px 10px; border-radius:9px; border:1.5px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:13px; box-sizing:border-box;">
-              <option value="">— Select Flat —</option>
+              <option value="">— Select Flat Number —</option>
             </select>
           </div>
         </div>
@@ -210,83 +204,61 @@ function selectOccupancy(radio) {
 }
 
 let currentSocietyId = null;
-let currentWingId = null;
+let currentBlockId = null;
 
-async function loadWings(societyId) {
+async function loadBlocks(societyId) {
   currentSocietyId = societyId;
-  const wSel = document.getElementById('wing-select');
   const bSel = document.getElementById('block-select');
   const fSel = document.getElementById('flat-select');
+  const hiddenBlk = document.getElementById('hidden-block-id');
 
-  wSel.innerHTML = '<option value="">— Loading Wings... —</option>';
-  bSel.innerHTML = '<option value="">— Select Block —</option>';
-  fSel.innerHTML = '<option value="">— Select Flat —</option>';
+  if (bSel) bSel.innerHTML = '<option value="">— Loading Blocks... —</option>';
+  if (fSel) fSel.innerHTML = '<option value="">— Select Flat Number —</option>';
+  if (hiddenBlk) hiddenBlk.value = '';
 
   if (!societyId) {
-    wSel.innerHTML = '<option value="">— Select Wing —</option>';
+    if (bSel) bSel.innerHTML = '<option value="">— Select Block —</option>';
     return;
   }
 
   try {
     const r = await fetch(`/api/buildings?society_id=${societyId}`);
     const data = await r.json();
-    wSel.innerHTML = '<option value="">— Select Wing —</option>';
-    (data.buildings || []).forEach(b => {
-      wSel.innerHTML += `<option value="${b.id}">${b.name}</option>`;
-    });
+    if (bSel) {
+      bSel.innerHTML = '<option value="">— Select Block —</option>';
+      (data.buildings || []).forEach(b => {
+        bSel.innerHTML += `<option value="${b.id}">${b.name}</option>`;
+      });
+    }
   } catch(e) {
-    wSel.innerHTML = '<option value="">— Error loading wings —</option>';
+    if (bSel) bSel.innerHTML = '<option value="">— Error loading blocks —</option>';
   }
 }
 
-async function loadBlocks(wingId) {
-  currentWingId = wingId;
-  const bSel = document.getElementById('block-select');
-  const fSel = document.getElementById('flat-select');
+// Alias for backwards compatibility
+async function loadWings(societyId) {
+  return loadBlocks(societyId);
+}
 
-  bSel.innerHTML = '<option value="">— Loading Blocks... —</option>';
-  fSel.innerHTML = '<option value="">— Select Flat —</option>';
-
-  if (!wingId) {
-    bSel.innerHTML = '<option value="">— Select Block —</option>';
-    return;
-  }
-
-  try {
-    const r = await fetch(`/api/blocks?building_id=${wingId}&society_id=${currentSocietyId || ''}`);
-    const data = await r.json();
-    const blocks = data.blocks || [];
-
-    if (blocks.length > 0) {
-      bSel.innerHTML = '<option value="">— Select Block —</option>';
-      blocks.forEach(blk => {
-        bSel.innerHTML += `<option value="${blk.id}">${blk.name}</option>`;
-      });
-    } else {
-      // If no blocks defined for this wing (legacy data), load flats directly for the wing
-      bSel.innerHTML = '<option value="">— No Blocks (Direct) —</option>';
-      loadFlatsByWing(wingId);
-    }
-  } catch(e) {
-    bSel.innerHTML = '<option value="">— Error loading blocks —</option>';
-  }
+async function onBlockChange(blockId) {
+  currentBlockId = blockId;
+  const hiddenBlk = document.getElementById('hidden-block-id');
+  if (hiddenBlk) hiddenBlk.value = blockId || '';
+  await loadFlats(blockId);
 }
 
 async function loadFlats(blockId) {
   const fSel = document.getElementById('flat-select');
+  if (!fSel) return;
   fSel.innerHTML = '<option value="">— Loading Flats... —</option>';
 
   if (!blockId) {
-    if (currentWingId) {
-      loadFlatsByWing(currentWingId);
-    } else {
-      fSel.innerHTML = '<option value="">— Select Flat —</option>';
-    }
+    fSel.innerHTML = '<option value="">— Select Flat Number —</option>';
     return;
   }
 
   try {
-    const r = await fetch(`/api/flats?block_id=${blockId}`);
+    const r = await fetch(`/api/flats?building_id=${blockId}`);
     const data = await r.json();
     const flats = data.flats || [];
 
@@ -295,8 +267,6 @@ async function loadFlats(blockId) {
       flats.forEach(f => {
         fSel.innerHTML += `<option value="${f.id}">${f.flat_number}</option>`;
       });
-    } else if (currentWingId) {
-      loadFlatsByWing(currentWingId);
     } else {
       fSel.innerHTML = '<option value="">— No Flats Available —</option>';
     }
@@ -306,17 +276,7 @@ async function loadFlats(blockId) {
 }
 
 async function loadFlatsByWing(wingId) {
-  const fSel = document.getElementById('flat-select');
-  try {
-    const r = await fetch(`/api/flats?building_id=${wingId}`);
-    const data = await r.json();
-    fSel.innerHTML = '<option value="">— Select Flat Number —</option>';
-    (data.flats || []).forEach(f => {
-      fSel.innerHTML += `<option value="${f.id}">${f.flat_number}</option>`;
-    });
-  } catch(e) {
-    fSel.innerHTML = '<option value="">— Error loading flats —</option>';
-  }
+  return loadFlats(wingId);
 }
 </script>
 {% endblock %}

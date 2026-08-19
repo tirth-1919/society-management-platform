@@ -1,20 +1,11 @@
-import json
 import logging
-from datetime import datetime, timedelta
 from app.models import (
     db,
     MaintenanceBill,
     Complaint,
     Notice,
     Resident,
-    Payment,
     Visitor,
-    Asset,
-    InventoryItem,
-    ParkingSlot,
-    AIInsight,
-    AIPrediction,
-    AIFeedback,
 )
 from app.services.accounting_service import AccountingService
 from app.utils import utcnow

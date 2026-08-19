@@ -224,7 +224,6 @@ class AccountingService:
         from app.models import Payment
 
         all_payments = Payment.query.filter_by(society_id=society_id).all()
-        total_count = len(all_payments) or 1
         total_amount_sum = sum(p.amount_paid for p in all_payments if p.status in ["captured", "Success", "paid"]) or 1.0
 
         methods = defaultdict(lambda: {"count": 0, "amount": 0.0, "failed_count": 0})
@@ -264,7 +263,7 @@ class AccountingService:
         Provides deterministic historical baseline forecast for expected month-end collection.
         Calculated strictly from database historical bill generation vs payment velocity.
         """
-        from app.models import MaintenanceBill, Payment
+        from app.models import MaintenanceBill
 
         today = utcnow().date()
         current_month = today.strftime("%Y-%m")
@@ -339,7 +338,7 @@ class AccountingService:
         """
         Generates month-end closing readiness checklist.
         """
-        from app.models import MaintenanceBill, Payment, PaymentReceipt
+        from app.models import MaintenanceBill, Payment
 
         if not month:
             month = utcnow().strftime("%Y-%m")

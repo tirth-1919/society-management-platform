@@ -26,7 +26,7 @@ from app.models.automation import AutomationRule, AutomationExecution, Automatio
 from app.models.reconciliation import PaymentReconciliationIssue
 from app.models.occupancy import PropertyOccupancyHistory
 from app.models.ai_insight import AIInsight, AIPrediction, AIFeedback
-from app.models.recovery import DefaulterFollowUp, PaymentDispute
+from app.models.recovery import DefaulterFollowUp, PaymentDispute, DefaulterStateTransition
 
 __all__ = [
     "db",
@@ -90,4 +90,5 @@ __all__ = [
     "AIFeedback",
     "DefaulterFollowUp",
     "PaymentDispute",
+    "DefaulterStateTransition",
 ]

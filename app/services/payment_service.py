@@ -1041,7 +1041,16 @@ class PaymentService:
             raise PermissionError("Bill does not belong to this resident or society.")
         if bill.remaining_amount <= 0:
             raise ValueError("Bill is already paid in full.")
-        if amount_paid <= 0 or amount_paid > bill.remaining_amount + 0.01:
+        # Check total remaining balance for resident in case payment spans multiple bills
+        total_remaining = sum(
+            b.remaining_amount
+            for b in MaintenanceBill.query.filter(
+                MaintenanceBill.resident_id == (resident_id or bill.resident_id),
+                MaintenanceBill.society_id == society_id,
+                MaintenanceBill.status.in_(["Pending", "Partially Paid", "Overdue"]),
+            ).all()
+        )
+        if amount_paid <= 0 or (amount_paid > bill.remaining_amount + 0.01 and amount_paid > total_remaining + 0.01):
             raise ValueError("Invalid cash payment amount.")
 
         txn_id = f"CASH-{secrets.token_hex(6).upper()}"
@@ -1093,8 +1102,15 @@ class PaymentService:
         if not bill:
             raise ValueError("Associated bill not found.")
 
-        # Deduct from bill balance
-        BillingService.apply_partial_payment(bill.id, payment.amount_paid)
+        # Deduct from bill balance (or allocate across unpaid bills if spanning multiple)
+        if payment.amount_paid > bill.remaining_amount + 0.01:
+            BillingService.allocate_multi_month_payment(
+                resident_id=payment.resident_id or bill.resident_id,
+                society_id=payment.society_id,
+                payment_amount=payment.amount_paid,
+            )
+        else:
+            BillingService.apply_partial_payment(bill.id, payment.amount_paid)
 
         payment.status = "captured"
         payment.webhook_verified = True
@@ -1112,6 +1128,22 @@ class PaymentService:
                 file_path=str(canonical_path),
             )
             db.session.add(receipt)
+
+        # Post to General Ledger
+        try:
+            from app.services.accounting_service import AccountingService
+            res_for_ledger = db.session.get(Resident, payment.resident_id) if payment.resident_id else None
+            res_label = res_for_ledger.full_name if res_for_ledger else "Resident"
+            AccountingService.record_income_entry(
+                society_id=payment.society_id,
+                amount=payment.amount_paid,
+                account_head="Maintenance Collection",
+                reference_type="CASH_PAYMENT",
+                reference_id=payment.id,
+                narration=f"Cash payment by {res_label} for {bill.billing_month}. TXN: {payment.transaction_id}",
+            )
+        except Exception as ledger_exc:
+            logger.warning("Accounting ledger entry for cash payment failed: %s", ledger_exc)
 
         db.session.add(
             AuditLog(
@@ -1197,7 +1229,6 @@ class PaymentService:
             collection_percentage, recent_payments
             by_method: {method: amount} breakdown
         """
-        from datetime import date, datetime
         from app.models import MaintenanceBill, Resident
 
         now = as_of or utcnow()

@@ -1,7 +1,4 @@
-import pytest
-from app.models import db, Society, MaintenanceBill, PreApprovedPass, PaymentReceipt, Payment
-from app.utils import utcnow
-from datetime import timedelta
+from app.models import Society
 
 def test_automation_cli_commands(app, runner):
     with app.app_context():

@@ -192,6 +192,62 @@ def flats():
     return render_template("admin/flats.html", flats=flats_list, buildings=buildings)
 
 
+@admin_bp.route("/member-details")
+def member_details():
+    # Permanent directory of approved members for the current society."
+    society_id = session.get("society_id")
+    user = db.session.get(User, session.get("user_id"))
+    if not society_id and user and user.society_id:
+        society_id = user.society_id
+        session["society_id"] = society_id
+    TenantService.enforce_tenant_isolation(user, society_id)
+
+    search_q = request.args.get("q", "").strip()
+    query = (
+        Resident.query.join(User, Resident.user_id == User.id)
+        .filter(
+            Resident.society_id == society_id,
+            Resident.occupancy_status == "Active",
+            User.account_status == "ACTIVE",
+            User.is_active.is_(True),
+        )
+    )
+    if search_q:
+        from sqlalchemy import or_
+        pattern = f"%{search_q}%"
+        query = query.filter(
+            or_(
+                Resident.full_name.ilike(pattern),
+                Resident.mobile.ilike(pattern),
+                Resident.email.ilike(pattern),
+                User.full_name.ilike(pattern),
+                User.email.ilike(pattern),
+            )
+        )
+
+    approved_requests = (
+        RegistrationRequest.query.filter_by(
+            society_id=society_id, status="APPROVED"
+        )
+        .order_by(RegistrationRequest.approved_at.desc())
+        .all()
+    )
+    latest_approval = {}
+    for registration in approved_requests:
+        latest_approval.setdefault(registration.user_id, registration)
+
+    members = [
+        resident for resident in query.order_by(Resident.full_name.asc()).all()
+        if resident.user_id in latest_approval
+    ]
+
+    return render_template(
+        "admin/member_details.html",
+        members=members,
+        approvals=latest_approval,
+        search_q=search_q,
+    )
+
 @admin_bp.route("/residents")
 def residents():
     society_id = session.get("society_id")
@@ -384,6 +440,8 @@ def payments_list():
         query = query.filter(Payment.status == status_filter)
     if method_filter:
         query = query.filter(Payment.payment_method == method_filter)
+    if month_filter:
+        query = query.filter(Payment.payment_date.like(f"{month_filter}%"))
 
     page = max(request.args.get("page", 1, type=int), 1)
     pagination = (
@@ -395,7 +453,7 @@ def payments_list():
         "admin/payments_list.html",
         payments=pagination.items,
         pagination=pagination,
-        filters={"q": q, "status": status_filter, "method": method_filter},
+        filters={"q": q, "status": status_filter, "method": method_filter, "month": month_filter},
     )
 
 
@@ -724,6 +782,7 @@ def period_close():
     TenantService.enforce_tenant_isolation(user, society_id)
 
     from app.services.accounting_service import AccountingService
+    from app.services.society_health_service import SocietyHealthService
     checklist_info = AccountingService.get_month_end_checklist(society_id)
 
     return render_template(

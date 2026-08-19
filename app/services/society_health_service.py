@@ -1,11 +1,7 @@
-import os
-from datetime import datetime, timedelta
+from datetime import timedelta
 from app.models import (
-    db,
-    Society,
     Flat,
     Resident,
-    MaintenanceBill,
     Payment,
     PaymentReceipt,
     RegistrationRequest,
@@ -14,7 +10,6 @@ from app.models import (
     InventoryItem,
     BackupLog,
     PaymentReconciliationIssue,
-    AccountLedger,
 )
 from app.services.reconciliation_service import PaymentReconciliationService
 from app.utils import utcnow
@@ -417,7 +412,7 @@ class SocietyHealthService:
         - Missing receipt PDF files for captured payments
         - Expired pre-approved visitor passes
         """
-        from app.models import Flat, Resident, Payment, PaymentReceipt, PreApprovedPass
+        from app.models import Resident, Payment
 
         issues = []
         flats_q = Flat.query.filter_by(occupancy_status="Occupied")

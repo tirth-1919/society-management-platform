@@ -346,6 +346,11 @@ class RegistrationService:
                 description="Forbidden: Cannot approve registration for another society",
             )
 
+        if req.status == "APPROVED":
+            # Approval is intentionally idempotent.  The first approval creates
+            # the persistent Resident row and activates the already-created User;
+            # repeating the admin action must never create another row.
+            return req
         if req.status != "PENDING_APPROVAL":
             raise ValueError(
                 f"Registration #{registration_id} is already {req.status}. "
@@ -387,10 +392,28 @@ class RegistrationService:
                 user.account_status = "ACTIVE"
                 user.is_active = True
                 user.society_id = req.society_id
+                user.full_name = req.full_name
+                user.mobile = req.mobile
+                user.email = req.email
 
                 existing_resident = Resident.query.filter_by(
                     user_id=user.id, flat_id=req.flat_id
                 ).first()
+                if not existing_resident:
+                    existing_resident = Resident.query.filter_by(
+                        user_id=user.id, society_id=req.society_id
+                    ).first()
+                    if existing_resident:
+                        existing_resident.flat_id = req.flat_id
+                        existing_resident.full_name = user.full_name
+                        existing_resident.mobile = user.mobile
+                        existing_resident.email = user.email
+                        existing_resident.resident_type = (
+                            "Owner" if req.occupancy_type in ["OWNER", "Owner"] else "Tenant"
+                        )
+                        existing_resident.occupancy_status = "Active"
+                        existing_resident.is_primary = True
+
                 if not existing_resident:
                     res_type = (
                         "Owner" if req.occupancy_type in ["OWNER", "Owner"] else "Tenant"
@@ -409,7 +432,10 @@ class RegistrationService:
                     )
                     db.session.add(existing_resident)
                 else:
-                    # Re-activate if previously inactive
+                    # Re-activate and update fields if previously inactive
+                    existing_resident.full_name = user.full_name
+                    existing_resident.mobile = user.mobile
+                    existing_resident.email = user.email
                     existing_resident.occupancy_status = "Active"
                     existing_resident.is_primary = True
                 db.session.flush()

@@ -17,6 +17,7 @@ from app.models.complaint import ComplaintCategory, Complaint
 from app.models.facility import Facility
 from app.models.operations import Staff
 from app.models.communication import Notice
+from app.services.tenant_service import TenantService
 from app.utils import utcnow
 
 
@@ -110,69 +111,21 @@ with app.app_context():
     print("[OK] Society Admin ready.")
 
     # --------------------------------------------------
-    # BUILDINGS / WINGS
+    # BLOCKS (A, B, C, D, E, F) & FLATS (101..1104 per block)
     # --------------------------------------------------
-    buildings = []
-
-    for wing in ["Wing A", "Wing B", "Wing C"]:
-        building = Building.query.filter_by(
-            society_id=society.id,
-            name=wing,
-        ).first()
-
-        if not building:
-            building = Building(
-                society_id=society.id,
-                name=wing,
-                floors_count=4,
-                total_flats=4,
-            )
-            db.session.add(building)
-            db.session.commit()
-
-        buildings.append(building)
-
-    print(f"[OK] Wings: {[b.name for b in buildings]}")
-
-    # --------------------------------------------------
-    # FLATS
-    # --------------------------------------------------
-    flat_configs = [
-        ("101", 1, "2BHK", 1050.0),
-        ("201", 2, "2BHK", 1050.0),
-        ("301", 3, "3BHK", 1500.0),
-        ("401", 4, "3BHK", 1500.0),
-    ]
-
-    all_flats = []
-
-    for building in buildings:
-        prefix = building.name.split()[-1]
-
-        for flat_no, floor, flat_type, area in flat_configs:
-            full_number = f"{prefix}-{flat_no}"
-
-            flat = Flat.query.filter_by(
-                building_id=building.id,
-                flat_number=full_number,
-            ).first()
-
-            if not flat:
-                flat = Flat(
-                    society_id=society.id,
-                    building_id=building.id,
-                    flat_number=full_number,
-                    floor_number=floor,
-                    flat_type=flat_type,
-                    area_sqft=area,
-                    occupancy_status="Occupied",
-                )
-                db.session.add(flat)
-                db.session.commit()
-
-            all_flats.append(flat)
-
-    print(f"[OK] {len(all_flats)} flats ready.")
+    TenantService.ensure_default_blocks_and_flats(society.id)
+    buildings = (
+        Building.query.filter_by(society_id=society.id)
+        .order_by(Building.name.asc())
+        .all()
+    )
+    all_flats = (
+        Flat.query.filter_by(society_id=society.id)
+        .order_by(Flat.building_id.asc(), Flat.floor_number.asc(), Flat.flat_number.asc())
+        .all()
+    )
+    print(f"[OK] Blocks: {[b.name for b in buildings]}")
+    print(f"[OK] {len(all_flats)} flats ready across all blocks.")
 
     # --------------------------------------------------
     # RESIDENTS + USERS

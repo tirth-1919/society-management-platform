@@ -1,5 +1,5 @@
 from app.utils import utcnow
-from datetime import datetime, date
+from datetime import datetime
 from sqlalchemy import func
 from flask import (
     Blueprint,
@@ -32,6 +32,7 @@ from app.models import (
 )
 from app.services.accounting_service import AccountingService
 from app.services.billing_service import BillingService
+from app.services.tenant_service import TenantService
 from app.config import Config
 
 main_bp = Blueprint("main", __name__)
@@ -449,53 +450,71 @@ def portal_qr():
 
 @main_bp.route("/api/buildings")
 def api_buildings():
-    """Wings for a given society_id."""
+    """Blocks (A to F) for a given society_id."""
     society_id = request.args.get("society_id")
     if not society_id:
         return jsonify({"buildings": []})
+    try:
+        TenantService.ensure_default_blocks_and_flats(int(society_id))
+    except Exception:
+        pass
     buildings = (
         Building.query.filter_by(society_id=int(society_id))
-        .order_by(Building.name)
+        .order_by(Building.name.asc())
         .all()
     )
+    # Prefer standard Block A-F ordering
+    block_names = ["Block A", "Block B", "Block C", "Block D", "Block E", "Block F"]
+    std_buildings = [b for b in buildings if b.name in block_names]
+    if std_buildings:
+        std_buildings.sort(key=lambda b: block_names.index(b.name) if b.name in block_names else 99)
+        buildings = std_buildings + [b for b in buildings if b.name not in block_names]
+
     return jsonify({"buildings": [{"id": b.id, "name": b.name} for b in buildings]})
 
 
 @main_bp.route("/api/blocks")
 def api_blocks():
-    """Blocks for a given wing (building_id) and society_id."""
+    """Blocks for a given wing (building_id) or society_id."""
     building_id = request.args.get("building_id")
     society_id = request.args.get("society_id")
-    if not building_id:
+    if not building_id and not society_id:
         return jsonify({"blocks": []})
-    q = Block.query.filter_by(building_id=int(building_id))
     if society_id:
-        q = q.filter_by(society_id=int(society_id))
-    blocks = q.order_by(Block.name).all()
-    return jsonify({"blocks": [{"id": b.id, "name": b.name} for b in blocks]})
+        try:
+            TenantService.ensure_default_blocks_and_flats(int(society_id))
+        except Exception:
+            pass
+        q = Block.query.filter_by(society_id=int(society_id))
+    else:
+        q = Block.query
+    if building_id:
+        q = q.filter_by(building_id=int(building_id))
+    blocks = q.order_by(Block.name.asc()).all()
+    return jsonify({"blocks": [{"id": b.id, "name": b.name, "building_id": b.building_id} for b in blocks]})
 
 
 @main_bp.route("/api/flats")
 def api_flats():
-    """Flats for a given block_id (preferred) or building_id (fallback)."""
+    """Flats for a given block_id (preferred) or building_id in floor-based order (101..1104)."""
     block_id = request.args.get("block_id")
     building_id = request.args.get("building_id")
     if block_id:
         flats = (
             Flat.query.filter_by(block_id=int(block_id))
-            .order_by(Flat.flat_number)
+            .order_by(Flat.floor_number.asc(), Flat.flat_number.asc())
             .all()
         )
     elif building_id:
         flats = (
             Flat.query.filter_by(building_id=int(building_id))
-            .order_by(Flat.flat_number)
+            .order_by(Flat.floor_number.asc(), Flat.flat_number.asc())
             .all()
         )
     else:
         return jsonify({"flats": []})
     return jsonify(
-        {"flats": [{"id": f.id, "flat_number": f.flat_number} for f in flats]}
+        {"flats": [{"id": f.id, "flat_number": f.flat_number, "floor_number": f.floor_number} for f in flats]}
     )
 
 

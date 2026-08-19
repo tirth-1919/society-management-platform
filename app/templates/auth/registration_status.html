@@ -11,13 +11,18 @@
         </div>
         <h2>Registration Pending Approval</h2>
         <p style="color: var(--text-secondary); margin-top: 12px; font-size: 15px;">
-            Your registration request for <strong>{{ reg.society.name }}</strong> (Flat: {{ reg.flat.flat_number }}) is currently under review by society administrators.
+            Your registration request for <strong>{{ reg.society.name }}</strong> ({{ reg.building.name if reg.building else (reg.block.name if reg.block else 'Block') }}, Flat {{ reg.flat.flat_number if reg.flat else reg.flat_id }}) is currently under review by society administrators.
         </p>
-        <div style="background: var(--bg-primary); padding: 16px; border-radius: 8px; margin-top: 20px; text-align: left; font-size: 14px;">
+        <div style="background: var(--bg-primary); padding: 16px; border-radius: 8px; margin-top: 20px; text-align: left; font-size: 14px; display: flex; flex-direction: column; gap: 8px;">
             <div><strong>Request ID:</strong> #{{ reg.id }}</div>
+            <div><strong>Name:</strong> {{ reg.full_name }}</div>
+            <div><strong>Mobile:</strong> {{ reg.mobile }}</div>
+            <div><strong>Email:</strong> {{ reg.email or '—' }}</div>
+            <div><strong>Block:</strong> {{ reg.building.name if reg.building else (reg.block.name if reg.block else '—') }}</div>
+            <div><strong>Flat Number:</strong> {{ reg.flat.flat_number if reg.flat else reg.flat_id }}</div>
             <div><strong>Occupancy Type:</strong> {{ reg.occupancy_type }}</div>
             <div><strong>Status:</strong> <span style="color: #f59e0b; font-weight: 600;">PENDING_APPROVAL</span></div>
-            <div><strong>Submitted At:</strong> {{ reg.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+            <div><strong>Submitted At:</strong> {{ reg.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</div>
         </div>
         <p style="margin-top: 20px; font-size: 13px; color: var(--text-secondary);">
             Once approved by the society administrator, you will be able to log in to access the Resident Portal.

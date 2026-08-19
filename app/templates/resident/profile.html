@@ -114,8 +114,8 @@
         <dl class="details-list">
             <dt data-i18n="societies">Society</dt>
             <dd>{{ user.society.name if user.society else '—' }}</dd>
-            <dt data-i18n="flats_and_wings">Wing / Block</dt>
-            <dd>{{ resident.flat.building.name if resident.flat and resident.flat.building else '—' }} / {{ resident.flat.block.name if resident.flat and resident.flat.block else '—' }}</dd>
+            <dt data-i18n="flats_and_wings">Block</dt>
+            <dd>{% if resident.flat and resident.flat.building and resident.flat.block and resident.flat.building.name != resident.flat.block.name %}{{ resident.flat.building.name }} / {{ resident.flat.block.name }}{% elif resident.flat and resident.flat.block %}{{ resident.flat.block.name }}{% elif resident.flat and resident.flat.building %}{{ resident.flat.building.name }}{% else %}—{% endif %}</dd>
             <dt data-i18n="select_flat">Flat number</dt>
             <dd>{{ resident.flat.flat_number if resident.flat else '—' }}</dd>
             <dt>Flat Type</dt>

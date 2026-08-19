@@ -14,25 +14,43 @@ def _buildings_response():
     society_id = request.args.get("society_id")
     if not society_id:
         return jsonify({"buildings": []}), 200
+    try:
+        from app.services.tenant_service import TenantService
+        TenantService.ensure_default_blocks_and_flats(int(society_id))
+    except Exception:
+        pass
     buildings = (
         Building.query.filter_by(society_id=int(society_id))
-        .order_by(Building.name)
+        .order_by(Building.name.asc())
         .all()
     )
+    block_names = ["Block A", "Block B", "Block C", "Block D", "Block E", "Block F"]
+    std_buildings = [b for b in buildings if b.name in block_names]
+    if std_buildings:
+        std_buildings.sort(key=lambda b: block_names.index(b.name) if b.name in block_names else 99)
+        buildings = std_buildings + [b for b in buildings if b.name not in block_names]
     return jsonify({"buildings": [{"id": b.id, "name": b.name} for b in buildings]})
 
 
 def _flats_response():
+    block_id = request.args.get("block_id")
     building_id = request.args.get("building_id")
-    if not building_id:
+    if block_id:
+        flats = (
+            Flat.query.filter_by(block_id=int(block_id))
+            .order_by(Flat.floor_number.asc(), Flat.flat_number.asc())
+            .all()
+        )
+    elif building_id:
+        flats = (
+            Flat.query.filter_by(building_id=int(building_id))
+            .order_by(Flat.floor_number.asc(), Flat.flat_number.asc())
+            .all()
+        )
+    else:
         return jsonify({"flats": []}), 200
-    flats = (
-        Flat.query.filter_by(building_id=int(building_id))
-        .order_by(Flat.flat_number)
-        .all()
-    )
     return jsonify(
-        {"flats": [{"id": f.id, "flat_number": f.flat_number} for f in flats]}
+        {"flats": [{"id": f.id, "flat_number": f.flat_number, "floor_number": f.floor_number} for f in flats]}
     )
 
 

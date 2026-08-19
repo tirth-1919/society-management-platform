@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}Registration Request #{{ reg.id }} — Admin Review{% endblock %}
+
+{% block content %}
+<style>
+  .registration-status-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .registration-status-badge.status-pending {
+    background: rgba(245, 158, 11, 0.15);
+    color: #d97706;
+  }
+
+  .registration-status-badge.status-approved {
+    background: rgba(16, 185, 129, 0.15);
+    color: #059669;
+  }
+
+  .registration-status-badge.status-rejected {
+    background: rgba(239, 68, 68, 0.15);
+    color: #dc2626;
+  }
+</style>
+
+<div style="max-width: 800px; margin: 32px auto; padding: 0 16px;">
+
+  <!-- Breadcrumb / Back Button -->
+  <div
+    style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+    <a href="{{ url_for('admin.registrations') }}" class="btn btn-secondary" style="font-size: 13px;">
+      <i class="fa-solid fa-arrow-left"></i> Back to Registrations
+    </a>
+    <div>
+      <span
+        class="registration-status-badge {% if reg.status == 'PENDING_APPROVAL' %}status-pending{% elif reg.status == 'APPROVED' %}status-approved{% else %}status-rejected{% endif %}">
+        {% if reg.status == 'PENDING_APPROVAL' %}<i class="fa-solid fa-hourglass-half"></i>
+        {% elif reg.status == 'APPROVED' %}<i class="fa-solid fa-circle-check"></i>
+        {% else %}<i class="fa-solid fa-circle-xmark"></i>{% endif %}
+        {{ reg.status }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Registration Details Card -->
+  <div class="card" style="padding: 28px; border-radius: 16px; box-shadow: var(--shadow-md);">
+    <div
+      style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 18px; margin-bottom: 20px;">
+      <div>
+        <h1 style="font-size: 20px; font-weight: 800; margin: 0;">Registration Details</h1>
+        <p style="color: var(--text-secondary); margin: 4px 0 0 0; font-size: 13px;">Request #{{ reg.id }} &middot;
+          Submitted on {{ reg.created_at.strftime('%d %b %Y at %H:%M') }}</p>
+      </div>
+    </div>
+
+    <!-- Details Grid -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; font-size: 14px;">
+      <div
+        style="background: var(--bg-primary); padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border-color);">
+        <div
+          style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">
+          Full Name</div>
+        <div style="font-weight: 700; color: var(--text-primary); font-size: 15px;">{{ reg.full_name }}</div>
+      </div>
+
+      <div
+        style="background: var(--bg-primary); padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border-color);">
+        <div
+          style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">
+          Mobile Number</div>
+        <div style="font-weight: 700; color: var(--text-primary); font-size: 15px;">{{ reg.mobile }}</div>
+      </div>
+
+      <div
+        style="background: var(--bg-primary); padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border-color);">
+        <div
+          style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">
+          Email Address</div>
+        <div style="font-weight: 600; color: var(--text-primary);">{{ reg.email or '—' }}</div>
+      </div>
+
+      <div
+        style="background: var(--bg-primary); padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border-color);">
+        <div
+          style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">
+          Society</div>
+        <div style="font-weight: 600; color: var(--text-primary);">{{ reg.society.name if reg.society else '—' }}</div>
+      </div>
+
+      <div
+        style="background: var(--bg-primary); padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border-color);">
+        <div
+          style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">
+          Block</div>
+        <div style="font-weight: 700; color: var(--text-primary); font-size: 15px;">{{ reg.block.name if reg.block else
+          (reg.building.name if reg.building else '—') }}</div>
+      </div>
+
+      <div
+        style="background: var(--bg-primary); padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border-color);">
+        <div
+          style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">
+          Flat Number</div>
+        <div style="font-weight: 700; color: var(--text-primary); font-size: 15px;">{{ reg.flat.flat_number if reg.flat
+          else reg.flat_id }}</div>
+      </div>
+
+      <div
+        style="background: var(--bg-primary); padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border-color);">
+        <div
+          style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">
+          Occupancy Type</div>
+        <div style="font-weight: 600; color: var(--text-primary);">{{ reg.occupancy_type }}</div>
+      </div>
+
+      <div
+        style="background: var(--bg-primary); padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border-color);">
+        <div
+          style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">
+          Registered At</div>
+        <div style="font-weight: 600; color: var(--text-primary);">{{ reg.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
+        </div>
+      </div>
+    </div>
+    <!-- Status Specific Information -->
+    {% if reg.status == 'APPROVED' %}
+    <div
+      style="background: rgba(16,185,129,0.08); border-left: 4px solid #10b981; padding: 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px;">
+      <div style="font-weight: 700; color: #065f46; margin-bottom: 4px;"><i class="fa-solid fa-circle-check"></i>
+        Approved Registration</div>
+      <div style="color: var(--text-secondary);">
+        Approved on: <strong>{{ reg.approved_at.strftime('%d %b %Y %H:%M') if reg.approved_at else '—' }}</strong>
+        {% if reg.approved_by %} by <strong>{{ reg.approved_by.full_name }}</strong>{% endif %}
+      </div>
+    </div>
+    {% elif reg.status == 'REJECTED' %}
+    <div
+      style="background: rgba(239,68,68,0.08); border-left: 4px solid #ef4444; padding: 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px;">
+      <div style="font-weight: 700; color: #991b1b; margin-bottom: 4px;"><i class="fa-solid fa-circle-xmark"></i>
+        Rejected Registration</div>
+      <div style="color: var(--text-secondary);">
+        Rejected on: <strong>{{ reg.rejected_at.strftime('%d %b %Y %H:%M') if reg.rejected_at else '—' }}</strong>
+        {% if reg.rejected_by %} by <strong>{{ reg.rejected_by.full_name }}</strong>{% endif %}
+      </div>
+      {% if reg.rejection_reason %}
+      <div style="margin-top: 8px; color: #991b1b;">
+        <strong>Reason:</strong> {{ reg.rejection_reason }}
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Action Buttons (Only for PENDING_APPROVAL) -->
+    {% if reg.status == 'PENDING_APPROVAL' %}
+    <div
+      style="border-top: 1px solid var(--border-color); padding-top: 20px; display: flex; gap: 14px; flex-wrap: wrap;">
+      <form action="{{ url_for('admin.approve_registration', id=reg.id) }}" method="POST" style="margin: 0;">
+        <button type="submit" class="btn btn-primary"
+          style="background: linear-gradient(135deg,#10b981,#059669); font-weight: 700; padding: 10px 24px;"
+          onclick="return confirm('Approve this registration request?')">
+          <i class="fa-solid fa-check"></i> Approve Registration
+        </button>
+      </form>
+
+      <button type="button" class="btn btn-secondary" onclick="toggleDetailReject()"
+        style="color: #dc2626; border-color: rgba(239,68,68,0.4); font-weight: 700; padding: 10px 24px;">
+        <i class="fa-solid fa-xmark"></i> Reject Registration
+      </button>
+    </div>
+
+    <!-- Hidden Reject Panel -->
+    <div id="detail-reject-panel"
+      style="display: none; margin-top: 16px; background: var(--bg-primary); padding: 16px; border-radius: 10px; border: 1px solid #ef4444;">
+      <form action="{{ url_for('admin.reject_registration', id=reg.id) }}" method="POST">
+        <label
+          style="display: block; font-weight: 600; font-size: 13px; margin-bottom: 6px; color: var(--text-primary);">Rejection
+          Reason *</label>
+        <textarea name="rejection_reason" required placeholder="Specify the reason for rejecting this registration..."
+          style="width: 100%; padding: 10px; border-radius: 8px; border: 1.5px solid #ef4444; font-size: 13px; resize: vertical; min-height: 80px; box-sizing: border-box; background: var(--bg-surface); color: var(--text-primary);"></textarea>
+        <div style="margin-top: 10px; display: flex; gap: 10px;">
+          <button type="submit" class="btn btn-primary"
+            style="background: #ef4444; border: none; font-weight: 700; font-size: 13px;">
+            Confirm Rejection
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="toggleDetailReject()" style="font-size: 13px;">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <script>
+    function toggleDetailReject() {
+      const p = document.getElementById('detail-reject-panel');
+      if (p) {
+        p.style.display = p.style.display === 'none' ? 'block' : 'none';
+      }
+    }
+  </script>
+  {% endblock %}

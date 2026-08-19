@@ -1,6 +1,6 @@
+import html as html_lib
 from datetime import date, timedelta
-import pytest
-from app.models import Facility, FacilityBooking, db, User, Resident, Society, Building, Flat, Role
+from app.models import Facility, db, User, Resident, Society, Building, Flat, Role
 from app.services.facility_booking_service import FacilityBookingService
 
 EXPECTED_10_FACILITIES = [
@@ -66,8 +66,6 @@ def test_ensure_default_facilities_seeds_all_10(app):
         facilities_after = Facility.query.filter_by(society_id=society.id).all()
         assert len(facilities_after) == len(facilities)
 
-
-import html as html_lib
 
 def test_facility_booking_page_renders_dropdown_and_10_facilities(client, app):
     user_id, soc_id, flat_id, resident_id = _setup_test_resident(app)

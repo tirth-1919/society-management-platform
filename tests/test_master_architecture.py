@@ -1,16 +1,14 @@
 import pytest
 from app import create_app
 from app.models import (
-    db, Society, Building, Block, Flat, Resident, User, Role,
-    RegistrationRequest, MaintenanceBill, Payment, PaymentReceipt,
-    AccountLedger, AuditLog
+    db, Society, Building, Flat, Resident, User, Role,
+    MaintenanceBill, Payment, AccountLedger, AuditLog
 )
 from app.services.registration_service import (
     RegistrationService, normalize_flat_number, normalize_building_name,
     build_property_key, check_flat_availability
 )
 from app.services.payment_service import PaymentService
-from app.services.billing_service import BillingService
 from sqlalchemy.exc import IntegrityError
 
 

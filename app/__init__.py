@@ -98,7 +98,7 @@ def create_app(config_name=None):
         from app.utils import utcnow
 
         passes = PreApprovedPass.query.filter(
-            PreApprovedPass.is_used == False,
+            PreApprovedPass.is_used.is_(False),
             PreApprovedPass.expected_date < utcnow().date(),
         ).all()
         for p in passes:
