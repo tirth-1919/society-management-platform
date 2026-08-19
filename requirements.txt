@@ -9,4 +9,7 @@ pytest-cov>=4.1.0
 python-dotenv>=1.0.0
 requests>=2.31.0
 pytz>=2024.1
+<<<<<<< HEAD
 razorpay>=1.4.1
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32

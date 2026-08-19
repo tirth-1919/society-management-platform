@@ -1,13 +1,21 @@
+<<<<<<< HEAD
 from flask import Blueprint, render_template, Response, request, session, abort
 from app.models import db, MaintenanceBill, User, Role, Building, Block, Payment
 from app.services.accounting_service import AccountingService
 from app.services.billing_service import BillingService
 from app.services.import_export_service import ImportExportService
 from app.services.tenant_service import TenantService
+=======
+from flask import Blueprint, render_template, Response, session
+from app.models import MaintenanceBill
+from app.services.accounting_service import AccountingService
+from app.services.import_export_service import ImportExportService
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 reports_bp = Blueprint("reports", __name__, url_prefix="/reports")
 
 
+<<<<<<< HEAD
 @reports_bp.before_request
 def admin_only_guard():
     user_id = session.get("user_id")
@@ -30,6 +38,11 @@ def financial_reports():
     society_id = session.get("society_id") or user.society_id
     TenantService.enforce_tenant_isolation(user, society_id)
 
+=======
+@reports_bp.route("/financial")
+def financial_reports():
+    society_id = session.get("society_id")
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     fin_summary = AccountingService.get_financial_summary(society_id)
     bills = MaintenanceBill.query.filter_by(society_id=society_id).all()
 
@@ -44,6 +57,7 @@ def financial_reports():
     )
 
 
+<<<<<<< HEAD
 @reports_bp.route("/defaulters")
 def defaulters_report():
     """Admin Defaulter Dashboard with filters."""
@@ -190,12 +204,18 @@ def export_residents():
     society_id = session.get("society_id") or user.society_id
     TenantService.enforce_tenant_isolation(user, society_id)
 
+=======
+@reports_bp.route("/export/residents")
+def export_residents():
+    society_id = session.get("society_id")
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     csv_data = ImportExportService.export_residents_csv(society_id)
     return Response(
         csv_data,
         mimetype="text/csv",
         headers={"Content-disposition": "attachment; filename=residents_export.csv"},
     )
+<<<<<<< HEAD
 
 
 @reports_bp.route("/export/payments")
@@ -240,3 +260,5 @@ def export_complaints():
     )
 
 
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32

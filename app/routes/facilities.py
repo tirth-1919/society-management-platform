@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from datetime import datetime, date
 from flask import (
     Blueprint,
@@ -12,10 +13,17 @@ from flask import (
 from app.models import Facility, FacilityBooking, Resident, User, Role, db
 from app.services.facility_booking_service import FacilityBookingService
 from app.services.tenant_service import TenantService
+=======
+from datetime import datetime
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from app.models import Facility, FacilityBooking, Resident, User, db
+from app.services.facility_booking_service import FacilityBookingService
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 facilities_bp = Blueprint("facilities", __name__, url_prefix="/facilities")
 
 
+<<<<<<< HEAD
 def _get_current_user():
     user_id = session.get("user_id")
     if not user_id:
@@ -64,11 +72,25 @@ def list_facilities():
         facilities=fac_list,
         bookings=bookings,
         today_date=today_date,
+=======
+@facilities_bp.route("/")
+def list_facilities():
+    society_id = session.get("society_id")
+    fac_list = Facility.query.filter_by(society_id=society_id).all()
+    bookings = (
+        FacilityBooking.query.filter_by(society_id=society_id)
+        .order_by(FacilityBooking.booking_date.desc())
+        .all()
+    )
+    return render_template(
+        "maintenance/facilities.html", facilities=fac_list, bookings=bookings
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     )
 
 
 @facilities_bp.route("/book", methods=["POST"])
 def book():
+<<<<<<< HEAD
     user = _get_current_user()
     if not user:
         return redirect(url_for("auth.login"))
@@ -146,14 +168,39 @@ def book():
             facility_id=facility_id,
             flat_id=resident.flat_id,
             resident_id=resident.id,
+=======
+    user = db.session.get(User, session.get("user_id"))
+    resident = Resident.query.filter_by(user_id=user.id).first()
+
+    facility_id = int(request.form.get("facility_id"))
+    booking_date = datetime.strptime(
+        request.form.get("booking_date"), "%Y-%m-%d"
+    ).date()
+    start_time = request.form.get("start_time")
+    end_time = request.form.get("end_time")
+    purpose = request.form.get("purpose")
+
+    try:
+        FacilityBookingService.book_facility(
+            society_id=user.society_id,
+            facility_id=facility_id,
+            flat_id=resident.flat_id if resident else 1,
+            resident_id=resident.id if resident else 1,
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
             booking_date=booking_date,
             start_time=start_time,
             end_time=end_time,
             purpose=purpose,
+<<<<<<< HEAD
             notes=notes,
         )
         flash(
             f"Facility '{facility.name}' booked successfully for {booking_date.strftime('%d %b %Y')} ({start_time} - {end_time})!",
+=======
+        )
+        flash(
+            f"Facility booked successfully for {booking_date} ({start_time} - {end_time})!",
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
             "success",
         )
     except ValueError as e:
@@ -162,6 +209,7 @@ def book():
     return redirect(url_for("facilities.list_facilities"))
 
 
+<<<<<<< HEAD
 @facilities_bp.route("/<int:booking_id>/cancel", methods=["POST"])
 def cancel_booking(booking_id):
     user = _get_current_user()
@@ -190,5 +238,7 @@ def cancel_booking(booking_id):
 
 
 
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 

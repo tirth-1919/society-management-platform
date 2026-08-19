@@ -1,5 +1,9 @@
 from flask import Blueprint, abort, jsonify, request, session
+<<<<<<< HEAD
 from app.models import db, Resident, MaintenanceBill, User, Role, Building, Flat
+=======
+from app.models import db, Resident, MaintenanceBill, User, Building, Flat
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 from app.services.ai_service import AIService
 from app.services.search_service import SearchService
 
@@ -39,9 +43,15 @@ def _flats_response():
 @api_bp.route("/residents", methods=["GET"])
 def get_residents():
     user = db.session.get(User, session.get("user_id"))
+<<<<<<< HEAD
     if not user or user.role not in [Role.SUPER_ADMIN, Role.SOCIETY_ADMIN]:
         abort(403)
     society_id = session.get("society_id") or user.society_id
+=======
+    if not user or user.role == "Resident":
+        abort(403)
+    society_id = session.get("society_id")
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     if not society_id:
         return jsonify({"error": "society_id required"}), 400
 
@@ -71,9 +81,15 @@ def get_bills():
         return jsonify({"error": "society_id required"}), 400
 
     query = MaintenanceBill.query.filter_by(society_id=int(society_id))
+<<<<<<< HEAD
     if user.role == Role.RESIDENT:
         resident = Resident.query.filter_by(
             user_id=user.id, society_id=int(society_id)
+=======
+    if user.role == "Resident":
+        resident = Resident.query.filter_by(
+            user_id=user.id, society_id=society_id, is_primary=True
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         ).first()
         if not resident:
             abort(403)
@@ -117,6 +133,7 @@ def global_search():
     user = db.session.get(User, session.get("user_id"))
     if not user:
         abort(401)
+<<<<<<< HEAD
     society_id = session.get("society_id") or user.society_id
     if not society_id:
         return jsonify({"query": "", "categories": []})
@@ -307,3 +324,11 @@ def classify_complaint():
     classification = AIService.classify_complaint(title, description)
     return jsonify(classification)
 
+=======
+    if user.role == "Resident":
+        abort(403)
+    society_id = session.get("society_id")
+    query_str = request.args.get("q", "")
+    res = SearchService.global_search(int(society_id), query_str)
+    return jsonify(res)
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32

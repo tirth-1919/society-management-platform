@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 from datetime import date
+=======
+﻿from datetime import date
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 from app.models import db, MaintenanceBill, NotificationLog, Resident, Role, User
 
@@ -114,6 +118,7 @@ def test_resident_cannot_access_previous_occupants_bill_or_receipt(client, app):
     assert client.get("/payments/bills").status_code == 200
     assert client.get(f"/payments/pay/{bill_id}").status_code == 403
 
+<<<<<<< HEAD
 
 def test_resident_bill_detail_and_receipts_working(client, app):
     with app.app_context():
@@ -180,3 +185,5 @@ def test_resident_bill_detail_and_receipts_working(client, app):
     assert res_unauth.status_code == 404
 
 
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32

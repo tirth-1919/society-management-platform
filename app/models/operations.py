@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 from app.models.tenant import db
 from app.utils import utcnow
+=======
+﻿from datetime import datetime
+from app.models.tenant import db
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class Staff(db.Model):
@@ -69,7 +74,11 @@ class WorkOrder(db.Model):
     completion_notes = db.Column(db.Text, nullable=True)
     due_date = db.Column(db.Date, nullable=True)
     completed_at = db.Column(db.DateTime, nullable=True)
+<<<<<<< HEAD
     created_at = db.Column(db.DateTime, default=utcnow)
+=======
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class Asset(db.Model):
@@ -116,7 +125,11 @@ class InventoryItem(db.Model):
     minimum_threshold = db.Column(db.Integer, default=5)
     unit_cost = db.Column(db.Float, default=0.0)
     updated_at = db.Column(
+<<<<<<< HEAD
         db.DateTime, default=utcnow, onupdate=utcnow
+=======
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     )
 
 
@@ -136,7 +149,11 @@ class InventoryTransaction(db.Model):
     quantity = db.Column(db.Integer, nullable=False)
     performed_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     notes = db.Column(db.String(255), nullable=True)
+<<<<<<< HEAD
     created_at = db.Column(db.DateTime, default=utcnow)
+=======
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
     item = db.relationship("InventoryItem", backref="transactions", lazy=True)
 

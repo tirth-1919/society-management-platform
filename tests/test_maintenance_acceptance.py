@@ -1,5 +1,9 @@
+<<<<<<< HEAD
 from datetime import date
 import pytest
+=======
+﻿from datetime import date
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 from app.models import (
     db,
     Society,
@@ -246,7 +250,10 @@ def test_cross_society_resident_cannot_open_another_societys_bill(client, app):
     assert client.get(f"/payments/pay/{bill_id}").status_code == 403
 
 
+<<<<<<< HEAD
 def test_generate_monthly_bills_requires_society_id(app):
     with app.app_context():
         with pytest.raises(ValueError, match="Society ID is required"):
             BillingService.generate_monthly_bills(None, "2026-08")
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32

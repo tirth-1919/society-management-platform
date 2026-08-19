@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 from app.models.tenant import db
 from app.utils import utcnow
+=======
+﻿from datetime import datetime
+from app.models.tenant import db
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class ComplaintCategory(db.Model):
@@ -34,9 +39,15 @@ class Complaint(db.Model):
     )  # Submitted, Assigned, In Progress, Resolved, Closed
     resolution_notes = db.Column(db.Text, nullable=True)
     resolved_at = db.Column(db.DateTime, nullable=True)
+<<<<<<< HEAD
     created_at = db.Column(db.DateTime, default=utcnow)
     updated_at = db.Column(
         db.DateTime, default=utcnow, onupdate=utcnow
+=======
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     )
 
     comments = db.relationship(
@@ -53,7 +64,11 @@ class ComplaintComment(db.Model):
     )
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     comment = db.Column(db.Text, nullable=False)
+<<<<<<< HEAD
     created_at = db.Column(db.DateTime, default=utcnow)
+=======
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
     user = db.relationship("User", backref="complaint_comments", lazy=True)
 

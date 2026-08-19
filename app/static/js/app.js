@@ -14,12 +14,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const savedTheme = localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
 
+<<<<<<< HEAD
     // Active menu item auto-highlighting is centrally managed
     if (typeof window.updateActiveNavigation === 'function') {
         window.updateActiveNavigation();
     }
 
     // AI Assistant widget logic
+=======
+    // AI Assistant Drawer Toggle
+    const aiBtn = document.getElementById('ai-chat-trigger');
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     const aiBox = document.getElementById('ai-chat-box');
     const aiClose = document.getElementById('ai-chat-close');
     const aiSend = document.getElementById('ai-send-btn');
@@ -27,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const aiMessages = document.getElementById('ai-messages');
 
     function openAiBox() {
+<<<<<<< HEAD
         if (!aiBox) return;
         aiBox.hidden = false;
         aiBox.style.display = 'flex';
@@ -52,6 +58,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.preventDefault();
                 if (aiBox.style.display === 'flex') closeAiBox(); else openAiBox();
             });
+=======
+        aiBox.hidden = false;
+        aiBox.style.display = 'flex';
+        aiBtn.setAttribute('aria-expanded', 'true');
+        aiInput.focus();
+    }
+    function closeAiBox() {
+        aiBox.hidden = true;
+        aiBox.style.display = 'none';
+        aiBtn.setAttribute('aria-expanded', 'false');
+        aiBtn.focus();
+    }
+
+    if (aiBtn && aiBox) {
+        aiBtn.addEventListener('click', () => {
+            if (aiBox.style.display === 'flex') closeAiBox(); else openAiBox();
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         });
         if (aiClose) {
             aiClose.addEventListener('click', closeAiBox);
@@ -99,6 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+<<<<<<< HEAD
     // Global Unified Search Trigger Delegation
     const searchTrigger = document.getElementById('global-search-trigger');
     if (searchTrigger) {
@@ -118,6 +142,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     // PWA Service Worker Registration
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/static/js/sw.js')

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {% extends "base.html" %}
 
 {% block title %}Dashboard · Society SaaS{% endblock %}
@@ -114,25 +115,65 @@
         <div>
             <div class="metric-val">₹{{ "{:,.0f}".format(total_billed or 0) }}</div>
             <div class="metric-lbl">Total Billed</div>
+=======
+﻿{% extends "base.html" %}
+
+{% block title %}Dashboard - Society SaaS{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h2>Welcome, {{ user.full_name }}</h2>
+        <p style="color: var(--text-secondary);">Society: <strong>{{ society.name if society else 'Green Valley Residency' }}</strong> | Role: {{ role }}</p>
+    </div>
+    {% if role in ['Super Admin', 'Society Admin'] %}
+    <form action="{{ url_for('payments.generate_bills') }}" method="POST" style="margin: 0;">
+        <button type="submit" class="btn btn-primary">
+            <i class="fa-solid fa-calculator"></i> Auto-Generate Monthly Bills
+        </button>
+    </form>
+    {% endif %}
+</div>
+
+{% if role in ['Super Admin', 'Society Admin'] %}
+<!-- Admin Analytics Cards -->
+<div class="metrics-grid">
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(79, 70, 229, 0.15); color: var(--primary);"><i class="fa-solid fa-building"></i></div>
+        <div>
+            <div class="metric-val">{{ flats_count }}</div>
+            <div class="metric-lbl">Total Flats</div>
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         </div>
     </div>
     <div class="metric-card">
         <div class="metric-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--success);"><i class="fa-solid fa-indian-rupee-sign"></i></div>
         <div>
+<<<<<<< HEAD
             <div class="metric-val" style="color: var(--success);">₹{{ "{:,.0f}".format(total_collected or 0) }}</div>
             <div class="metric-lbl" data-i18n="collected_dues">Collected Dues</div>
+=======
+            <div class="metric-val">₹{{ "{:,.0f}".format(total_collected) }}</div>
+            <div class="metric-lbl">Collected Dues</div>
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         </div>
     </div>
     <div class="metric-card">
         <div class="metric-icon" style="background: rgba(239, 68, 68, 0.15); color: var(--danger);"><i class="fa-solid fa-clock"></i></div>
         <div>
+<<<<<<< HEAD
             <div class="metric-val" style="color: var(--danger);">₹{{ "{:,.0f}".format(total_pending or 0) }}</div>
             <div class="metric-lbl" data-i18n="pending_dues">Outstanding Dues</div>
+=======
+            <div class="metric-val">₹{{ "{:,.0f}".format(total_pending) }}</div>
+            <div class="metric-lbl">Pending Dues</div>
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         </div>
     </div>
     <div class="metric-card">
         <div class="metric-icon" style="background: rgba(245, 158, 11, 0.15); color: var(--warning);"><i class="fa-solid fa-triangle-exclamation"></i></div>
         <div>
+<<<<<<< HEAD
             <div class="metric-val" style="color: var(--warning);">₹{{ "{:,.0f}".format(overdue_amount or 0) }}</div>
             <div class="metric-lbl">Overdue Amount ({{ overdue_count or 0 }})</div>
         </div>
@@ -157,10 +198,15 @@
             <div class="metric-val" style="color: {% if (occupancy_rate or 0) >= 80 %}var(--success){% elif (occupancy_rate or 0) >= 50 %}var(--warning){% else %}var(--danger){% endif %};">{{ occupancy_rate or 0 }}%</div>
             <div class="metric-lbl">Occupancy Rate</div>
             <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">{{ occupied_flats_count or 0 }}/{{ flats_count or 0 }} occupied</div>
+=======
+            <div class="metric-val">{{ open_complaints }}</div>
+            <div class="metric-lbl">Open Complaints</div>
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         </div>
     </div>
 </div>
 
+<<<<<<< HEAD
 <div class="card" style="margin-bottom: 24px; padding: 18px 24px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
         <span style="font-size: 13.5px; font-weight: 700; color: var(--text-primary);">
@@ -364,16 +410,32 @@
                 <span style="font-size: 20px; font-weight: 800; color: var(--secondary);">{{ visitors_today or 0 }}</span>
             </div>
         </div>
+=======
+<!-- Charts Grid -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+    <div class="card">
+        <div class="card-title"><i class="fa-solid fa-chart-area"></i> Monthly Collection vs Expenses Trend</div>
+        <canvas id="collectionChart" height="120"></canvas>
+    </div>
+    <div class="card">
+        <div class="card-title"><i class="fa-solid fa-chart-pie"></i> Occupancy Status</div>
+        <canvas id="occupancyChart" height="180"></canvas>
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+<<<<<<< HEAD
+=======
+    // Collection Chart
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     const ctx1 = document.getElementById('collectionChart');
     if (ctx1) {
         new Chart(ctx1, {
             type: 'line',
             data: {
+<<<<<<< HEAD
                 labels: {{ monthly_chart_labels | tojson }},
                 datasets: [{
                     label: 'Maintenance Collected (₹)',
@@ -410,11 +472,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 datasets: [{ data: values, backgroundColor: ['#4f46e5','#06b6d4','#10b981','#f59e0b','#8b5cf6','#ef4444'], borderWidth: 0 }]
             },
             options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
+=======
+                labels: ['Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr'],
+                datasets: [{
+                    label: 'Maintenance Collected (₹)',
+                    data: [120000, 135000, 140000, 145000, {{ total_collected }}, 160000],
+                    borderColor: '#4f46e5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            }
+        });
+    }
+
+    // Occupancy Chart
+    const ctx2 = document.getElementById('occupancyChart');
+    if (ctx2) {
+        new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: ['Occupied', 'Vacant', 'Under Maintenance'],
+                datasets: [{
+                    data: [{{ flats_count - 2 }}, 2, 0],
+                    backgroundColor: ['#10b981', '#f59e0b', '#ef4444']
+                }]
+            }
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         });
     }
 });
 </script>
 
+<<<<<<< HEAD
 {# ================================================================
    RESIDENT DASHBOARD — FEATURES 1-10
    ================================================================ #}
@@ -738,18 +828,132 @@ document.addEventListener('DOMContentLoaded', () => {
         <span><i class="fa-solid fa-file-invoice" style="color: var(--primary);"></i> <span data-i18n="recent_bills">Maintenance Bills</span></span>
         <a class="table-link" href="{{ url_for('resident.bills') }}" data-i18n="view_all">View all</a>
     </div>
+=======
+{% elif role == 'Resident' %}
+<!-- Resident Portal Dashboard -->
+<div class="card" style="background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; margin-bottom: 20px;">
+    <h3>Flat {{ flat.flat_number if flat else 'A-101' }} Status</h3>
+    <p style="opacity: 0.9;">Wing: {{ flat.building.name if flat and flat.building else 'Wing A' }} | Block: {{ flat.block.name if flat and flat.block else 'Block 1' }} | Floor {{ flat.floor_number if flat else 1 }}</p>
+</div>
+
+{% if dues.overdue_bills %}
+<div class="dashboard-alert" role="alert"><i class="fa-solid fa-triangle-exclamation"></i><div><strong>Overdue maintenance payment</strong><br><span>{{ dues.overdue_bills|length }} bill{{ '' if dues.overdue_bills|length == 1 else 's' }} need{{ 's' if dues.overdue_bills|length == 1 else '' }} your attention.</span></div><a class="btn btn-secondary btn-small" href="{{ url_for('resident.bills', status='Overdue') }}">View overdue bills</a></div>
+{% endif %}
+
+<div class="dashboard-due-card">
+    <div><p>Overall payment status <span class="badge badge-{{ 'success' if dues.overall_status == 'Paid' else ('info' if dues.overall_status == 'Partially Paid' else ('danger' if dues.overall_status == 'Overdue' else 'warning')) }}">{{ dues.overall_status }}</span></p><h3>Total Amount Due</h3><strong>₹{{ "{:,.2f}".format(dues.total_due) }}</strong>
+        {% if due_countdown %}<small class="{{ 'due-overdue' if due_countdown.overdue else '' }}">{{ 'Overdue by' if due_countdown.overdue else 'Maintenance due in' }} {{ due_countdown.days }} day{{ '' if due_countdown.days == 1 else 's' }}</small>
+        {% elif dues.next_due_date %}<small>Next due date: {{ dues.next_due_date.strftime('%d %b %Y') }}</small>{% endif %}
+    </div>
+    {% if dues.next_payable_bill %}<a href="{{ url_for('payments.pay_bill', bill_id=dues.next_payable_bill.id) }}" class="btn btn-primary"><i class="fa-solid fa-credit-card" aria-hidden="true"></i> Quick Pay</a>{% endif %}
+</div>
+
+<nav class="quick-actions" aria-label="Quick actions">
+    <a href="{{ url_for('resident.bills') }}" class="quick-action-tile"><i class="fa-solid fa-credit-card" aria-hidden="true"></i><span>Pay Maintenance</span></a>
+    <a href="{{ url_for('resident.bills') }}" class="quick-action-tile"><i class="fa-solid fa-file-invoice" aria-hidden="true"></i><span>My Bills</span></a>
+    <a href="{{ url_for('resident.receipts') }}" class="quick-action-tile"><i class="fa-solid fa-receipt" aria-hidden="true"></i><span>Receipts</span></a>
+    <a href="{{ url_for('resident.notifications') }}" class="quick-action-tile"><i class="fa-solid fa-bell" aria-hidden="true"></i><span>Notifications</span></a>
+    <a href="{{ url_for('resident.help_center') }}" class="quick-action-tile"><i class="fa-solid fa-circle-question" aria-hidden="true"></i><span>Help & Support</span></a>
+</nav>
+
+{% if payment_summary %}
+<div class="summary-grid" style="margin-bottom:20px;">
+    <div class="card summary-tile"><span class="muted">Maintenance outstanding</span><strong>₹{{ "{:,.2f}".format(dues.maintenance_due) }}</strong></div>
+    <div class="card summary-tile"><span class="muted">Late fee outstanding</span><strong>₹{{ "{:,.2f}".format(dues.late_fee) }}</strong></div>
+    <div class="card summary-tile"><span class="muted">Paid bills</span><strong>{{ payment_summary.total_paid_bills }}</strong></div>
+    <div class="card summary-tile"><span class="muted">Pending bills</span><strong>{{ payment_summary.total_pending_bills }}</strong></div>
+</div>
+<details class="card" style="margin-bottom:20px;"><summary style="cursor:pointer; font-weight:700;">This year's payment summary</summary>
+    <dl class="details-list" style="margin-top:12px;">
+        <dt>Total paid this year</dt><dd>₹{{ "{:,.2f}".format(payment_summary.year_total_paid) }}</dd>
+        <dt>Maintenance paid</dt><dd>₹{{ "{:,.2f}".format(payment_summary.year_maintenance_paid) }}</dd>
+        <dt>Late fees paid</dt><dd>₹{{ "{:,.2f}".format(payment_summary.year_late_fee_paid) }}</dd>
+        <dt>Paid months</dt><dd>{{ payment_summary.year_paid_months }}</dd>
+        <dt>Pending months</dt><dd>{{ payment_summary.year_pending_months }}</dd>
+    </dl>
+</details>
+{% endif %}
+
+{% if dues.next_payable_bill %}
+{% set billed = dues.maintenance_due + dues.late_fee %}
+{% set paid_pct = ((billed - dues.total_due) / billed * 100) if billed > 0 else 100 %}
+<div class="card" style="margin-bottom: 20px;">
+    <h2 class="card-title" style="margin-bottom: 12px;">Upcoming Due</h2>
+    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;">
+        <span>{{ dues.next_payable_bill.billing_month }} Â· due {{ dues.next_due_date.strftime('%d %b %Y') if dues.next_due_date else 'â€”' }}</span>
+        <strong>₹{{ "{:,.2f}".format(dues.next_payable_bill.remaining_amount) }}</strong>
+    </div>
+    <div style="height:8px; border-radius:99px; background:var(--bg-primary); overflow:hidden;">
+        <div style="height:100%; width:{{ paid_pct }}%; background:var(--success); border-radius:99px;"></div>
+    </div>
+    <small style="color:var(--text-secondary);">{{ "%.0f"|format(paid_pct) }}% of total outstanding maintenance already paid</small>
+</div>
+{% endif %}
+
+<!-- Maintenance Summary Grid -->
+<div class="metrics-grid" style="margin-bottom: 24px;">
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(79, 70, 229, 0.15); color: var(--primary);"><i class="fa-solid fa-calendar-day"></i></div>
+        <div>
+            <div class="metric-val" id="current-month-maintenance">₹{{ "{:,.0f}".format(dues.current_month_maintenance if dues else 1500) }}</div>
+            <div class="metric-lbl">Current Month Maintenance</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(245, 158, 11, 0.15); color: var(--warning);"><i class="fa-solid fa-clock-rotate-left"></i></div>
+        <div>
+            <div class="metric-val" id="pending-months">{{ dues.pending_months if dues else 0 }}</div>
+            <div class="metric-lbl">Pending Months</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;"><i class="fa-solid fa-calculator"></i></div>
+        <div>
+            <div class="metric-val" id="maintenance-due">₹{{ "{:,.0f}".format(dues.maintenance_due if dues else 0) }}</div>
+            <div class="metric-lbl">Maintenance Due</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(239, 68, 68, 0.15); color: var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div>
+            <div class="metric-val" id="late-fee">₹{{ "{:,.0f}".format(dues.late_fee if dues else 0) }}</div>
+            <div class="metric-lbl">Late Fee</div>
+        </div>
+    </div>
+    <div class="metric-card" style="border: 2px solid var(--primary); background: rgba(79, 70, 229, 0.05);">
+        <div class="metric-icon" style="background: var(--primary); color: white;"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+        <div>
+            <div class="metric-val" id="total-amount-due" style="color: var(--primary); font-weight: 800;">₹{{ "{:,.0f}".format(dues.total_due if dues else 0) }}</div>
+            <div class="metric-lbl" style="font-weight: 700;">Total Amount Due</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2 class="card-title">Recent Bills <a class="table-link" href="{{ url_for('resident.bills') }}">View all</a></h2>
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     <div class="table-responsive">
         <table class="data-table">
             <thead>
                 <tr>
+<<<<<<< HEAD
                     <th data-i18n="billing_month">Month</th>
                     <th data-i18n="total_amount">Amount</th>
                     <th>Late Fee</th>
                     <th data-i18n="status">Status</th>
+=======
+                    <th>Bill Number</th>
+                    <th>Month</th>
+                    <th>Total Dues</th>
+                    <th>Paid</th>
+                    <th>Remaining</th>
+                    <th>Status</th>
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
                     <th>Action</th>
                 </tr>
             </thead>
             <tbody>
+<<<<<<< HEAD
                 {% for b in bills[:8] %}
                 <tr>
                     <td><strong>{{ b.billing_month }}</strong></td>
@@ -757,27 +961,53 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>{{ '₹{:,.0f}'.format(b.late_fee) if b.late_fee > 0 else '—' }}</td>
                     <td>
                         <span class="badge badge-{{ 'success' if b.status == 'Paid' else ('info' if b.status == 'Partially Paid' else ('danger' if b.status == 'Overdue' else 'warning')) }}">
+=======
+                {% for b in bills %}
+                <tr>
+                    <td><strong>{{ b.bill_number }}</strong></td>
+                    <td>{{ b.billing_month }}</td>
+                    <td>₹{{ "{:,.2f}".format(b.total_amount) }}</td>
+                    <td>₹{{ "{:,.2f}".format(b.amount_paid) }}</td>
+                    <td><strong style="color: var(--danger);">₹{{ "{:,.2f}".format(b.remaining_amount) }}</strong></td>
+                    <td>
+                        <span class="badge badge-{{ 'success' if b.status == 'Paid' else ('warning' if b.status == 'Partially Paid' else 'danger') }}">
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
                             {{ b.status }}
                         </span>
                     </td>
                     <td>
                         {% if b.remaining_amount > 0 %}
+<<<<<<< HEAD
                         <a href="{{ url_for('payments.pay_bill', bill_id=b.id) }}" class="btn btn-primary btn-small" data-i18n="pay_now">Pay</a>
                         {% else %}
                         <a href="{{ url_for('resident.bill_detail', bill_id=b.id) }}" class="btn btn-secondary btn-small">View</a>
+=======
+                        <a href="{{ url_for('payments.pay_bill', bill_id=b.id) }}" class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;">
+                            <i class="fa-solid fa-credit-card"></i> Pay Now
+                        </a>
+                        {% else %}
+                        <a href="{{ url_for('payments.download_receipt', payment_id=b.payments[0].id) if b.payments else '#' }}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;">
+                            <i class="fa-solid fa-download"></i> Receipt
+                        </a>
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
                         {% endif %}
                     </td>
                 </tr>
                 {% else %}
+<<<<<<< HEAD
                 <tr><td colspan="5" class="empty-cell">
                     <i class="fa-regular fa-file-lines"></i>
                     <strong data-i18n="no_results_found">No bills yet.</strong>
                 </td></tr>
+=======
+                <tr><td colspan="7" style="text-align: center;">No maintenance bills generated yet.</td></tr>
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+<<<<<<< HEAD
 {% endif %}
 
 {% elif role == 'Security Staff' %}
@@ -807,3 +1037,13 @@ document.addEventListener('DOMContentLoaded', () => {
 <div class="card"><p>Welcome, {{ user.full_name }}.</p></div>
 {% endif %}
 {% endblock %}
+=======
+
+<div class="dashboard-bottom-grid">
+<section class="card"><h2 class="card-title">Recent Payments <a class="table-link" href="{{ url_for('resident.receipts') }}">View receipts</a></h2>{% for payment in recent_payments %}<div class="compact-row"><div><strong>₹{{ "{:,.2f}".format(payment.amount_paid) }}</strong><small>{{ payment.transaction_id }} Â· {{ payment.payment_method }}</small></div><span>{{ payment.payment_date.strftime('%d %b') }}</span></div>{% else %}<p class="muted">No payments yet.</p>{% endfor %}</section>
+<section class="card"><h2 class="card-title">Notifications <a class="table-link" href="{{ url_for('resident.notifications') }}">View all</a></h2>{% for item in notifications %}<div class="compact-row"><div><strong>{{ item.notification_type|replace('_', ' ')|title }}</strong><small>{{ item.message }}</small></div></div>{% else %}<p class="muted">You're all caught up!</p>{% endfor %}</section>
+</div>
+{% endif %}
+{% endblock %}
+
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32

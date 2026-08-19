@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {% extends "base.html" %}
 {% block title %}Maintenance Bills · Society SaaS{% endblock %}
 
@@ -93,10 +94,40 @@
                     <th data-i18n="remaining_amount">Remaining</th>
                     <th data-i18n="status">Status</th>
                     <th style="text-align: right;">Action</th>
+=======
+﻿{% extends "base.html" %}
+{% block title %}Maintenance Bills - Society SaaS{% endblock %}
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <h2>Society Maintenance Bills</h2>
+    {% if session.role in ['Super Admin', 'Society Admin'] %}
+    <form action="{{ url_for('payments.generate_bills') }}" method="POST" style="margin:0;">
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-calculator"></i> Run Auto-Billing</button>
+    </form>
+    {% endif %}
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Bill Number</th>
+                    <th>Flat</th>
+                    <th>Month</th>
+                    <th>Base Charge</th>
+                    <th>Late Fee</th>
+                    <th>Total Bill</th>
+                    <th>Paid</th>
+                    <th>Remaining</th>
+                    <th>Status</th>
+                    <th>Action</th>
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
                 </tr>
             </thead>
             <tbody>
                 {% for b in bills %}
+<<<<<<< HEAD
                 <tr class="bill-row" data-bill-id="{{ b.id }}" data-status="{{ b.status }}" data-remaining="{{ b.remaining_amount }}">
                     <td style="text-align: center;">
                         <input type="checkbox" class="bill-checkbox" value="{{ b.id }}" onchange="handleBillCheckboxChange()">
@@ -134,16 +165,40 @@
                         <a href="{{ url_for('payments.download_receipt', payment_id=b.payments[0].id, view=1) }}" target="_blank" class="btn btn-secondary" style="padding: 4px 10px; font-size: 12px;">
                             <i class="fa-solid fa-eye"></i> Receipt
                         </a>
+=======
+                <tr>
+                    <td><strong>{{ b.bill_number }}</strong></td>
+                    <td>{{ b.flat.flat_number if b.flat else 'N/A' }}</td>
+                    <td>{{ b.billing_month }}</td>
+                    <td>₹{{ "{:,.2f}".format(b.base_amount) }}</td>
+                    <td>₹{{ "{:,.2f}".format(b.late_fee) }}</td>
+                    <td>₹{{ "{:,.2f}".format(b.total_amount) }}</td>
+                    <td>₹{{ "{:,.2f}".format(b.amount_paid) }}</td>
+                    <td><strong style="color: var(--danger);">₹{{ "{:,.2f}".format(b.remaining_amount) }}</strong></td>
+                    <td>
+                        <span class="badge badge-{{ 'success' if b.status == 'Paid' else ('warning' if b.status == 'Partially Paid' else 'danger') }}">
+                            {{ b.status }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if b.remaining_amount > 0 %}
+                        <a href="{{ url_for('payments.pay_bill', bill_id=b.id) }}" class="btn btn-primary" style="padding: 4px 10px; font-size: 12px;">Pay Dues</a>
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
                         {% endif %}
                     </td>
                 </tr>
                 {% else %}
+<<<<<<< HEAD
                 <tr><td colspan="11" style="text-align: center; padding: 36px;" data-i18n="no_results_found">No bills available. Your maintenance bills will appear here when issued.</td></tr>
+=======
+                <tr><td colspan="10" style="text-align: center;">No bills available. Your maintenance bills will appear here when issued.</td></tr>
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+<<<<<<< HEAD
 
 <script>
 function filterBillsTable() {
@@ -252,3 +307,7 @@ function exportBillsTableToCSV() {
 }
 </script>
 {% endblock %}
+=======
+{% endblock %}
+
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32

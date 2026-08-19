@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {% extends "base.html" %}
 {% block title %}Pay Bill · Society SaaS{% endblock %}
 {% block content %}
@@ -34,10 +35,28 @@
         <span data-i18n="remaining_amount">Amount Payable</span>
         <span>₹{{ '{:,.2f}'.format(bill.remaining_amount) }}</span>
       </div>
+=======
+﻿{% extends "base.html" %}
+{% block title %}Pay Bill {{ bill.bill_number }} Â· Society SaaS{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">Maintenance payment</p><h1>Pay Maintenance Bill</h1><p>{{ bill.bill_number }} Â· {{ bill.billing_month }}</p></div></div>
+<div class="pay-wrap">
+  <section class="card">
+    <h2 class="card-title">Payment summary</h2>
+    <dl class="payment-summary">
+      <dt>Bill number</dt><dd>{{ bill.bill_number }}</dd>
+      <dt>Billing month</dt><dd>{{ bill.billing_month }}</dd>
+      <dt>Maintenance</dt><dd>₹{{ '{:,.2f}'.format(bill.base_amount) }}</dd>
+      <dt>Late fee</dt><dd>₹{{ '{:,.2f}'.format(bill.late_fee) }}</dd>
+      <dt>Total bill amount</dt><dd>₹{{ '{:,.2f}'.format(bill.total_amount) }}</dd>
+      <dt>Already paid</dt><dd>₹{{ '{:,.2f}'.format(bill.amount_paid) }}</dd>
+      <div class="total-line"><span>Amount payable</span><span>₹{{ '{:,.2f}'.format(bill.remaining_amount) }}</span></div>
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     </dl>
   </section>
 
   {% if not razorpay_configured %}
+<<<<<<< HEAD
   <div class="dev-mode-notice">
     <i class="fa-solid fa-flask"></i>
     <div>Development mode: using mock payment provider. Configure <code>RAZORPAY_KEY_ID</code> and <code>RAZORPAY_KEY_SECRET</code> to enable live payments.</div>
@@ -87,6 +106,13 @@
     </div>
     {% else %}
     <!-- Legacy mock form -->
+=======
+  <div class="dev-mode-notice"><i class="fa-solid fa-flask"></i><div>This environment uses the development mock payment provider. No real money moves â€” a live gateway requires provider credentials to be configured by the society office.</div></div>
+  {% endif %}
+
+  <section class="card">
+    <h2 class="card-title">Choose amount &amp; method</h2>
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     <form id="pay-form" method="POST" action="{{ url_for('payments.pay_bill', bill_id=bill.id) }}">
       <input type="hidden" name="idempotency_key" value="{{ idempotency_key }}">
       <label style="font-weight:600; font-size:13px; display:block; margin-bottom:6px;">Payment amount (INR)</label>
@@ -107,12 +133,19 @@
         <i class="fa-solid fa-lock"></i> Review &amp; pay
       </button>
     </form>
+<<<<<<< HEAD
     {% endif %}
   </section>
 </div>
 
 {% if not razorpay_configured %}
 <!-- Confirmation modal for mock -->
+=======
+  </section>
+</div>
+
+<!-- Confirmation modal -->
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 <div class="modal-backdrop" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title" hidden>
   <div class="modal-box">
     <h3 id="confirm-modal-title">Confirm payment</h3>
@@ -128,6 +161,7 @@
     </div>
   </div>
 </div>
+<<<<<<< HEAD
 {% endif %}
 
 {% if razorpay_configured %}
@@ -157,6 +191,9 @@
 })();
 </script>
 {% else %}
+=======
+
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 <script>
 (function () {
   const form = document.getElementById('pay-form');
@@ -196,6 +233,17 @@
   cancelBtn.addEventListener('click', closeModal);
   modal.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !submitted) closeModal();
+<<<<<<< HEAD
+=======
+    if (e.key === 'Tab') {
+      // Simple two-item focus trap between Cancel and Confirm.
+      const focusables = [cancelBtn, confirmBtn];
+      const idx = focusables.indexOf(document.activeElement);
+      e.preventDefault();
+      const next = e.shiftKey ? (idx <= 0 ? 1 : idx - 1) : (idx === 1 ? 0 : 1);
+      focusables[next].focus();
+    }
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
   });
 
   confirmBtn.addEventListener('click', () => {
@@ -209,5 +257,10 @@
   });
 })();
 </script>
+<<<<<<< HEAD
 {% endif %}
 {% endblock %}
+=======
+{% endblock %}
+
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32

@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 from app.utils import utcnow
+=======
+﻿from app.utils import utcnow
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 from datetime import datetime
 from flask import abort
 from app.models import (
@@ -16,11 +20,16 @@ from app.models import (
 from app.config import Config
 from app.services.auth_service import AuthService
 
+<<<<<<< HEAD
 # ─── Constants (server-side, never trust frontend amounts) ────────────────────
+=======
+# â”€â”€â”€ Constants (server-side, never trust frontend amounts) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 MONTHLY_MAINTENANCE_RATE = 1500.0  # ₹1,500 per month
 LATE_FEE_PER_MONTH = 500.0  # ₹500 per overdue month
 
 
+<<<<<<< HEAD
 # ─── Normalization helpers ────────────────────────────────────────────────────
 
 
@@ -117,11 +126,17 @@ def get_flat_property_key(flat):
     return flat_num
 
 
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 class RegistrationService:
     @staticmethod
     def validate_hierarchy(society_id, building_id, block_id, flat_id):
         """
+<<<<<<< HEAD
         Validates that society → wing (building) → block → flat hierarchy is
+=======
+        Validates that society â†’ wing (building) â†’ block â†’ flat hierarchy is
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         internally consistent. Aborts 403 if any ID is tampered / mismatched.
 
         block_id is REQUIRED (not optional) for new registrations.
@@ -166,7 +181,11 @@ class RegistrationService:
     def validate_hierarchy_legacy(society_id, building_id, flat_id):
         """
         Backward-compatible validation for tests that don't use blocks.
+<<<<<<< HEAD
         Validates society → building → flat only.
+=======
+        Validates society â†’ building â†’ flat only.
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         Used by existing tests and internal calls without block_id.
         """
         society = db.session.get(Society, society_id)
@@ -207,11 +226,18 @@ class RegistrationService:
     ):
         """
         Registers a new resident:
+<<<<<<< HEAD
         1. Validates hierarchy (Wing→Block→Flat when block_id given, else Wing→Flat).
         2. Checks for duplicate active/pending accounts.
         3. SERVER-SIDE checks flat availability — rejects if flat already occupied/pending.
         4. Hashes password into User model ONLY. (Never in RegistrationRequest).
         5. Creates RegistrationRequest record with PENDING_APPROVAL status.
+=======
+        1. Validates hierarchy (Wingâ†’Blockâ†’Flat when block_id given, else Wingâ†’Flat).
+        2. Checks duplicate active/pending accounts.
+        3. Hashes password into User model ONLY. (Never in RegistrationRequest).
+        4. Creates RegistrationRequest record.
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         """
         mobile = AuthService.normalize_mobile(mobile)
         if block_id is not None:
@@ -223,6 +249,7 @@ class RegistrationService:
                 society_id, building_id, flat_id
             )
 
+<<<<<<< HEAD
         # ── FLAT AVAILABILITY CHECK (server-side) ─────────────────────────────
         # Check if an existing user is ALREADY a resident of this flat
         existing_active_resident = Resident.query.filter_by(
@@ -238,6 +265,8 @@ class RegistrationService:
                 f"Please contact the society administrator."
             )
 
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         # Check existing user with this mobile
         existing_user = User.query.filter_by(mobile=mobile).first()
         if existing_user:
@@ -302,6 +331,7 @@ class RegistrationService:
         )
         db.session.add(req)
         db.session.commit()
+<<<<<<< HEAD
 
         # Audit log for new registration request
         db.session.add(
@@ -316,10 +346,13 @@ class RegistrationService:
             )
         )
         db.session.commit()
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         return req
 
     @staticmethod
     def approve_request(registration_id, admin_user):
+<<<<<<< HEAD
         """
         Approves a registration request.
 
@@ -333,6 +366,9 @@ class RegistrationService:
           6. Create audit log entry.
           7. COMMIT — only if all steps succeed.
         """
+=======
+        """Approves a registration request."""
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         req = db.session.get(RegistrationRequest, registration_id)
         if not req:
             raise ValueError("Registration request not found")
@@ -346,6 +382,7 @@ class RegistrationService:
                 description="Forbidden: Cannot approve registration for another society",
             )
 
+<<<<<<< HEAD
         if req.status != "PENDING_APPROVAL":
             raise ValueError(
                 f"Registration #{registration_id} is already {req.status}. "
@@ -445,6 +482,57 @@ class RegistrationService:
             db.session.rollback()
             raise
 
+=======
+        req.status = "APPROVED"
+        req.approved_by_id = admin_user.id
+        req.approved_at = utcnow()
+
+        user = db.session.get(User, req.user_id)
+        if user:
+            user.maintenance_start_month = req.approved_at.strftime("%Y-%m")
+            user.account_status = "ACTIVE"
+            user.is_active = True
+            user.society_id = req.society_id
+
+            existing_resident = Resident.query.filter_by(
+                user_id=user.id, flat_id=req.flat_id
+            ).first()
+            if not existing_resident:
+                res_type = (
+                    "Owner" if req.occupancy_type in ["OWNER", "Owner"] else "Tenant"
+                )
+                existing_resident = Resident(
+                    society_id=req.society_id,
+                    flat_id=req.flat_id,
+                    user_id=user.id,
+                    full_name=user.full_name,
+                    mobile=user.mobile,
+                    email=user.email,
+                    resident_type=res_type,
+                    occupancy_status="Active",
+                    is_primary=True,
+                )
+                db.session.add(existing_resident)
+                db.session.flush()
+
+            from app.services.billing_service import BillingService
+
+            BillingService.ensure_bill_for_flat(
+                society_id=req.society_id,
+                flat_id=req.flat_id,
+                resident_id=existing_resident.id,
+                billing_month=user.maintenance_start_month,
+            )
+
+        audit = AuditLog(
+            society_id=req.society_id,
+            user_id=admin_user.id,
+            action="RESIDENT_REGISTRATION_APPROVED",
+            details=f"Approved registration #{req.id} for user {user.full_name if user else req.full_name}",
+        )
+        db.session.add(audit)
+        db.session.commit()
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         return req
 
     @staticmethod
@@ -473,30 +561,45 @@ class RegistrationService:
             user.account_status = "REJECTED"
             user.is_active = False
 
+<<<<<<< HEAD
         flat = db.session.get(Flat, req.flat_id)
         prop_key = get_flat_property_key(flat) if flat else "UNKNOWN"
 
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         audit = AuditLog(
             society_id=req.society_id,
             user_id=admin_user.id,
             action="RESIDENT_REGISTRATION_REJECTED",
+<<<<<<< HEAD
             details=(
                 f"Rejected registration #{req.id} for {req.full_name} at flat {prop_key}. "
                 f"Reason: {reason}. Rejected by: {admin_user.full_name} (ID: {admin_user.id})"
             ),
+=======
+            details=f"Rejected registration #{req.id} for reason: {reason}",
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         )
         db.session.add(audit)
         db.session.commit()
         return req
 
 
+<<<<<<< HEAD
 # ─── Maintenance Due Calculator ───────────────────────────────────────────────
+=======
+# â”€â”€â”€ Maintenance Due Calculator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class MaintenanceSummaryService:
     """
     Server-side maintenance due calculator.
+<<<<<<< HEAD
     Uses actual unpaid MaintenanceBill records — never trusts frontend.
+=======
+    Uses actual unpaid MaintenanceBill records â€” never trusts frontend.
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
     Rates (fixed, server-side):
         Monthly maintenance: ₹1,500
@@ -622,3 +725,10 @@ class MaintenanceSummaryService:
             "total_due": total_due,
             "unpaid_bills": unpaid_bills,
         }
+<<<<<<< HEAD
+=======
+
+
+
+
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32

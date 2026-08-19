@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 from app.models import db, User, Role
+=======
+﻿from app.models import db, User, Role
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 def test_root_redirects_unauthenticated_users_to_login(client):

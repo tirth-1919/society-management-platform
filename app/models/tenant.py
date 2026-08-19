@@ -1,20 +1,32 @@
+<<<<<<< HEAD
 from flask_sqlalchemy import SQLAlchemy
 from app.utils import utcnow
+=======
+﻿from datetime import datetime
+from flask_sqlalchemy import SQLAlchemy
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 db = SQLAlchemy()
 
 
 def patch_sqlite_schema(app=None):
     """
+<<<<<<< HEAD
     Safely patches existing SQLite database tables if missing new columns like flats.block_id,
     residents.advance_balance, complaints resolution fields, etc.
+=======
+    Safely patches existing SQLite database tables if missing new columns like flats.block_id.
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     """
     try:
         from sqlalchemy import inspect, text
 
+<<<<<<< HEAD
         # Ensure any newly added tables are created
         db.create_all()
 
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         with db.engine.connect() as conn:
             inspector = inspect(db.engine)
             if "flats" in inspector.get_table_names():
@@ -46,6 +58,7 @@ def patch_sqlite_schema(app=None):
                         )
                     )
                     conn.commit()
+<<<<<<< HEAD
             if "residents" in inspector.get_table_names():
                 cols_residents = [c["name"] for c in inspector.get_columns("residents")]
                 if "advance_balance" not in cols_residents:
@@ -78,6 +91,8 @@ def patch_sqlite_schema(app=None):
                         )
                     )
                     conn.commit()
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
             if "notification_logs" in inspector.get_table_names():
                 cols_notifications = [
                     c["name"] for c in inspector.get_columns("notification_logs")
@@ -89,6 +104,7 @@ def patch_sqlite_schema(app=None):
                         )
                     )
                     conn.commit()
+<<<<<<< HEAD
             # Razorpay payment fields added in v2 payment system
             if "payments" in inspector.get_table_names():
                 cols_payments = [c["name"] for c in inspector.get_columns("payments")]
@@ -153,6 +169,8 @@ def patch_sqlite_schema(app=None):
                     )
                     conn.commit()
 
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     except Exception as e:
         print(f"[DB PATCH NOTE] Schema patch skipped or already applied: {e}")
 
@@ -171,9 +189,15 @@ class Society(db.Model):
     phone = db.Column(db.String(20), nullable=False)
     logo_url = db.Column(db.String(255), nullable=True)
     emergency_contact = db.Column(db.String(20), nullable=True)
+<<<<<<< HEAD
     created_at = db.Column(db.DateTime, default=utcnow)
     updated_at = db.Column(
         db.DateTime, default=utcnow, onupdate=utcnow
+=======
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     )
 
     buildings = db.relationship(
@@ -183,6 +207,7 @@ class Society(db.Model):
         "Flat", backref="society", lazy=True, cascade="all, delete-orphan"
     )
 
+<<<<<<< HEAD
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -191,6 +216,12 @@ class Society(db.Model):
 class Building(db.Model):
     """
     Represents a Wing in the hierarchy: Society → Wing (Building) → Block → Flat.
+=======
+
+class Building(db.Model):
+    """
+    Represents a Wing in the hierarchy: Society â†’ Wing (Building) â†’ Block â†’ Flat.
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     Kept as 'buildings' table for backward compatibility with existing data and tests.
     In the UI this is presented as 'Wing'.
     """
@@ -204,7 +235,11 @@ class Building(db.Model):
     name = db.Column(db.String(100), nullable=False)  # e.g. "Wing A", "Wing B"
     floors_count = db.Column(db.Integer, default=1)
     total_flats = db.Column(db.Integer, default=0)
+<<<<<<< HEAD
     created_at = db.Column(db.DateTime, default=utcnow)
+=======
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
     flats = db.relationship(
         "Flat", backref="building", lazy=True, cascade="all, delete-orphan"
@@ -213,15 +248,22 @@ class Building(db.Model):
         "Block", backref="wing", lazy=True, cascade="all, delete-orphan"
     )
 
+<<<<<<< HEAD
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 class Block(db.Model):
     """
     Represents a Block within a Wing.
+<<<<<<< HEAD
     Hierarchy: Society → Wing (Building) → Block → Flat
+=======
+    Hierarchy: Society â†’ Wing (Building) â†’ Block â†’ Flat
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     """
 
     __tablename__ = "blocks"
@@ -235,6 +277,7 @@ class Block(db.Model):
     )
     name = db.Column(db.String(100), nullable=False)  # e.g. "Block 1", "Block A"
     floors_count = db.Column(db.Integer, default=1)
+<<<<<<< HEAD
     created_at = db.Column(db.DateTime, default=utcnow)
 
     flats = db.relationship("Flat", backref="block", lazy=True)
@@ -256,6 +299,15 @@ class Flat(db.Model):
             name="uq_flat_society_building_number",
         ),
     )
+=======
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    flats = db.relationship("Flat", backref="block", lazy=True)
+
+
+class Flat(db.Model):
+    __tablename__ = "flats"
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
     id = db.Column(db.Integer, primary_key=True)
     society_id = db.Column(
@@ -266,20 +318,31 @@ class Flat(db.Model):
     )
     block_id = db.Column(
         db.Integer, db.ForeignKey("blocks.id"), nullable=True, index=True
+<<<<<<< HEAD
     )  # Wing→Block→Flat
+=======
+    )  # Wingâ†’Blockâ†’Flat
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     flat_number = db.Column(db.String(50), nullable=False)
     floor_number = db.Column(db.Integer, nullable=False, default=1)
     area_sqft = db.Column(db.Float, nullable=False, default=1000.0)
     flat_type = db.Column(db.String(50), default="2BHK")  # 1BHK, 2BHK, 3BHK, Penthouse
     occupancy_status = db.Column(
+<<<<<<< HEAD
         db.String(30), default="Vacant"
     )  # Occupied, Vacant, Under Maintenance, Available
     created_at = db.Column(db.DateTime, default=utcnow)
+=======
+        db.String(30), default="Occupied"
+    )  # Occupied, Vacant, Under Maintenance
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
     residents = db.relationship("Resident", backref="flat", lazy=True)
     bills = db.relationship("MaintenanceBill", backref="flat", lazy=True)
     vehicles = db.relationship("Vehicle", backref="flat", lazy=True)
 
+<<<<<<< HEAD
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -309,5 +372,7 @@ class Flat(db.Model):
         )
 
 
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 

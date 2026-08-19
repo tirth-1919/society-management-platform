@@ -1,15 +1,24 @@
+<<<<<<< HEAD
 from app.utils import utcnow
 import secrets
 import re
+=======
+﻿from app.utils import utcnow
+import random
+import secrets
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 from datetime import timedelta
 from app.models import db, UserSession, OTPLog, AuditLog
 
 
 class AuthService:
     OTP_EXPIRY_MINUTES = 5
+<<<<<<< HEAD
     OTP_COOLDOWN_SECONDS = 60
     MAX_HOURLY_OTPS = 10
     MAX_OTP_ATTEMPTS = 5
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
     @staticmethod
     def normalize_mobile(mobile):
@@ -22,6 +31,7 @@ class AuthService:
         return value
 
     @staticmethod
+<<<<<<< HEAD
     def validate_password_strength(password):
         """Validates password meets minimum security requirements."""
         if not password or len(password) < 8:
@@ -55,6 +65,12 @@ class AuthService:
             raise ValueError("Too many OTP requests. Please try again later.")
 
         code = f"{secrets.randbelow(900000) + 100000:06d}"
+=======
+    def generate_otp(mobile, purpose="LOGIN"):
+        """Generates a 6-digit OTP code valid for 5 minutes."""
+        mobile = AuthService.normalize_mobile(mobile)
+        code = f"{random.randint(100000, 999999)}"
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         expires_at = utcnow() + timedelta(
             minutes=AuthService.OTP_EXPIRY_MINUTES
         )
@@ -68,7 +84,10 @@ class AuthService:
             purpose=purpose,
             expires_at=expires_at,
             is_used=False,
+<<<<<<< HEAD
             attempts=0,
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         )
         db.session.add(otp_entry)
         db.session.commit()
@@ -76,11 +95,19 @@ class AuthService:
 
     @staticmethod
     def verify_otp(mobile, code, purpose="LOGIN"):
+<<<<<<< HEAD
         """Verifies OTP code with expiry, attempt limit, and single-use logic."""
         mobile = AuthService.normalize_mobile(mobile)
         otp_entry = (
             OTPLog.query.filter_by(
                 mobile=mobile, purpose=purpose, is_used=False
+=======
+        """Verifies OTP code with expiry and single-use logic."""
+        mobile = AuthService.normalize_mobile(mobile)
+        otp_entry = (
+            OTPLog.query.filter_by(
+                mobile=mobile, otp_code=code, purpose=purpose, is_used=False
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
             )
             .order_by(OTPLog.created_at.desc())
             .first()
@@ -90,6 +117,7 @@ class AuthService:
             return False, "Invalid OTP code"
 
         if utcnow() > otp_entry.expires_at:
+<<<<<<< HEAD
             otp_entry.is_used = True
             db.session.commit()
             return False, "OTP has expired"
@@ -105,6 +133,10 @@ class AuthService:
             remaining = AuthService.MAX_OTP_ATTEMPTS - otp_entry.attempts
             return False, f"Invalid OTP code. {remaining} attempt(s) remaining."
 
+=======
+            return False, "OTP has expired"
+
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         otp_entry.is_used = True
         db.session.commit()
         return True, "OTP verified successfully"

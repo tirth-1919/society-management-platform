@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ﻿$ErrorActionPreference = "Stop"
 
 # ============================================================
@@ -170,3 +171,48 @@ Write-Host "============================================" -ForegroundColor Green
 Write-Host " READY FOR CLAUDE CODE" -ForegroundColor Green
 Write-Host "============================================" -ForegroundColor Green
 
+=======
+$Project = (Get-Location).Path
+$Zip = "$env:USERPROFILE\Desktop\society-maintenance-LATEST.zip"
+
+Write-Host "Creating latest project ZIP..." -ForegroundColor Cyan
+Write-Host "Project: $Project"
+
+Remove-Item $Zip -Force -ErrorAction SilentlyContinue
+
+$Items = Get-ChildItem $Project -Force | Where-Object {
+    $_.Name -notin @(
+        "instance",
+        ".pytest_cache",
+        ".qodo",
+        ".ruff_cache",
+        "__pycache__",
+        ".git",
+        "UPDATE-ZIP.ps1"
+    )
+}
+
+if (-not $Items) {
+    Write-Host "ERROR: No project files found!" -ForegroundColor Red
+    exit 1
+}
+
+Compress-Archive `
+    -Path $Items.FullName `
+    -DestinationPath $Zip `
+    -Force
+
+if (Test-Path $Zip) {
+    $File = Get-Item $Zip
+
+    Write-Host ""
+    Write-Host "ZIP UPDATED SUCCESSFULLY!" -ForegroundColor Green
+    Write-Host "File: $($File.FullName)"
+    Write-Host "Size: $($File.Length) bytes"
+    Write-Host "Updated: $($File.LastWriteTime)"
+}
+else {
+    Write-Host "ERROR: ZIP was not created!" -ForegroundColor Red
+    exit 1
+}
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32

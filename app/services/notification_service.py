@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from app.utils import utcnow
 from datetime import datetime, timedelta
 
@@ -10,11 +11,19 @@ from app.models import (
     Resident,
     NotificationPreference,
 )
+=======
+﻿from app.utils import utcnow
+from datetime import datetime, timedelta
+
+from app.config import Config
+from app.models import db, NotificationLog, MaintenanceBill, MaintenanceConfig, Resident
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class NotificationService:
     @staticmethod
     def send_notification(
+<<<<<<< HEAD
         recipient,
         message,
         channel="In-App",
@@ -35,6 +44,13 @@ class NotificationService:
         log = NotificationLog(
             society_id=society_id,
             user_id=user_id,
+=======
+        recipient, message, channel="In-App", subject=None, society_id=None
+    ):
+        """Unified notification sender with delivery status logging."""
+        log = NotificationLog(
+            society_id=society_id,
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
             recipient_mobile_or_email=recipient,
             channel=channel,
             subject=subject,
@@ -46,6 +62,7 @@ class NotificationService:
         return log
 
     @staticmethod
+<<<<<<< HEAD
     def check_reminder_cooldown(user_id, billing_month, notification_type, cooldown_hours=24):
         """
         Checks if a notification of notification_type was sent to user_id for billing_month
@@ -90,6 +107,23 @@ class NotificationService:
             society_id=user.society_id,
             user_id=user.id,
             recipient_mobile_or_email=user.mobile or user.email or "N/A",
+=======
+    def send_billing_notification(
+        user, billing_month, notification_type, message, subject=None
+    ):
+        """Log one resident-scoped notification for a billing event."""
+        existing = NotificationLog.query.filter_by(
+            user_id=user.id,
+            billing_month=billing_month,
+            notification_type=notification_type,
+        ).first()
+        if existing:
+            return existing
+        log = NotificationLog(
+            society_id=user.society_id,
+            user_id=user.id,
+            recipient_mobile_or_email=user.mobile,
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
             channel="SMS",
             notification_type=notification_type,
             billing_month=billing_month,
@@ -102,6 +136,7 @@ class NotificationService:
         return log
 
     @staticmethod
+<<<<<<< HEAD
     def retry_failed_notifications(society_id=None):
         """Retries failed notification logs up to 3 times."""
         q = NotificationLog.query.filter_by(status="Failed").filter(NotificationLog.retry_count < 3)
@@ -118,6 +153,8 @@ class NotificationService:
         return retried
 
     @staticmethod
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     def send_maintenance_reminders(as_of=None, society_id=None):
         """Send one upcoming or overdue SMS per unpaid billing month."""
         as_of = as_of or utcnow().date()

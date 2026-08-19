@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import logging
 import os
 import tempfile
@@ -20,10 +21,17 @@ from app.models import (
 from app.utils import utcnow
 
 logger = logging.getLogger(__name__)
+=======
+﻿from pathlib import Path
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from app.models import db, Payment, Society, MaintenanceBill, Flat, Resident
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class ReceiptService:
     @staticmethod
+<<<<<<< HEAD
     def get_receipt_directory():
         """
         Returns a single reliable receipt directory Path based on Flask's actual runtime instance_path.
@@ -143,12 +151,36 @@ class ReceiptService:
     @staticmethod
     def _build_pdf(payment, society, bill, receipt, target_path):
         """Internal helper to render the PDF onto target_path."""
+=======
+    def generate_pdf_receipt(payment_id, output_path=None):
+        """Generates a downloadable PDF receipt using ReportLab."""
+        payment = db.session.get(Payment, payment_id)
+        if not payment:
+            raise ValueError("Payment not found")
+
+        society = db.session.get(Society, payment.society_id)
+        bill = db.session.get(MaintenanceBill, payment.bill_id)
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         flat = db.session.get(Flat, bill.flat_id) if bill else None
         resident = (
             db.session.get(Resident, payment.resident_id) if payment.resident_id else None
         )
 
+<<<<<<< HEAD
         c = canvas.Canvas(str(target_path), pagesize=letter)
+=======
+        if not output_path:
+            out_dir = Path("instance/documents")
+            out_dir.mkdir(parents=True, exist_ok=True)
+            rcpt_num = (
+                payment.receipt.receipt_number
+                if payment.receipt
+                else f"RCPT-{payment.id}"
+            )
+            output_path = out_dir / f"{rcpt_num}.pdf"
+
+        c = canvas.Canvas(str(output_path), pagesize=letter)
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         width, height = letter
 
         # Header - Society Name
@@ -179,7 +211,11 @@ class ReceiptService:
         c.drawString(
             50,
             height - 145,
+<<<<<<< HEAD
             f"Receipt No: {receipt.receipt_number}",
+=======
+            f"Receipt No: {payment.receipt.receipt_number if payment.receipt else 'RCPT-' + str(payment.id)}",
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         )
         c.drawString(
             350,
@@ -209,6 +245,7 @@ class ReceiptService:
         c.drawString(50, height - 200, f"Transaction ID: {payment.transaction_id}")
         c.drawString(350, height - 200, f"Payment Method: {payment.payment_method}")
 
+<<<<<<< HEAD
         line_y = height - 215
         if payment.provider_order_id:
             c.setFont("Helvetica", 9)
@@ -229,10 +266,22 @@ class ReceiptService:
         line_y -= 20
 
         c.setFont("Helvetica", 10)
+=======
+        c.line(50, height - 212, width - 50, height - 212)
+
+        # Payment Breakdown
+        c.setFont("Helvetica-Bold", 11)
+        c.drawString(50, height - 237, "Bill Breakdown")
+        c.drawString(400, height - 237, "Amount (INR)")
+
+        c.setFont("Helvetica", 10)
+        line_y = height - 257
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         if bill:
             c.drawString(50, line_y, "Maintenance")
             c.drawString(400, line_y, f"Rs. {bill.base_amount:,.2f}")
             line_y -= 16
+<<<<<<< HEAD
             if bill.late_fee > 0:
                 c.drawString(50, line_y, "Late Fee")
                 c.drawString(400, line_y, f"Rs. {bill.late_fee:,.2f}")
@@ -249,6 +298,14 @@ class ReceiptService:
             c.drawString(400, line_y, f"Rs. {bill.total_amount:,.2f}")
             line_y -= 16
 
+=======
+            c.drawString(50, line_y, "Late Fee")
+            c.drawString(400, line_y, f"Rs. {bill.late_fee:,.2f}")
+            line_y -= 16
+            c.drawString(50, line_y, "Total Bill Amount")
+            c.drawString(400, line_y, f"Rs. {bill.total_amount:,.2f}")
+            line_y -= 16
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         c.drawString(50, line_y, f"Amount Paid This Receipt ({payment.payment_method})")
         c.drawString(400, line_y, f"Rs. {payment.amount_paid:,.2f}")
         line_y -= 10
@@ -270,6 +327,7 @@ class ReceiptService:
             c.drawString(50, line_y, f"Bill Status: {bill.status}")
             line_y -= 15
         c.drawString(50, line_y, f"Payment Status: {payment.status}")
+<<<<<<< HEAD
         line_y -= 25
 
         # Embed QR Verification Code if qrcode library available
@@ -301,10 +359,13 @@ class ReceiptService:
             c.drawString(width - 135, line_y - 50, "Scan to verify receipt")
         except Exception as qr_err:
             logger.warning("Receipt PDF QR generation skipped: %s", qr_err)
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
         c.setFont("Helvetica-Oblique", 9)
         c.drawString(
             50,
+<<<<<<< HEAD
             line_y - 20,
             "This is a computer generated digital receipt. No signature required.",
         )
@@ -314,4 +375,15 @@ class ReceiptService:
 
         c.save()
 
+=======
+            height - 400,
+            "This is a computer generated digital receipt. No signature required.",
+        )
+        c.drawString(
+            50, height - 415, "Thank you for supporting community maintenance!"
+        )
+
+        c.save()
+        return str(output_path)
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 

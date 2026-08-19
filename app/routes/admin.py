@@ -9,7 +9,10 @@ from flask import (
     session,
     abort,
     current_app,
+<<<<<<< HEAD
     jsonify,
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 )
 from app.models import (
     db,
@@ -21,14 +24,20 @@ from app.models import (
     Role,
     RegistrationRequest,
     AuditLog,
+<<<<<<< HEAD
     MaintenanceBill,
     Payment,
     PaymentReceipt,
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 )
 from app.services.tenant_service import TenantService
 from app.services.registration_service import RegistrationService
 from app.services.auth_service import AuthService
+<<<<<<< HEAD
 from app.services.payment_service import PaymentService
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -119,6 +128,7 @@ def registrations():
     return render_template("admin/registrations.html", registrations=regs)
 
 
+<<<<<<< HEAD
 @admin_bp.route("/registrations/<int:id>")
 def registration_detail(id):
     """Full detail view of a single registration request."""
@@ -128,6 +138,8 @@ def registration_detail(id):
     return render_template("admin/registration_detail.html", reg=reg)
 
 
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 @admin_bp.route("/registrations/<int:id>/approve", methods=["POST"])
 def approve_registration(id):
     admin_user = db.session.get(User, session.get("user_id"))
@@ -197,6 +209,7 @@ def residents():
     society_id = session.get("society_id")
     user = db.session.get(User, session.get("user_id"))
     TenantService.enforce_tenant_isolation(user, society_id)
+<<<<<<< HEAD
 
     search_q = request.args.get("q", "").strip()
     status_filter = request.args.get("status", "").strip()
@@ -750,4 +763,12 @@ def resident_move_out(id):
     except Exception as e:
         flash(f"Failed to record move-out: {e}", "danger")
     return redirect(url_for("admin.resident_detail", id=resident.id))
+=======
+    residents_list = Resident.query.filter_by(society_id=society_id).all()
+    return render_template("admin/residents.html", residents=residents_list)
+
+
+
+
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 

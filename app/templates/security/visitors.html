@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+<<<<<<< HEAD
 {% block title %}Visitor Security Desk - Security Desk{% endblock %}
 {% block content %}
 <div class="page-heading">
@@ -104,4 +105,62 @@
     .visitors-mobile { display: grid !important; }
 }
 </style>
+=======
+{% block title %}Visitor Management - Security Desk{% endblock %}
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <h2>Visitor Security Desk</h2>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
+    <div class="card">
+        <h3>Verify Pre-Approved Pass</h3>
+        <form action="{{ url_for('visitors.verify_pass') }}" method="POST" style="margin-top: 16px;">
+            <div style="margin-bottom: 16px;">
+                <label style="font-weight: 600;">Pass Code</label>
+                <input type="text" name="pass_code" required placeholder="e.g. PASS4921" style="width: 100%; padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); text-transform: uppercase;">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;"><i class="fa-solid fa-qrcode"></i> Verify & Check-In</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3>Today's Gate Entries</h3>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Visitor Name</th>
+                        <th>Mobile</th>
+                        <th>Purpose</th>
+                        <th>Entry Time</th>
+                        <th>Exit Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in visitors %}
+                    <tr>
+                        <td><strong>{{ v.visitor_name }}</strong></td>
+                        <td>{{ v.mobile }}</td>
+                        <td>{{ v.purpose }}</td>
+                        <td>{{ v.entry_time.strftime('%H:%M') }}</td>
+                        <td>
+                            {% if v.exit_time %}
+                            {{ v.exit_time.strftime('%H:%M') }}
+                            {% else %}
+                            <form action="{{ url_for('visitors.exit_visitor', visitor_id=v.id) }}" method="POST" style="margin:0;">
+                                <button type="submit" class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;">Log Exit</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" style="text-align: center;">No visitors recorded today.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 {% endblock %}

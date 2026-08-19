@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 """Society Management SaaS - Database Seeder
+=======
+﻿"""Society Management SaaS - Database Seeder
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 Run with: python seed.py
 """
 
@@ -211,12 +215,17 @@ with app.app_context():
             flat = all_flats[i]
 
             resident = Resident(
+<<<<<<< HEAD
                 society_id=society.id,
                 flat_id=flat.id,
                 user_id=user.id,
                 full_name=name,
                 mobile=mobile,
                 email=email,
+=======
+                flat_id=flat.id,
+                user_id=user.id,
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
                 resident_type=resident_type,
                 occupancy_status="Active",
                 move_in_date=date(2023, 1, 1),
@@ -282,7 +291,10 @@ with app.app_context():
             paid = months_ago == 3
 
             bill = MaintenanceBill(
+<<<<<<< HEAD
                 society_id=society.id,
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
                 bill_number=f"BILL-{flat.id}-{billing_month}",
                 flat_id=flat.id,
                 resident_id=resident.id,
@@ -346,7 +358,10 @@ with app.app_context():
 
         for i, resident in enumerate(residents_list[:3]):
             complaint = Complaint(
+<<<<<<< HEAD
                 society_id=society.id,
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
                 ticket_number=f"TKT-{society.id}-{i + 1:04d}",
                 flat_id=resident.flat_id,
                 resident_id=resident.id,
@@ -366,6 +381,7 @@ with app.app_context():
     # FACILITIES
     # --------------------------------------------------
     facilities_data = [
+<<<<<<< HEAD
         ("Club House", 50, 0.0, False),
         ("Swimming Pool", 30, 0.0, False),
         ("Gym", 20, 0.0, False),
@@ -376,6 +392,13 @@ with app.app_context():
         ("Tennis Court", 10, 100.0, True),
         ("Garden", 100, 0.0, False),
         ("Children's Play Area", 40, 0.0, False),
+=======
+        ("Clubhouse", 50, 0.0, False),
+        ("Swimming Pool", 30, 0.0, False),
+        ("Gymnasium", 20, 0.0, False),
+        ("Banquet Hall", 100, 500.0, True),
+        ("Tennis Court", 10, 100.0, True),
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     ]
 
     for name, capacity, hourly_rate, approval in facilities_data:

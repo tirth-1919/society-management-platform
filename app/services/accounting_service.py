@@ -1,12 +1,17 @@
 import secrets
 from datetime import date
+<<<<<<< HEAD
 from collections import defaultdict
 from app.models import db, ExpenseVoucher, AccountLedger
 from app.utils import utcnow
+=======
+from app.models import db, ExpenseVoucher, AccountLedger
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class AccountingService:
     @staticmethod
+<<<<<<< HEAD
     def record_income_entry(
         society_id,
         amount,
@@ -35,6 +40,8 @@ class AccountingService:
         return ledger_entry
 
     @staticmethod
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     def create_expense_voucher(
         society_id,
         category,
@@ -54,7 +61,11 @@ class AccountingService:
             voucher_number=voucher_num,
             society_id=society_id,
             category=category,
+<<<<<<< HEAD
             amount=float(amount),
+=======
+            amount=amount,
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
             payee_name=payee_name,
             description=description,
             invoice_number=invoice_number,
@@ -71,7 +82,11 @@ class AccountingService:
             entry_date=expense_date,
             account_head=f"{category} Expense",
             entry_type="DEBIT",
+<<<<<<< HEAD
             amount=float(amount),
+=======
+            amount=amount,
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
             reference_type="EXPENSE_VOUCHER",
             reference_id=voucher.id,
             narration=f"Expense Voucher {voucher_num}: {description} (Paid to {payee_name})",
@@ -89,6 +104,7 @@ class AccountingService:
         net_surplus = total_income - total_expense
 
         return {
+<<<<<<< HEAD
             "total_income": round(total_income, 2),
             "total_expense": round(total_expense, 2),
             "net_surplus": round(net_surplus, 2),
@@ -451,3 +467,10 @@ class AccountingService:
         db.session.commit()
         return ledger_entry
 
+=======
+            "total_income": total_income,
+            "total_expense": total_expense,
+            "net_surplus": net_surplus,
+            "ledger_count": len(entries),
+        }
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32

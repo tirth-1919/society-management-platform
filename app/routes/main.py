@@ -1,6 +1,11 @@
+<<<<<<< HEAD
 from app.utils import utcnow
 from datetime import datetime, date
 from sqlalchemy import func
+=======
+﻿from app.utils import utcnow
+from datetime import datetime
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 from flask import (
     Blueprint,
     render_template,
@@ -19,7 +24,10 @@ from app.models import (
     Block,
     Flat,
     Resident,
+<<<<<<< HEAD
     RegistrationRequest,
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     MaintenanceBill,
     Complaint,
     Visitor,
@@ -27,8 +35,11 @@ from app.models import (
     Role,
     Payment,
     NotificationLog,
+<<<<<<< HEAD
     PaymentReceipt,
     PreApprovedPass,
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 )
 from app.services.accounting_service import AccountingService
 from app.services.billing_service import BillingService
@@ -80,6 +91,7 @@ def dashboard():
         )
         total_collected = sum(b.amount_paid for b in bills)
         total_pending = sum(b.remaining_amount for b in bills)
+<<<<<<< HEAD
         total_billed = sum(b.total_amount for b in bills)
         total_late_fee = sum(b.late_fee for b in bills)
         overdue_bills = [b for b in bills if b.status == "Overdue"]
@@ -170,6 +182,18 @@ def dashboard():
             RegistrationRequest.query.filter_by(society_id=society_id, status="PENDING_APPROVAL").count()
             if society_id
             else RegistrationRequest.query.filter_by(status="PENDING_APPROVAL").count()
+=======
+
+        open_complaints = (
+            Complaint.query.filter_by(society_id=society_id)
+            .filter(Complaint.status.in_(["Submitted", "In Progress"]))
+            .count()
+            if society_id
+            else 0
+        )
+        visitors_today = (
+            Visitor.query.filter_by(society_id=society_id).count() if society_id else 0
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         )
 
         fin = (
@@ -178,6 +202,7 @@ def dashboard():
             else {"total_expense": 0}
         )
 
+<<<<<<< HEAD
         # Recent transactions widget
         recent_transactions = (
             Payment.query.filter_by(society_id=society_id)
@@ -191,12 +216,15 @@ def dashboard():
         from app.services.society_health_service import SocietyHealthService
         daily_brief = SocietyHealthService.get_admin_daily_brief(society_id=society_id)
 
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         return render_template(
             "dashboard.html",
             role=role,
             user=user,
             society=society,
             flats_count=flats_count,
+<<<<<<< HEAD
             occupied_flats_count=occupied_flats,
             occupancy_rate=occupancy_rate,
             pending_registrations_count=pending_registrations,
@@ -218,6 +246,14 @@ def dashboard():
             society_health=daily_brief.get("society_health"),
             monthly_chart_labels=monthly_chart_labels,
             monthly_chart_data=monthly_chart_data,
+=======
+            residents_count=residents_count,
+            total_collected=total_collected,
+            total_pending=total_pending,
+            open_complaints=open_complaints,
+            visitors_today=visitors_today,
+            total_expense=fin["total_expense"],
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         )
 
     elif role == Role.RESIDENT:
@@ -236,7 +272,11 @@ def dashboard():
             Complaint.query.filter_by(resident_id=resident.id).all() if resident else []
         )
 
+<<<<<<< HEAD
         # Server-side maintenance due calculation — never trust frontend
+=======
+        # Server-side maintenance due calculation â€” never trust frontend
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         dues = (
             BillingService.resident_dashboard_summary(resident.id, society_id)
             if flat
@@ -246,25 +286,38 @@ def dashboard():
                 "maintenance_due": 0.0,
                 "late_fee": 0.0,
                 "total_due": 0.0,
+<<<<<<< HEAD
                 "unpaid_bills": [],
                 "next_due_date": None,
                 "next_payable_bill": None,
                 "overall_status": "Paid",
                 "overdue_bills": [],
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
             }
         )
 
         recent_payments = (
+<<<<<<< HEAD
             Payment.query.filter_by(society_id=society_id, resident_id=resident.id)
             .order_by(Payment.payment_date.desc())
             .limit(5)
             .all()
+=======
+            (
+                Payment.query.filter_by(society_id=society_id, resident_id=resident.id)
+                .order_by(Payment.payment_date.desc())
+                .limit(5)
+                .all()
+            )
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
             if resident
             else []
         )
         notifications = (
             NotificationLog.query.filter_by(society_id=society_id, user_id=user.id)
             .order_by(NotificationLog.created_at.desc())
+<<<<<<< HEAD
             .limit(5)
             .all()
         )
@@ -279,11 +332,21 @@ def dashboard():
         )
 
         # Feature 4 / 16 — Due countdown
+=======
+            .limit(4)
+            .all()
+        )
+
+        # Additive, read-only summary widgets â€” derived from the same
+        # persisted bills/payments dues already uses, no new calculation
+        # of what is owed and no change to billing_service's logic.
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         today = utcnow().date()
         due_countdown = None
         if dues.get("next_due_date"):
             delta_days = (dues["next_due_date"] - today).days
             due_countdown = {"days": abs(delta_days), "overdue": delta_days < 0}
+<<<<<<< HEAD
 
         current_year = today.strftime("%Y")
         year_payments = (
@@ -293,6 +356,17 @@ def dashboard():
                 Payment.status.in_(["captured", "Success"]),
                 Payment.payment_date >= datetime(today.year, 1, 1),
             ).all()
+=======
+        current_year = today.strftime("%Y")
+        year_payments = (
+            (
+                Payment.query.filter_by(
+                    society_id=society_id, resident_id=resident.id, status="Success"
+                )
+                .filter(Payment.payment_date >= datetime(today.year, 1, 1))
+                .all()
+            )
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
             if resident
             else []
         )
@@ -316,6 +390,7 @@ def dashboard():
             "year_pending_months": len([b for b in year_bills if b.status != "Paid"]),
         }
 
+<<<<<<< HEAD
         # Feature 7 — Last payment details
         last_payment = recent_payments[0] if recent_payments else None
 
@@ -387,6 +462,8 @@ def dashboard():
             else []
         )
 
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         return render_template(
             "dashboard.html",
             role=role,
@@ -398,6 +475,7 @@ def dashboard():
             dues=dues,
             recent_payments=recent_payments,
             notifications=notifications,
+<<<<<<< HEAD
             unread_notifications_count=unread_notifications_count,
             due_countdown=due_countdown,
             payment_summary=payment_summary,
@@ -407,6 +485,10 @@ def dashboard():
             open_complaints_count=open_complaints_count,
             upcoming_visitors=upcoming_visitors,
             resident_ai=resident_ai,
+=======
+            due_countdown=due_countdown,
+            payment_summary=payment_summary,
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         )
 
     elif role == Role.SECURITY:
@@ -427,7 +509,17 @@ def dashboard():
 
 @main_bp.route("/qr/portal.png")
 def portal_qr():
+<<<<<<< HEAD
     """Generates a QR code that opens the resident portal."""
+=======
+    """Generates a QR code that opens the resident portal.
+
+    Uses the configured production APP_URL if set; otherwise falls back to
+    the current request's own host, so it works automatically for local
+    dev and for an ngrok tunnel without any hardcoded localhost value ever
+    reaching a production deployment.
+    """
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     try:
         import qrcode
         import io
@@ -439,12 +531,20 @@ def portal_qr():
     target_url = Config.APP_URL or request.host_url
     img = qrcode.make(target_url)
     buf = io.BytesIO()
+<<<<<<< HEAD
     img.save(buf, "PNG")
+=======
+    img.save(buf, format="PNG")
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     buf.seek(0)
     return Response(buf.getvalue(), mimetype="image/png")
 
 
+<<<<<<< HEAD
 # Public API: cascading dropdowns for registration form (no auth required)
+=======
+# â”€â”€ Public API: cascading dropdowns for registration form (no auth required) â”€â”€
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 @main_bp.route("/api/buildings")
@@ -499,6 +599,7 @@ def api_flats():
     )
 
 
+<<<<<<< HEAD
 @main_bp.route("/api/search")
 def api_search():
     user_id = session.get("user_id")
@@ -516,4 +617,10 @@ def api_search():
         user, int(society_id), query_str, category=category, limit=limit
     )
     return jsonify(res)
+=======
+
+
+
+
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 

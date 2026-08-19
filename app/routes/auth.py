@@ -1,5 +1,9 @@
+<<<<<<< HEAD
 from app.utils import utcnow
 from datetime import timedelta
+=======
+﻿from app.utils import utcnow
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 from flask import (
     Blueprint,
     render_template,
@@ -9,6 +13,7 @@ from flask import (
     flash,
     session,
     jsonify,
+<<<<<<< HEAD
     current_app,
 )
 from werkzeug.exceptions import HTTPException
@@ -19,6 +24,13 @@ from app.services.registration_service import (
     check_flat_availability,
     get_flat_property_key,
 )
+=======
+)
+from werkzeug.exceptions import HTTPException
+from app.models import db, User, Society, RegistrationRequest, AuditLog
+from app.services.auth_service import AuthService
+from app.services.registration_service import RegistrationService
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -31,6 +43,7 @@ def login():
 
         user = User.query.filter_by(mobile=mobile).first()
         if user:
+<<<<<<< HEAD
             # Check account lockout
             if user.locked_until:
                 if user.locked_until > utcnow():
@@ -54,6 +67,22 @@ def login():
                 if user.account_status == "ACTIVE":
                     # Regenerate/clear session to prevent session fixation
                     session.clear()
+=======
+            # Check rate limiting / failed attempts
+            if user.failed_login_attempts >= 5:
+                flash(
+                    "Too many failed login attempts. Account temporarily locked.",
+                    "danger",
+                )
+                return redirect(url_for("auth.login"))
+
+            if user.check_password(password):
+                # Reset failed attempts
+                user.failed_login_attempts = 0
+
+                # Account status handling
+                if user.account_status == "ACTIVE":
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
                     token = AuthService.create_session(
                         user,
                         device_info=request.headers.get("User-Agent", "Browser"),
@@ -90,15 +119,23 @@ def login():
                     )
                     return redirect(url_for("auth.login"))
             else:
+<<<<<<< HEAD
                 user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
                 if user.failed_login_attempts >= 5:
                     user.locked_until = utcnow() + timedelta(minutes=15)
+=======
+                user.failed_login_attempts += 1
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
                 db.session.commit()
                 audit = AuditLog(
                     society_id=user.society_id,
                     user_id=user.id,
                     action="LOGIN_FAILURE",
+<<<<<<< HEAD
                     details=f"Incorrect password attempt {user.failed_login_attempts}",
+=======
+                    details="Incorrect password",
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
                 )
                 db.session.add(audit)
                 db.session.commit()
@@ -123,6 +160,7 @@ def register():
         occupancy_type = request.form.get("occupancy_type", "OWNER")
         password = request.form.get("password", "").strip()
 
+<<<<<<< HEAD
         # ── FLAT AVAILABILITY PRE-CHECK (server-side, user-friendly) ──
         try:
             is_available, occupant_name = check_flat_availability(society_id, flat_id)
@@ -139,6 +177,8 @@ def register():
         except Exception:
             pass  # Let register_resident() handle validation errors
 
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         try:
             req = RegistrationService.register_resident(
                 full_name=full_name,
@@ -188,6 +228,7 @@ def send_otp():
             {"success": False, "message": "Mobile number not registered"}
         ), 404
 
+<<<<<<< HEAD
     try:
         code = AuthService.generate_otp(mobile)
     except ValueError as e:
@@ -198,6 +239,12 @@ def send_otp():
         payload["dev_otp"] = code
 
     return jsonify(payload)
+=======
+    code = AuthService.generate_otp(mobile)
+    return jsonify(
+        {"success": True, "message": f"OTP sent to {mobile}", "dev_otp": code}
+    )
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 @auth_bp.route("/verify-otp", methods=["POST"])
@@ -208,6 +255,7 @@ def verify_otp():
     valid, msg = AuthService.verify_otp(mobile, code)
     if valid:
         user = User.query.filter_by(mobile=mobile).first()
+<<<<<<< HEAD
         if not user:
             flash("User not found.", "danger")
             return redirect(url_for("auth.login"))
@@ -225,13 +273,19 @@ def verify_otp():
             device_info=request.headers.get("User-Agent", "Browser"),
             ip_address=request.remote_addr,
         )
+=======
+        token = AuthService.create_session(user, ip_address=request.remote_addr)
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         session["user_id"] = user.id
         session["society_id"] = user.society_id
         session["role"] = user.role
         session["session_token"] = token
+<<<<<<< HEAD
         user.last_login_at = utcnow()
         db.session.commit()
 
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         flash("OTP Verified Successfully!", "success")
         return redirect(url_for("main.dashboard"))
 

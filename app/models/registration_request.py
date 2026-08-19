@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 from app.models.tenant import db
 from app.utils import utcnow
+=======
+﻿from datetime import datetime
+from app.models.tenant import db
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class RegistrationRequest(db.Model):
@@ -38,9 +43,15 @@ class RegistrationRequest(db.Model):
     rejected_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     rejected_at = db.Column(db.DateTime, nullable=True)
 
+<<<<<<< HEAD
     created_at = db.Column(db.DateTime, default=utcnow)
     updated_at = db.Column(
         db.DateTime, default=utcnow, onupdate=utcnow
+=======
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     )
 
     society = db.relationship("Society", foreign_keys=[society_id], lazy=True)
@@ -50,9 +61,12 @@ class RegistrationRequest(db.Model):
     approved_by = db.relationship("User", foreign_keys=[approved_by_id], lazy=True)
     rejected_by = db.relationship("User", foreign_keys=[rejected_by_id], lazy=True)
 
+<<<<<<< HEAD
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 

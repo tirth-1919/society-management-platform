@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 from app.models.tenant import db
 from app.utils import utcnow
+=======
+﻿from datetime import datetime
+from app.models.tenant import db
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class Visitor(db.Model):
@@ -24,9 +29,15 @@ class Visitor(db.Model):
     approval_status = db.Column(
         db.String(20), default="Approved"
     )  # Approved, Pending, Rejected, Expired
+<<<<<<< HEAD
     entry_time = db.Column(db.DateTime, default=utcnow)
     exit_time = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=utcnow)
+=======
+    entry_time = db.Column(db.DateTime, default=datetime.utcnow)
+    exit_time = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class PreApprovedPass(db.Model):
@@ -46,7 +57,11 @@ class PreApprovedPass(db.Model):
     expected_time = db.Column(db.String(20), nullable=True)
     purpose = db.Column(db.String(100), default="Guest")
     is_used = db.Column(db.Boolean, default=False)
+<<<<<<< HEAD
     created_at = db.Column(db.DateTime, default=utcnow)
+=======
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 

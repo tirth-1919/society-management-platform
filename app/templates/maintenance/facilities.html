@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+<<<<<<< HEAD
 {% block title %}Facility Booking · Society SaaS{% endblock %}
 {% block content %}
 <div class="page-heading">
@@ -19,10 +20,28 @@
                     <option value="" disabled selected>Select a facility</option>
                     {% for f in facilities %}
                     <option value="{{ f.id }}">{{ f.name }}</option>
+=======
+{% block title %}Facility Bookings - Society SaaS{% endblock %}
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <h2>Amenities & Facility Bookings</h2>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
+    <div class="card">
+        <h3>Book Facility</h3>
+        <form action="{{ url_for('facilities.book') }}" method="POST" style="margin-top: 16px;">
+            <div style="margin-bottom: 16px;">
+                <label style="font-weight: 600;">Facility</label>
+                <select name="facility_id" required style="width: 100%; padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary);">
+                    {% for f in facilities %}
+                    <option value="{{ f.id }}">{{ f.name }} (Cap: {{ f.capacity }})</option>
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
                     {% endfor %}
                 </select>
             </div>
             <div style="margin-bottom: 16px;">
+<<<<<<< HEAD
                 <label for="booking_date" style="font-weight: 600; display: block; margin-bottom: 6px;">Booking Date</label>
                 <input type="date" name="booking_date" id="booking_date" required min="{{ today_date }}" style="width: 100%; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); font-size: 14px; min-height: 44px;">
             </div>
@@ -47,15 +66,36 @@
             <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; min-height: 44px; margin-top: 8px;">
                 <i class="fa-solid fa-calendar-check"></i> Book Facility
             </button>
+=======
+                <label style="font-weight: 600;">Booking Date</label>
+                <input type="date" name="booking_date" required style="width: 100%; padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary);">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                <div>
+                    <label style="font-weight: 600;">Start Time</label>
+                    <input type="time" name="start_time" required value="10:00" style="width: 100%; padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary);">
+                </div>
+                <div>
+                    <label style="font-weight: 600;">End Time</label>
+                    <input type="time" name="end_time" required value="12:00" style="width: 100%; padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary);">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;"><i class="fa-solid fa-calendar-check"></i> Reserve Slot</button>
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         </form>
     </div>
 
     <div class="card">
+<<<<<<< HEAD
         <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
             <span><i class="fa-solid fa-list-check" style="color: var(--secondary);"></i> Confirmed Bookings</span>
             <span class="badge badge-info">{{ bookings|length }} active</span>
         </div>
         <div class="table-responsive" style="margin-top: 16px;">
+=======
+        <h3>Confirmed Bookings</h3>
+        <div class="table-responsive">
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
             <table class="data-table">
                 <thead>
                     <tr>
@@ -68,6 +108,7 @@
                 <tbody>
                     {% for b in bookings %}
                     <tr>
+<<<<<<< HEAD
                         <td>
                             <strong>{{ b.facility.name if b.facility else 'N/A' }}</strong>
                             {% if b.purpose %}
@@ -90,12 +131,22 @@
                     </tr>
                     {% else %}
                     <tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">No active facility bookings.</td></tr>
+=======
+                        <td><strong>{{ b.facility.name if b.facility else 'N/A' }}</strong></td>
+                        <td>{{ b.booking_date }}</td>
+                        <td>{{ b.start_time }} - {{ b.end_time }}</td>
+                        <td><span class="badge badge-success">{{ b.status }}</span></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" style="text-align: center;">No active facility bookings.</td></tr>
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+<<<<<<< HEAD
 
 <style>
 .facility-dropdown:hover, .facility-dropdown:focus {
@@ -109,4 +160,6 @@
     }
 }
 </style>
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 {% endblock %}

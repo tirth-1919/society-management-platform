@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 """
 payments.py — Complete Razorpay payment routes.
 
@@ -9,11 +10,16 @@ Security principles:
 - Only the public RAZORPAY_KEY_ID is included in checkout responses.
 """
 
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 import secrets
 
 from flask import (
     Blueprint,
+<<<<<<< HEAD
     abort,
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     flash,
     jsonify,
     redirect,
@@ -24,6 +30,7 @@ from flask import (
     url_for,
 )
 
+<<<<<<< HEAD
 from app.config import Config
 from app.models import (
     AuditLog,
@@ -35,16 +42,23 @@ from app.models import (
     User,
     db,
 )
+=======
+from app.models import db, MaintenanceBill, Payment, Role, User
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 from app.services.billing_service import BillingService
 from app.services.payment_service import PaymentService
 from app.services.receipt_service import ReceiptService
 from app.services.tenant_service import TenantService
+<<<<<<< HEAD
 from app.utils import utcnow
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 payments_bp = Blueprint("payments", __name__, url_prefix="/payments")
 
 
+<<<<<<< HEAD
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -76,17 +90,27 @@ def _require_admin_session():
 # ---------------------------------------------------------------------------
 
 
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 @payments_bp.route("/bills")
 def bills():
     society_id = session.get("society_id")
     user = db.session.get(User, session.get("user_id"))
+<<<<<<< HEAD
     if not society_id and user and user.society_id:
         society_id = user.society_id
         session["society_id"] = society_id
+=======
+
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     TenantService.enforce_tenant_isolation(user, society_id)
 
     if user.role == Role.RESIDENT:
         resident = user.residents[0] if user.residents else None
+<<<<<<< HEAD
+=======
+
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         bills_list = (
             MaintenanceBill.query.filter_by(
                 society_id=society_id,
@@ -104,13 +128,21 @@ def bills():
             .all()
         )
 
+<<<<<<< HEAD
     return render_template("maintenance/bills.html", bills=bills_list)
+=======
+    return render_template(
+        "maintenance/bills.html",
+        bills=bills_list,
+    )
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 @payments_bp.route("/generate-monthly-bills", methods=["POST"])
 def generate_bills():
     society_id = session.get("society_id")
     user = db.session.get(User, session.get("user_id"))
+<<<<<<< HEAD
     if not society_id and user and user.society_id:
         society_id = user.society_id
         session["society_id"] = society_id
@@ -118,10 +150,13 @@ def generate_bills():
     if not society_id:
         flash("Please select a society before generating bills.", "danger")
         return redirect(url_for("payments.bills"))
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
     TenantService.enforce_tenant_isolation(user, society_id)
 
     billing_month = request.form.get("billing_month")
+<<<<<<< HEAD
     try:
         created = BillingService.generate_monthly_bills(society_id, billing_month)
         flash(
@@ -173,22 +208,65 @@ def pay_bill(bill_id=None):
 
     if user.role == Role.RESIDENT:
         resident = user.residents[0] if user.residents else None
+=======
+
+    created = BillingService.generate_monthly_bills(
+        society_id,
+        billing_month,
+    )
+
+    flash(
+        f"Successfully generated {len(created)} maintenance bills for {billing_month}!",
+        "success",
+    )
+
+    return redirect(url_for("payments.bills"))
+
+
+@payments_bp.route("/pay/<int:bill_id>", methods=["GET", "POST"])
+def pay_bill(bill_id):
+    bill = MaintenanceBill.query.get_or_404(bill_id)
+    user = db.session.get(User, session.get("user_id"))
+
+    # Use the bill's society_id directly.
+    # This removes the unused local society_id variable while preserving
+    # tenant-isolation protection.
+    TenantService.enforce_tenant_isolation(
+        user,
+        bill.society_id,
+    )
+
+    if user.role == Role.RESIDENT:
+        resident = user.residents[0] if user.residents else None
+
+        # Legacy records without an occupant owner remain accessible to the
+        # current flat resident. New bills always have resident_id and are
+        # strictly isolated by that immutable occupancy reference.
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         if (
             not resident
             or (bill.resident_id is not None and bill.resident_id != resident.id)
             or (bill.resident_id is None and bill.flat_id != resident.flat_id)
         ):
             return "Forbidden", 403
+<<<<<<< HEAD
     else:
         resident = None
 
     if bill.remaining_amount <= 0:
         flash("This bill is already paid.", "info")
+=======
+
+    if bill.remaining_amount <= 0:
+        flash("This bill is already paid.", "info")
+
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         latest_payment = (
             Payment.query.filter_by(bill_id=bill.id)
             .order_by(Payment.payment_date.desc())
             .first()
         )
+<<<<<<< HEAD
         if latest_payment:
             return redirect(url_for("payments.payment_success", payment_id=latest_payment.id))
         return redirect(url_for("payments.bills"))
@@ -208,16 +286,85 @@ def pay_bill(bill_id=None):
         existing_payment = Payment.query.filter_by(idempotency_key=idempotency_key).first()
         if existing_payment:
             flash("This payment was already recorded. No second charge was made.", "info")
+=======
+
+        if latest_payment:
+            return redirect(
+                url_for(
+                    "payments.payment_success",
+                    payment_id=latest_payment.id,
+                )
+            )
+
+        return redirect(url_for("payments.bills"))
+
+    if request.method == "POST":
+        idempotency_key = request.form.get("idempotency_key")
+
+        # Backward-compatible legacy confirmation:
+        # old clients posted an "amount" field.
+        # Its value is intentionally ignored and the entire outstanding
+        # balance is collected.
+        legacy_confirmation = (
+            "amount" in request.form and "amount_to_pay" not in request.form
+        )
+
+        if legacy_confirmation:
+            idempotency_key = f"IDEM-LEGACY-{bill_id}-{secrets.token_hex(16)}"
+        elif not idempotency_key:
+            flash(
+                "Your payment session expired. Please review and confirm again.",
+                "danger",
+            )
+            return redirect(
+                url_for(
+                    "payments.pay_bill",
+                    bill_id=bill.id,
+                )
+            )
+
+        # A browser retry with the same confirmation token is a successful
+        # replay, not a second charge.
+        existing_payment = Payment.query.filter_by(
+            idempotency_key=idempotency_key
+        ).first()
+
+        if existing_payment:
+            flash(
+                "This payment was already recorded. No second charge was made.",
+                "info",
+            )
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
             return redirect(url_for("payments.bills"))
 
         if legacy_confirmation:
             amount_to_pay = bill.remaining_amount
         else:
             try:
+<<<<<<< HEAD
                 amount_to_pay = float(request.form.get("amount_to_pay", bill.remaining_amount))
             except (TypeError, ValueError):
                 flash("Enter a valid payment amount.", "danger")
                 return redirect(url_for("payments.pay_bill", bill_id=bill.id))
+=======
+                amount_to_pay = float(
+                    request.form.get(
+                        "amount_to_pay",
+                        bill.remaining_amount,
+                    )
+                )
+            except (TypeError, ValueError):
+                flash(
+                    "Enter a valid payment amount.",
+                    "danger",
+                )
+                return redirect(
+                    url_for(
+                        "payments.pay_bill",
+                        bill_id=bill.id,
+                    )
+                )
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
             if amount_to_pay <= 0 or amount_to_pay > bill.remaining_amount + 0.01:
                 flash(
@@ -225,9 +372,24 @@ def pay_bill(bill_id=None):
                     "no more than the remaining balance.",
                     "danger",
                 )
+<<<<<<< HEAD
                 return redirect(url_for("payments.pay_bill", bill_id=bill.id))
 
         payment_method = request.form.get("payment_method", "UPI")
+=======
+                return redirect(
+                    url_for(
+                        "payments.pay_bill",
+                        bill_id=bill.id,
+                    )
+                )
+
+        payment_method = request.form.get(
+            "payment_method",
+            "UPI",
+        )
+
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         txn_id = f"TXN-{secrets.token_hex(8).upper()}"
 
         try:
@@ -241,6 +403,7 @@ def pay_bill(bill_id=None):
                 provider_name="Mock",
                 idempotency_key=idempotency_key,
             )
+<<<<<<< HEAD
         except ValueError as error:
             db.session.rollback()
             flash(str(error), "danger")
@@ -261,10 +424,52 @@ def pay_bill(bill_id=None):
         society_id=bill.society_id,
         razorpay_configured=razorpay_provider.is_configured,
         razorpay_key_id=Config.RAZORPAY_KEY_ID if razorpay_provider.is_configured else None,
+=======
+
+        except ValueError as error:
+            db.session.rollback()
+            flash(str(error), "danger")
+
+            return redirect(
+                url_for(
+                    "payments.pay_bill",
+                    bill_id=bill.id,
+                )
+            )
+
+        except Exception:
+            db.session.rollback()
+            flash(
+                "Payment could not be completed. Please try again.",
+                "danger",
+            )
+
+            return redirect(
+                url_for(
+                    "payments.pay_bill",
+                    bill_id=bill.id,
+                )
+            )
+
+        return redirect(
+            url_for(
+                "payments.payment_success",
+                payment_id=payment.id,
+            )
+        )
+
+    razorpay_provider = PaymentService.get_provider("Razorpay")
+
+    return render_template(
+        "maintenance/pay_now.html",
+        bill=bill,
+        razorpay_configured=razorpay_provider.is_configured,
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         idempotency_key=(f"IDEM-{bill_id}-{secrets.token_hex(16)}"),
     )
 
 
+<<<<<<< HEAD
 # ---------------------------------------------------------------------------
 # Razorpay Checkout API endpoints
 # ---------------------------------------------------------------------------
@@ -360,10 +565,13 @@ def razorpay_verify():
 # ---------------------------------------------------------------------------
 
 
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 @payments_bp.route("/success/<int:payment_id>")
 def payment_success(payment_id):
     payment = Payment.query.get_or_404(payment_id)
     user = db.session.get(User, session.get("user_id"))
+<<<<<<< HEAD
     TenantService.enforce_tenant_isolation(user, payment.society_id)
 
     if user.role == Role.RESIDENT:
@@ -372,12 +580,31 @@ def payment_success(payment_id):
             return "Forbidden", 403
 
     return render_template("maintenance/payment_success.html", payment=payment)
+=======
+
+    TenantService.enforce_tenant_isolation(
+        user,
+        payment.society_id,
+    )
+
+    if user.role == Role.RESIDENT:
+        resident = user.residents[0] if user.residents else None
+
+        if not resident or payment.resident_id != resident.id:
+            return "Forbidden", 403
+
+    return render_template(
+        "maintenance/payment_success.html",
+        payment=payment,
+    )
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 @payments_bp.route("/failed/<int:bill_id>")
 def payment_failed(bill_id):
     bill = MaintenanceBill.query.get_or_404(bill_id)
     user = db.session.get(User, session.get("user_id"))
+<<<<<<< HEAD
     TenantService.enforce_tenant_isolation(user, bill.society_id)
 
     if user.role == Role.RESIDENT:
@@ -1080,3 +1307,73 @@ def admin_reject_cash_payment(payment_id):
 
     return redirect(url_for("payments.admin_cash_verifications"))
 
+=======
+
+    TenantService.enforce_tenant_isolation(
+        user,
+        bill.society_id,
+    )
+
+    if user.role == Role.RESIDENT:
+        resident = user.residents[0] if user.residents else None
+
+        if not resident or bill.resident_id != resident.id:
+            return "Forbidden", 403
+
+    return render_template(
+        "maintenance/payment_failed.html",
+        bill=bill,
+    )
+
+
+@payments_bp.route("/receipt/<int:payment_id>")
+def download_receipt(payment_id):
+    payment = Payment.query.get_or_404(payment_id)
+    user = db.session.get(User, session.get("user_id"))
+
+    TenantService.enforce_tenant_isolation(
+        user,
+        payment.society_id,
+    )
+
+    if user.role == Role.RESIDENT:
+        resident = user.residents[0] if user.residents else None
+
+        if not resident or payment.resident_id != resident.id:
+            return "Forbidden", 403
+
+    pdf_path = ReceiptService.generate_pdf_receipt(payment.id)
+
+    # ?view=1 opens the PDF inline in the browser so the resident's
+    # native PDF viewer print dialog can be used.
+    # Default behaviour remains a forced download.
+    inline = request.args.get("view") == "1"
+
+    return send_file(
+        pdf_path,
+        as_attachment=not inline,
+        download_name=(f"Receipt_{payment.transaction_id}.pdf"),
+    )
+
+
+@payments_bp.route("/webhook/<provider>", methods=["POST"])
+def webhook(provider):
+    payload = (
+        request.get_json(
+            force=True,
+            silent=True,
+        )
+        or {}
+    )
+
+    res = PaymentService.handle_webhook(
+        provider,
+        payload,
+    )
+
+    return jsonify(res), 200
+
+
+
+
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32

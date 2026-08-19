@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from flask import (
     Blueprint,
     render_template,
@@ -11,10 +12,16 @@ from flask import (
 from app.models import db, Complaint, Resident, User, Role
 from app.services.complaint_service import ComplaintService
 from app.services.tenant_service import TenantService
+=======
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from app.models import db, Complaint, Resident, User
+from app.services.complaint_service import ComplaintService
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 complaints_bp = Blueprint("complaints", __name__, url_prefix="/complaints")
 
 
+<<<<<<< HEAD
 def _get_current_user():
     user_id = session.get("user_id")
     if not user_id:
@@ -52,10 +59,26 @@ def list_complaints():
     # Attach SLA check info
     for c in complaints_list:
         c.sla_breached = ComplaintService.check_sla_breach(c)
+=======
+@complaints_bp.route("/")
+def list_complaints():
+    society_id = session.get("society_id")
+    user_id = session.get("user_id")
+    user = db.session.get(User, user_id)
+
+    if user.role == "Resident":
+        resident = Resident.query.filter_by(user_id=user.id).first()
+        complaints_list = (
+            Complaint.query.filter_by(resident_id=resident.id).all() if resident else []
+        )
+    else:
+        complaints_list = Complaint.query.filter_by(society_id=society_id).all()
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
     return render_template("maintenance/complaints.html", complaints=complaints_list)
 
 
+<<<<<<< HEAD
 @complaints_bp.route("/<int:complaint_id>")
 def complaint_detail(complaint_id):
     user = _get_current_user()
@@ -117,12 +140,33 @@ def create_complaint():
             society_id=society_id,
             flat_id=resident.flat_id,
             resident_id=resident.id,
+=======
+@complaints_bp.route("/create", methods=["GET", "POST"])
+def create_complaint():
+    user = db.session.get(User, session.get("user_id"))
+    resident = Resident.query.filter_by(user_id=user.id).first()
+
+    if request.method == "POST":
+        category = request.form.get("category")
+        title = request.form.get("title")
+        description = request.form.get("description")
+        priority = request.form.get("priority", "Medium")
+
+        c = ComplaintService.create_complaint(
+            society_id=user.society_id,
+            flat_id=resident.flat_id if resident else 1,
+            resident_id=resident.id if resident else 1,
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
             category=category,
             title=title,
             description=description,
             priority=priority,
         )
+<<<<<<< HEAD
         flash(f"Complaint Ticket #{c.ticket_number} created successfully!", "success")
+=======
+        flash(f"Complaint Ticket {c.ticket_number} created successfully!", "success")
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         return redirect(url_for("complaints.list_complaints"))
 
     return render_template("maintenance/create_complaint.html")
@@ -130,6 +174,7 @@ def create_complaint():
 
 @complaints_bp.route("/<int:complaint_id>/status", methods=["POST"])
 def update_status(complaint_id):
+<<<<<<< HEAD
     user = _get_current_user()
     if not user:
         abort(403)
@@ -145,6 +190,8 @@ def update_status(complaint_id):
         if not resident or complaint.resident_id != resident.id:
             abort(403)
 
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     new_status = request.form.get("status")
     notes = request.form.get("resolution_notes")
     ComplaintService.update_status(complaint_id, new_status, notes)
@@ -152,6 +199,7 @@ def update_status(complaint_id):
     return redirect(url_for("complaints.list_complaints"))
 
 
+<<<<<<< HEAD
 @complaints_bp.route("/<int:complaint_id>/comment", methods=["POST"])
 def add_comment(complaint_id):
     user = _get_current_user()
@@ -214,5 +262,7 @@ def reopen_complaint(complaint_id):
 
 
 
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 

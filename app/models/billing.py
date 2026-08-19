@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 from app.models.tenant import db
 from app.utils import utcnow
+=======
+﻿from datetime import datetime
+from app.models.tenant import db
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class MaintenanceConfig(db.Model):
@@ -17,7 +22,11 @@ class MaintenanceConfig(db.Model):
     grace_period_days = db.Column(db.Integer, default=5)
     late_fee_per_month = db.Column(db.Float, default=500.0)  # ₹500 per overdue month
     billing_cycle = db.Column(db.String(20), default="Monthly")  # Monthly, Quarterly
+<<<<<<< HEAD
     created_at = db.Column(db.DateTime, default=utcnow)
+=======
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class MaintenanceBill(db.Model):
@@ -55,9 +64,15 @@ class MaintenanceBill(db.Model):
         db.String(30), default="Pending", index=True
     )  # Pending, Partially Paid, Paid, Overdue, Cancelled
 
+<<<<<<< HEAD
     created_at = db.Column(db.DateTime, default=utcnow)
     updated_at = db.Column(
         db.DateTime, default=utcnow, onupdate=utcnow
+=======
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     )
 
     line_items = db.relationship(
@@ -65,10 +80,13 @@ class MaintenanceBill(db.Model):
     )
     payments = db.relationship("Payment", backref="bill", lazy=True)
 
+<<<<<<< HEAD
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 class BillLineItem(db.Model):
     __tablename__ = "bill_line_items"

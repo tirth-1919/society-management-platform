@@ -1,5 +1,9 @@
+<<<<<<< HEAD
 from app.utils import utcnow
 from datetime import timedelta
+=======
+﻿from app.utils import utcnow
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 import secrets
 from app.models import db, Complaint, ComplaintComment
 
@@ -62,6 +66,7 @@ class ComplaintService:
         return complaint
 
     @staticmethod
+<<<<<<< HEAD
     def reopen_complaint(complaint_id, user_id, reason):
         complaint = db.session.get(Complaint, complaint_id)
         if not complaint:
@@ -89,6 +94,8 @@ class ComplaintService:
         return complaint
 
     @staticmethod
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     def add_comment(complaint_id, user_id, comment_text):
         comment = ComplaintComment(
             complaint_id=complaint_id, user_id=user_id, comment=comment_text
@@ -97,6 +104,7 @@ class ComplaintService:
         db.session.commit()
         return comment
 
+<<<<<<< HEAD
     @staticmethod
     def check_sla_breach(complaint):
         """Returns True if the complaint SLA has been breached."""
@@ -116,4 +124,6 @@ class ComplaintService:
         return (now - created) > timedelta(hours=max_hours)
 
 
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 

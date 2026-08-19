@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 from app.utils import utcnow
+=======
+﻿from app.utils import utcnow
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 import random
 from app.models import db, Visitor, PreApprovedPass
 
@@ -13,7 +17,10 @@ class VisitorService:
         mobile,
         expected_date,
         purpose="Guest",
+<<<<<<< HEAD
         expected_time=None,
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     ):
         """Resident generates a pre-approved visitor pass code."""
         pass_code = f"PASS{random.randint(1000, 9999)}"
@@ -25,7 +32,10 @@ class VisitorService:
             visitor_name=visitor_name,
             mobile=mobile,
             expected_date=expected_date,
+<<<<<<< HEAD
             expected_time=expected_time,
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
             purpose=purpose,
             is_used=False,
         )

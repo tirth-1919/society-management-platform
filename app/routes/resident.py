@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 """Resident-only portal pages.
+=======
+﻿"""Resident-only portal pages.
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 All records in this blueprint are derived from the authenticated resident,
 never an identifier supplied by the browser.
@@ -334,6 +338,7 @@ def bills():
     )
 
 
+<<<<<<< HEAD
 @resident_bp.route("/bills/<int:bill_id>")
 def bill_detail(bill_id):
     user, resident = _current_resident()
@@ -367,6 +372,8 @@ def bill_detail(bill_id):
     )
 
 
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 @resident_bp.route("/receipts")
 def receipts():
     user, resident = _current_resident()
@@ -722,14 +729,22 @@ def announcements():
     notices = (
         Notice.query.filter(
             Notice.society_id == user.society_id,
+<<<<<<< HEAD
             Notice.created_at <= now,
+=======
+            Notice.publish_date <= now,
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
             or_(
                 Notice.expiry_date.is_(None),
                 Notice.expiry_date >= now,
             ),
         )
         .order_by(
+<<<<<<< HEAD
             Notice.created_at.desc()
+=======
+            Notice.publish_date.desc()
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         )
         .all()
     )
@@ -1046,6 +1061,7 @@ def download_document(doc_id):
     return send_file(
         doc.file_path,
         as_attachment=True,
+<<<<<<< HEAD
     )
 
 
@@ -1796,3 +1812,6 @@ def submit_dispute():
     return redirect(url_for("resident.bills"))
 
 
+=======
+    )
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32

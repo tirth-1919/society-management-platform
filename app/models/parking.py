@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 from app.models.tenant import db
 from app.utils import utcnow
+=======
+﻿from datetime import datetime
+from app.models.tenant import db
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class ParkingSlot(db.Model):
@@ -40,7 +45,11 @@ class Vehicle(db.Model):
         db.Integer, db.ForeignKey("parking_slots.id"), nullable=True
     )
     rfid_tag = db.Column(db.String(50), nullable=True)
+<<<<<<< HEAD
     created_at = db.Column(db.DateTime, default=utcnow)
+=======
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 

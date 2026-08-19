@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 from app.models import db, User, Role, Society, Building, Flat, RegistrationRequest
+=======
+﻿from app.models import db, User, Role, Society, Building, Flat, RegistrationRequest
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 def test_registration_request_no_password(client, app):

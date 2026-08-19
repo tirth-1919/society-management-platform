@@ -1,4 +1,5 @@
 from app.utils import utcnow
+<<<<<<< HEAD
 from flask import (
     Blueprint,
     render_template,
@@ -12,10 +13,16 @@ from flask import (
 from app.models import Visitor, PreApprovedPass, Resident, User, Role, db
 from app.services.visitor_service import VisitorService
 from app.services.tenant_service import TenantService
+=======
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from app.models import Visitor, PreApprovedPass, Resident, User, db
+from app.services.visitor_service import VisitorService
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 visitors_bp = Blueprint("visitors", __name__, url_prefix="/visitors")
 
 
+<<<<<<< HEAD
 def _get_current_user():
     user_id = session.get("user_id")
     if not user_id:
@@ -66,6 +73,19 @@ def list_visitors():
             .all()
         )
 
+=======
+@visitors_bp.route("/")
+def list_visitors():
+    society_id = session.get("society_id")
+    db.session.get(User, session.get("user_id"))
+
+    visitors_list = (
+        Visitor.query.filter_by(society_id=society_id)
+        .order_by(Visitor.entry_time.desc())
+        .all()
+    )
+    passes = PreApprovedPass.query.filter_by(society_id=society_id).all()
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     return render_template(
         "security/visitors.html", visitors=visitors_list, passes=passes
     )
@@ -73,6 +93,7 @@ def list_visitors():
 
 @visitors_bp.route("/pre-approve", methods=["POST"])
 def pre_approve():
+<<<<<<< HEAD
     user = _get_current_user()
     if not user:
         return redirect(url_for("auth.login"))
@@ -100,6 +121,19 @@ def pre_approve():
         society_id=society_id,
         flat_id=resident.flat_id,
         resident_id=resident.id,
+=======
+    user = db.session.get(User, session.get("user_id"))
+    resident = Resident.query.filter_by(user_id=user.id).first()
+
+    visitor_name = request.form.get("visitor_name")
+    mobile = request.form.get("mobile")
+    purpose = request.form.get("purpose", "Guest")
+
+    p = VisitorService.create_pre_approved_pass(
+        society_id=user.society_id,
+        flat_id=resident.flat_id if resident else 1,
+        resident_id=resident.id if resident else 1,
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         visitor_name=visitor_name,
         mobile=mobile,
         expected_date=utcnow().date(),
@@ -111,6 +145,7 @@ def pre_approve():
 
 @visitors_bp.route("/verify-pass", methods=["POST"])
 def verify_pass():
+<<<<<<< HEAD
     user = _get_current_user()
     if not user:
         abort(403)
@@ -122,12 +157,20 @@ def verify_pass():
 
     ok, msg, visitor = VisitorService.verify_and_checkin_pass(pass_code, society_id)
     if ok and visitor:
+=======
+    society_id = session.get("society_id")
+    pass_code = request.form.get("pass_code")
+
+    ok, msg, visitor = VisitorService.verify_and_checkin_pass(pass_code, society_id)
+    if ok:
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         flash(f"{msg}: {visitor.visitor_name} checked in!", "success")
     else:
         flash(msg, "danger")
     return redirect(url_for("visitors.list_visitors"))
 
 
+<<<<<<< HEAD
 @visitors_bp.route("/pass/<int:pass_id>/cancel", methods=["POST"])
 def cancel_pass(pass_id):
     user = _get_current_user()
@@ -188,6 +231,11 @@ def exit_visitor(visitor_id):
     TenantService.enforce_tenant_isolation(user, visitor.society_id)
 
     VisitorService.log_visitor_exit(visitor.id)
+=======
+@visitors_bp.route("/exit/<int:visitor_id>", methods=["POST"])
+def exit_visitor(visitor_id):
+    VisitorService.log_visitor_exit(visitor_id)
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     flash("Visitor exit recorded!", "info")
     return redirect(url_for("visitors.list_visitors"))
 
@@ -195,5 +243,8 @@ def exit_visitor(visitor_id):
 
 
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
