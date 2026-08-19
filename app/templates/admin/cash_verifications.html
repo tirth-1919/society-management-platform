@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Cash Payment Verifications — Admin Portal{% endblock %}
+
+{% block content %}
+<div style="max-width: 1100px; margin: 32px auto;">
+
+  <!-- Page Header -->
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
+    <div>
+      <h1 style="font-size:22px; font-weight:800; margin:0;">
+        <i class="fa-solid fa-money-bill-wave" style="color:var(--primary);"></i>
+        Cash Payment Verifications
+      </h1>
+      <p style="color:var(--text-secondary); margin:4px 0 0 0; font-size:14px;">
+        Review, verify, and approve offline cash maintenance payments
+      </p>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+      {% if filters.status == 'pending' %}
+      <a href="{{ url_for('payments.admin_cash_verifications', status='pending') }}"
+         style="padding:6px 14px; border-radius:20px; font-size:13px; font-weight:700; text-decoration:none; background:#f59e0b; color:#fff;">
+        <i class="fa-solid fa-hourglass-half"></i> Pending
+      </a>
+      {% else %}
+      <a href="{{ url_for('payments.admin_cash_verifications', status='pending') }}"
+         style="padding:6px 14px; border-radius:20px; font-size:13px; font-weight:700; text-decoration:none; background:rgba(245,158,11,0.12); color:#d97706;">
+        <i class="fa-solid fa-hourglass-half"></i> Pending
+      </a>
+      {% endif %}
+
+      {% if filters.status == 'captured' %}
+      <a href="{{ url_for('payments.admin_cash_verifications', status='captured') }}"
+         style="padding:6px 14px; border-radius:20px; font-size:13px; font-weight:700; text-decoration:none; background:#10b981; color:#fff;">
+        <i class="fa-solid fa-check"></i> Approved
+      </a>
+      {% else %}
+      <a href="{{ url_for('payments.admin_cash_verifications', status='captured') }}"
+         style="padding:6px 14px; border-radius:20px; font-size:13px; font-weight:700; text-decoration:none; background:rgba(16,185,129,0.12); color:#059669;">
+        <i class="fa-solid fa-check"></i> Approved
+      </a>
+      {% endif %}
+
+      {% if filters.status == 'rejected' %}
+      <a href="{{ url_for('payments.admin_cash_verifications', status='rejected') }}"
+         style="padding:6px 14px; border-radius:20px; font-size:13px; font-weight:700; text-decoration:none; background:#ef4444; color:#fff;">
+        <i class="fa-solid fa-xmark"></i> Rejected
+      </a>
+      {% else %}
+      <a href="{{ url_for('payments.admin_cash_verifications', status='rejected') }}"
+         style="padding:6px 14px; border-radius:20px; font-size:13px; font-weight:700; text-decoration:none; background:rgba(239,68,68,0.12); color:#dc2626;">
+        <i class="fa-solid fa-xmark"></i> Rejected
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="card" style="padding:0; overflow:hidden; border-radius:14px;">
+    {% if payments %}
+    <div style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; font-size:13px;">
+        <thead>
+          <tr style="background:var(--bg-primary);">
+            <th style="padding:14px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:12px; text-transform:uppercase;">Txn ID</th>
+            <th style="padding:14px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:12px; text-transform:uppercase;">Resident / Flat</th>
+            <th style="padding:14px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:12px; text-transform:uppercase;">Bill Month</th>
+            <th style="padding:14px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:12px; text-transform:uppercase;">Amount</th>
+            <th style="padding:14px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:12px; text-transform:uppercase;">Date</th>
+            <th style="padding:14px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:12px; text-transform:uppercase;">Status</th>
+            <th style="padding:14px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:12px; text-transform:uppercase;">Notes</th>
+            <th style="padding:14px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:12px; text-transform:uppercase;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in payments %}
+          <tr style="border-bottom:1px solid var(--border-color);">
+            <td style="padding:14px 16px; font-weight:700; font-family:monospace;">{{ p.transaction_id }}</td>
+            <td style="padding:14px 16px;">
+              <div style="font-weight:700;">{{ p.resident.full_name if p.resident else '—' }}</div>
+              <div style="font-size:12px; color:var(--text-secondary);">Flat: {{ p.resident.flat.flat_number if p.resident and p.resident.flat else '—' }}</div>
+            </td>
+            <td style="padding:14px 16px; font-weight:600;">
+              {{ p.bill.billing_month if p.bill else '—' }}
+            </td>
+            <td style="padding:14px 16px; font-weight:800; color:var(--text-primary); font-size:14px;">
+              ₹{{ "{:,.2f}".format(p.amount_paid) }}
+            </td>
+            <td style="padding:14px 16px; color:var(--text-secondary); font-size:12px;">
+              {{ p.payment_date.strftime('%d %b %Y %H:%M') if p.payment_date else '—' }}
+            </td>
+            <td style="padding:14px 16px;">
+              {% if p.status == 'pending' %}
+              <span style="padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; background:rgba(245,158,11,0.15); color:#d97706;">
+                {{ p.status | upper }}
+              </span>
+              {% elif p.status in ('captured', 'Success') %}
+              <span style="padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; background:rgba(16,185,129,0.15); color:#059669;">
+                {{ p.status | upper }}
+              </span>
+              {% else %}
+              <span style="padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; background:rgba(239,68,68,0.15); color:#dc2626;">
+                {{ p.status | upper }}
+              </span>
+              {% endif %}
+            </td>
+            <td style="padding:14px 16px; font-size:12px; color:var(--text-secondary); max-width:180px;">
+              {{ p.notes or '—' }}
+            </td>
+            <td style="padding:14px 16px;">
+              {% if p.status == 'pending' %}
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <form action="{{ url_for('payments.admin_approve_cash_payment', payment_id=p.id) }}" method="POST" style="margin:0;">
+                  <button type="submit" style="width:100%; padding:6px 12px; border-radius:7px; border:none; cursor:pointer; background:#10b981; color:#fff; font-size:12px; font-weight:700;"
+                          onclick="return confirm('Approve cash payment of ₹{{ p.amount_paid }}?')">
+                    <i class="fa-solid fa-check"></i> Approve
+                  </button>
+                </form>
+                <form action="{{ url_for('payments.admin_reject_cash_payment', payment_id=p.id) }}" method="POST" style="margin:0;">
+                  <button type="submit" style="width:100%; padding:6px 12px; border-radius:7px; border:none; cursor:pointer; background:#ef4444; color:#fff; font-size:12px; font-weight:700;"
+                          onclick="return confirm('Reject this cash payment?')">
+                    <i class="fa-solid fa-xmark"></i> Reject
+                  </button>
+                </form>
+              </div>
+              {% elif p.status in ('captured', 'Success') and p.receipt %}
+              <a href="{{ url_for('payments.download_receipt', payment_id=p.id) }}" style="color:var(--primary); font-weight:600; text-decoration:none; font-size:12px;">
+                <i class="fa-solid fa-download"></i> Receipt
+              </a>
+              {% else %}
+              <span style="color:var(--text-secondary); font-size:12px;">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div style="text-align:center; padding:60px 20px; color:var(--text-secondary);">
+      <i class="fa-solid fa-money-bill-wave" style="font-size:48px; opacity:0.3; display:block; margin-bottom:16px;"></i>
+      <div style="font-size:16px; font-weight:600;">No cash payments found</div>
+      <div style="font-size:14px; margin-top:6px;">Submitted cash payments will appear here for verification</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

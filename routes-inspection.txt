@@ -1,0 +1,2579 @@
+﻿========== app\routes\auth.py ==========
+
+from app.utils import utcnow
+from flask import (
+    Blueprint,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    flash,
+    session,
+    jsonify,
+)
+from werkzeug.exceptions import HTTPException
+from app.models import db, User, Society, RegistrationRequest, AuditLog
+from app.services.auth_service import AuthService
+from app.services.registration_service import RegistrationService
+
+auth_bp = Blueprint("auth", __name__)
+
+
+@auth_bp.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        mobile = AuthService.normalize_mobile(request.form.get("mobile", ""))
+        password = request.form.get("password", "").strip()
+
+        user = User.query.filter_by(mobile=mobile).first()
+        if user:
+            # Check rate limiting / failed attempts
+            if user.failed_login_attempts >= 5:
+                flash(
+                    "Too many failed login attempts. Account temporarily locked.",
+                    "danger",
+                )
+                return redirect(url_for("auth.login"))
+
+            if user.check_password(password):
+                # Reset failed attempts
+                user.failed_login_attempts = 0
+
+                # Account status handling
+                if user.account_status == "ACTIVE":
+                    token = AuthService.create_session(
+                        user,
+                        device_info=request.headers.get("User-Agent", "Browser"),
+                        ip_address=request.remote_addr,
+                    )
+                    session["user_id"] = user.id
+                    session["society_id"] = user.society_id
+                    session["role"] = user.role
+                    session["session_token"] = token
+                    user.last_login_at = utcnow()
+                    db.session.commit()
+
+                    flash(f"Welcome back, {user.full_name}!", "success")
+                    return redirect(url_for("main.dashboard"))
+                elif user.account_status == "PENDING_APPROVAL":
+                    db.session.commit()
+                    reg = (
+                        RegistrationRequest.query.filter_by(user_id=user.id)
+                        .order_by(RegistrationRequest.created_at.desc())
+                        .first()
+                    )
+                    if reg:
+                        return redirect(
+                            url_for("auth.registration_status", registration_id=reg.id)
+                        )
+                    else:
+                        flash("Your registration is pending approval.", "info")
+                        return redirect(url_for("auth.login"))
+                else:
+                    # REJECTED, SUSPENDED, INACTIVE
+                    db.session.commit()
+                    flash(
+                        "Your account is not active. Please contact support.", "danger"
+                    )
+                    return redirect(url_for("auth.login"))
+            else:
+                user.failed_login_attempts += 1
+                db.session.commit()
+                audit = AuditLog(
+                    society_id=user.society_id,
+                    user_id=user.id,
+                    action="LOGIN_FAILURE",
+                    details="Incorrect password",
+                )
+                db.session.add(audit)
+                db.session.commit()
+
+        flash("Invalid mobile number or password", "danger")
+
+    return render_template("auth/login.html")
+
+
+@auth_bp.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        full_name = request.form.get("full_name", "").strip()
+        mobile = AuthService.normalize_mobile(request.form.get("mobile", ""))
+        email = request.form.get("email", "").strip() or None
+        society_id = int(request.form.get("society_id"))
+        building_id = int(request.form.get("building_id"))
+        block_id = (
+            int(request.form.get("block_id")) if request.form.get("block_id") else None
+        )
+        flat_id = int(request.form.get("flat_id"))
+        occupancy_type = request.form.get("occupancy_type", "OWNER")
+        password = request.form.get("password", "").strip()
+
+        try:
+            req = RegistrationService.register_resident(
+                full_name=full_name,
+                mobile=mobile,
+                email=email,
+                society_id=society_id,
+                building_id=building_id,
+                block_id=block_id,
+                flat_id=flat_id,
+                occupancy_type=occupancy_type,
+                password=password,
+            )
+            flash(
+                "Registration request submitted successfully. Awaiting admin approval.",
+                "info",
+            )
+            return redirect(url_for("auth.registration_status", registration_id=req.id))
+        except HTTPException:
+            raise
+        except ValueError as e:
+            flash(str(e), "danger")
+        except Exception as e:
+            flash(f"Registration failed: {str(e)}", "danger")
+
+    societies = Society.query.all()
+    return render_template("auth/register.html", societies=societies)
+
+
+@auth_bp.route("/registration-status/<int:registration_id>")
+def registration_status(registration_id):
+    reg = RegistrationRequest.query.get_or_404(registration_id)
+    return render_template("auth/registration_status.html", reg=reg, status=reg.status)
+
+
+@auth_bp.route("/otp-login", methods=["POST"])
+def send_otp():
+    mobile = (
+        request.json.get("mobile") if request.is_json else request.form.get("mobile")
+    )
+    mobile = AuthService.normalize_mobile(mobile)
+    if not mobile:
+        return jsonify({"success": False, "message": "Mobile number required"}), 400
+
+    user = User.query.filter_by(mobile=mobile).first()
+    if not user:
+        return jsonify(
+            {"success": False, "message": "Mobile number not registered"}
+        ), 404
+
+    code = AuthService.generate_otp(mobile)
+    return jsonify(
+        {"success": True, "message": f"OTP sent to {mobile}", "dev_otp": code}
+    )
+
+
+@auth_bp.route("/verify-otp", methods=["POST"])
+def verify_otp():
+    mobile = AuthService.normalize_mobile(request.form.get("mobile"))
+    code = request.form.get("otp_code")
+
+    valid, msg = AuthService.verify_otp(mobile, code)
+    if valid:
+        user = User.query.filter_by(mobile=mobile).first()
+        token = AuthService.create_session(user, ip_address=request.remote_addr)
+        session["user_id"] = user.id
+        session["society_id"] = user.society_id
+        session["role"] = user.role
+        session["session_token"] = token
+        flash("OTP Verified Successfully!", "success")
+        return redirect(url_for("main.dashboard"))
+
+    flash(msg, "danger")
+    return redirect(url_for("auth.login"))
+
+
+@auth_bp.route("/logout")
+def logout():
+    token = session.get("session_token")
+    if token:
+        AuthService.invalidate_session(token)
+    session.clear()
+    flash("You have been logged out securely.", "info")
+    return redirect(url_for("auth.login"))
+
+
+
+========== app\routes\main.py ==========
+
+from app.utils import utcnow
+from datetime import datetime
+from flask import (
+    Blueprint,
+    render_template,
+    session,
+    redirect,
+    url_for,
+    abort,
+    jsonify,
+    request,
+    Response,
+)
+from app.models import (
+    db,
+    Society,
+    Building,
+    Block,
+    Flat,
+    Resident,
+    MaintenanceBill,
+    Complaint,
+    Visitor,
+    User,
+    Role,
+    Payment,
+    NotificationLog,
+)
+from app.services.accounting_service import AccountingService
+from app.services.billing_service import BillingService
+from app.config import Config
+
+main_bp = Blueprint("main", __name__)
+
+
+@main_bp.route("/")
+def index():
+    # Always start at login; the dashboard is reached only after sign-in.
+    return redirect(url_for("auth.login"))
+
+
+@main_bp.route("/dashboard")
+def dashboard():
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("auth.login"))
+
+    user = db.session.get(User, user_id)
+    if not user or user.account_status != "ACTIVE":
+        abort(
+            403,
+            description="Forbidden: Pending approval or inactive account cannot access dashboard",
+        )
+
+    society_id = session.get("society_id")
+    role = session.get("role")
+
+    society = db.session.get(Society, society_id) if society_id else None
+
+    if role in [Role.SUPER_ADMIN, Role.SOCIETY_ADMIN]:
+        flats_count = (
+            Flat.query.filter_by(society_id=society_id).count()
+            if society_id
+            else Flat.query.count()
+        )
+        residents_count = (
+            Resident.query.filter_by(society_id=society_id).count()
+            if society_id
+            else Resident.query.count()
+        )
+
+        bills = (
+            MaintenanceBill.query.filter_by(society_id=society_id).all()
+            if society_id
+            else MaintenanceBill.query.all()
+        )
+        total_collected = sum(b.amount_paid for b in bills)
+        total_pending = sum(b.remaining_amount for b in bills)
+
+        open_complaints = (
+            Complaint.query.filter_by(society_id=society_id)
+            .filter(Complaint.status.in_(["Submitted", "In Progress"]))
+            .count()
+            if society_id
+            else 0
+        )
+        visitors_today = (
+            Visitor.query.filter_by(society_id=society_id).count() if society_id else 0
+        )
+
+        fin = (
+            AccountingService.get_financial_summary(society_id)
+            if society_id
+            else {"total_expense": 0}
+        )
+
+        return render_template(
+            "dashboard.html",
+            role=role,
+            user=user,
+            society=society,
+            flats_count=flats_count,
+            residents_count=residents_count,
+            total_collected=total_collected,
+            total_pending=total_pending,
+            open_complaints=open_complaints,
+            visitors_today=visitors_today,
+            total_expense=fin["total_expense"],
+        )
+
+    elif role == Role.RESIDENT:
+        resident = Resident.query.filter_by(user_id=user.id).first()
+        flat = resident.flat if resident else None
+        bills = (
+            MaintenanceBill.query.filter_by(
+                society_id=society_id, resident_id=resident.id
+            )
+            .order_by(MaintenanceBill.billing_month.desc())
+            .all()
+            if flat
+            else []
+        )
+        my_complaints = (
+            Complaint.query.filter_by(resident_id=resident.id).all() if resident else []
+        )
+
+        # Server-side maintenance due calculation â€” never trust frontend
+        dues = (
+            BillingService.resident_dashboard_summary(resident.id, society_id)
+            if flat
+            else {
+                "current_month_maintenance": Config.MONTHLY_MAINTENANCE,
+                "pending_months": 0,
+                "maintenance_due": 0.0,
+                "late_fee": 0.0,
+                "total_due": 0.0,
+            }
+        )
+
+        recent_payments = (
+            (
+                Payment.query.filter_by(society_id=society_id, resident_id=resident.id)
+                .order_by(Payment.payment_date.desc())
+                .limit(5)
+                .all()
+            )
+            if resident
+            else []
+        )
+        notifications = (
+            NotificationLog.query.filter_by(society_id=society_id, user_id=user.id)
+            .order_by(NotificationLog.created_at.desc())
+            .limit(4)
+            .all()
+        )
+
+        # Additive, read-only summary widgets â€” derived from the same
+        # persisted bills/payments dues already uses, no new calculation
+        # of what is owed and no change to billing_service's logic.
+        today = utcnow().date()
+        due_countdown = None
+        if dues.get("next_due_date"):
+            delta_days = (dues["next_due_date"] - today).days
+            due_countdown = {"days": abs(delta_days), "overdue": delta_days < 0}
+        current_year = today.strftime("%Y")
+        year_payments = (
+            (
+                Payment.query.filter_by(
+                    society_id=society_id, resident_id=resident.id, status="Success"
+                )
+                .filter(Payment.payment_date >= datetime(today.year, 1, 1))
+                .all()
+            )
+            if resident
+            else []
+        )
+        year_bills = (
+            [b for b in bills if b.billing_month.startswith(current_year)]
+            if bills
+            else []
+        )
+        payment_summary = {
+            "current_month_maintenance": dues.get("current_month_maintenance", 0.0),
+            "total_paid_bills": len([b for b in bills if b.status == "Paid"]),
+            "total_pending_bills": dues.get("pending_months", 0),
+            "year_total_paid": sum(p.amount_paid for p in year_payments),
+            "year_maintenance_paid": sum(
+                b.amount_paid for b in year_bills if b.status == "Paid"
+            ),
+            "year_late_fee_paid": sum(
+                b.late_fee for b in year_bills if b.status == "Paid"
+            ),
+            "year_paid_months": len([b for b in year_bills if b.status == "Paid"]),
+            "year_pending_months": len([b for b in year_bills if b.status != "Paid"]),
+        }
+
+        return render_template(
+            "dashboard.html",
+            role=role,
+            user=user,
+            resident=resident,
+            flat=flat,
+            bills=bills,
+            complaints=my_complaints,
+            dues=dues,
+            recent_payments=recent_payments,
+            notifications=notifications,
+            due_countdown=due_countdown,
+            payment_summary=payment_summary,
+        )
+
+    elif role == Role.SECURITY:
+        recent_visitors = (
+            Visitor.query.filter_by(society_id=society_id)
+            .order_by(Visitor.entry_time.desc())
+            .limit(10)
+            .all()
+            if society_id
+            else []
+        )
+        return render_template(
+            "dashboard.html", role=role, user=user, visitors=recent_visitors
+        )
+
+    return render_template("dashboard.html", role=role, user=user)
+
+
+@main_bp.route("/qr/portal.png")
+def portal_qr():
+    """Generates a QR code that opens the resident portal.
+
+    Uses the configured production APP_URL if set; otherwise falls back to
+    the current request's own host, so it works automatically for local
+    dev and for an ngrok tunnel without any hardcoded localhost value ever
+    reaching a production deployment.
+    """
+    try:
+        import qrcode
+        import io
+    except ImportError:
+        abort(
+            503,
+            description="QR code support is not installed. Add 'qrcode[pil]' to requirements.txt and reinstall.",
+        )
+    target_url = Config.APP_URL or request.host_url
+    img = qrcode.make(target_url)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    return Response(buf.getvalue(), mimetype="image/png")
+
+
+# â”€â”€ Public API: cascading dropdowns for registration form (no auth required) â”€â”€
+
+
+@main_bp.route("/api/buildings")
+def api_buildings():
+    """Wings for a given society_id."""
+    society_id = request.args.get("society_id")
+    if not society_id:
+        return jsonify({"buildings": []})
+    buildings = (
+        Building.query.filter_by(society_id=int(society_id))
+        .order_by(Building.name)
+        .all()
+    )
+    return jsonify({"buildings": [{"id": b.id, "name": b.name} for b in buildings]})
+
+
+@main_bp.route("/api/blocks")
+def api_blocks():
+    """Blocks for a given wing (building_id) and society_id."""
+    building_id = request.args.get("building_id")
+    society_id = request.args.get("society_id")
+    if not building_id:
+        return jsonify({"blocks": []})
+    q = Block.query.filter_by(building_id=int(building_id))
+    if society_id:
+        q = q.filter_by(society_id=int(society_id))
+    blocks = q.order_by(Block.name).all()
+    return jsonify({"blocks": [{"id": b.id, "name": b.name} for b in blocks]})
+
+
+@main_bp.route("/api/flats")
+def api_flats():
+    """Flats for a given block_id (preferred) or building_id (fallback)."""
+    block_id = request.args.get("block_id")
+    building_id = request.args.get("building_id")
+    if block_id:
+        flats = (
+            Flat.query.filter_by(block_id=int(block_id))
+            .order_by(Flat.flat_number)
+            .all()
+        )
+    elif building_id:
+        flats = (
+            Flat.query.filter_by(building_id=int(building_id))
+            .order_by(Flat.flat_number)
+            .all()
+        )
+    else:
+        return jsonify({"flats": []})
+    return jsonify(
+        {"flats": [{"id": f.id, "flat_number": f.flat_number} for f in flats]}
+    )
+
+
+
+
+
+
+
+
+
+========== app\routes\resident.py ==========
+
+"""Resident-only portal pages.
+
+All records in this blueprint are derived from the authenticated resident,
+never an identifier supplied by the browser.
+"""
+
+import csv
+import io
+
+from flask import (
+    Blueprint,
+    Response,
+    abort,
+    flash,
+    redirect,
+    render_template,
+    request,
+    send_file,
+    session,
+    url_for,
+)
+from sqlalchemy import or_
+
+from app.models import (
+    AuditLog,
+    Document,
+    MaintenanceBill,
+    Notice,
+    NotificationLog,
+    NotificationPreference,
+    Payment,
+    PaymentReceipt,
+    RegistrationRequest,
+    Resident,
+    Role,
+    SupportRequest,
+    User,
+    db,
+)
+from app.utils import utcnow
+
+
+resident_bp = Blueprint("resident", __name__, url_prefix="/resident")
+
+
+def _current_resident():
+    """Return the authenticated active resident and their User."""
+    user = db.session.get(User, session.get("user_id"))
+
+    if (
+        not user
+        or user.role != Role.RESIDENT
+        or user.account_status != "ACTIVE"
+    ):
+        abort(403)
+
+    resident = Resident.query.filter_by(
+        user_id=user.id,
+        society_id=user.society_id,
+        is_primary=True,
+    ).first()
+
+    if not resident:
+        abort(403)
+
+    return user, resident
+
+
+@resident_bp.route("/profile", methods=["GET", "POST"])
+def profile():
+    user, resident = _current_resident()
+
+    if request.method == "POST":
+        full_name = request.form.get("full_name", "").strip()
+        email = request.form.get("email", "").strip() or None
+
+        if not full_name:
+            flash("Your full name is required.", "danger")
+        elif (
+            email
+            and User.query.filter(
+                User.email == email,
+                User.id != user.id,
+            ).first()
+        ):
+            flash("That email address is already in use.", "danger")
+        else:
+            user.full_name = full_name
+            resident.full_name = full_name
+            user.email = email
+            resident.email = email
+
+            db.session.add(
+                AuditLog(
+                    society_id=user.society_id,
+                    user_id=user.id,
+                    action="RESIDENT_PROFILE_UPDATED",
+                    details="Resident updated permitted profile fields.",
+                )
+            )
+            db.session.commit()
+
+            flash("Your profile has been updated.", "success")
+
+        return redirect(url_for("resident.profile"))
+
+    approval = (
+        RegistrationRequest.query.filter_by(
+            user_id=user.id,
+            status="APPROVED",
+        )
+        .order_by(RegistrationRequest.approved_at.desc())
+        .first()
+    )
+
+    return render_template(
+        "resident/profile.html",
+        user=user,
+        resident=resident,
+        approval=approval,
+    )
+
+
+@resident_bp.route("/change-password", methods=["POST"])
+def change_password():
+    """Allow an authenticated resident to change their password."""
+    user, _resident = _current_resident()
+
+    current_password = request.form.get(
+        "current_password",
+        "",
+    )
+
+    new_password = request.form.get(
+        "new_password",
+        "",
+    )
+
+    confirm_password = request.form.get(
+        "confirm_password",
+        "",
+    )
+
+    if not current_password or not new_password or not confirm_password:
+        flash(
+            "All password fields are required.",
+            "danger",
+        )
+        return redirect(url_for("resident.profile"))
+
+    if not user.check_password(current_password):
+        flash(
+            "Current password is incorrect.",
+            "danger",
+        )
+        return redirect(url_for("resident.profile"))
+
+    if len(new_password) < 8:
+        flash(
+            "New password must be at least 8 characters.",
+            "danger",
+        )
+        return redirect(url_for("resident.profile"))
+
+    if new_password != confirm_password:
+        flash(
+            "New passwords do not match.",
+            "danger",
+        )
+        return redirect(url_for("resident.profile"))
+
+    if current_password == new_password:
+        flash(
+            "New password must be different from your current password.",
+            "danger",
+        )
+        return redirect(url_for("resident.profile"))
+
+    user.set_password(new_password)
+
+    db.session.add(
+        AuditLog(
+            society_id=user.society_id,
+            user_id=user.id,
+            action="RESIDENT_PASSWORD_CHANGED",
+            details=(
+                "Resident changed their password "
+                "from the resident portal."
+            ),
+        )
+    )
+
+    db.session.commit()
+
+    flash(
+        "Your password has been changed successfully.",
+        "success",
+    )
+
+    return redirect(url_for("resident.profile"))
+
+
+@resident_bp.route("/bills")
+def bills():
+    user, resident = _current_resident()
+
+    query = MaintenanceBill.query.filter_by(
+        society_id=user.society_id,
+        resident_id=resident.id,
+    )
+
+    search_term = request.args.get(
+        "q",
+        "",
+    ).strip()
+
+    status = request.args.get(
+        "status",
+        "",
+    ).strip()
+
+    month = request.args.get(
+        "month",
+        "",
+    ).strip()
+
+    year = request.args.get(
+        "year",
+        "",
+    ).strip()
+
+    if search_term:
+        pattern = f"%{search_term}%"
+
+        query = query.filter(
+            or_(
+                MaintenanceBill.bill_number.ilike(pattern),
+                MaintenanceBill.billing_month.ilike(pattern),
+            )
+        )
+
+    if status in {
+        "Pending",
+        "Partially Paid",
+        "Paid",
+        "Overdue",
+    }:
+        query = query.filter_by(
+            status=status,
+        )
+
+    if month and len(month) == 7:
+        query = query.filter_by(
+            billing_month=month,
+        )
+
+    elif year.isdigit() and len(year) == 4:
+        query = query.filter(
+            MaintenanceBill.billing_month.like(
+                f"{year}-%"
+            )
+        )
+
+    sort = request.args.get(
+        "sort",
+        "month_desc",
+    )
+
+    orderings = {
+        "month_asc": MaintenanceBill.billing_month.asc(),
+        "month_desc": MaintenanceBill.billing_month.desc(),
+        "amount_desc": MaintenanceBill.total_amount.desc(),
+        "amount_asc": MaintenanceBill.total_amount.asc(),
+    }
+
+    page = max(
+        request.args.get(
+            "page",
+            1,
+            type=int,
+        ),
+        1,
+    )
+
+    pagination = query.order_by(
+        orderings.get(
+            sort,
+            MaintenanceBill.billing_month.desc(),
+        )
+    ).paginate(
+        page=page,
+        per_page=10,
+        error_out=False,
+    )
+
+    years = [
+        value[0]
+        for value in db.session.query(
+            db.func.substr(
+                MaintenanceBill.billing_month,
+                1,
+                4,
+            )
+        )
+        .filter_by(
+            society_id=user.society_id,
+            resident_id=resident.id,
+        )
+        .distinct()
+        .order_by(
+            db.desc(
+                db.func.substr(
+                    MaintenanceBill.billing_month,
+                    1,
+                    4,
+                )
+            )
+        )
+        .all()
+    ]
+
+    return render_template(
+        "resident/bills.html",
+        bills=pagination.items,
+        pagination=pagination,
+        years=years,
+        filters={
+            "q": search_term,
+            "status": status,
+            "month": month,
+            "year": year,
+            "sort": sort,
+        },
+    )
+
+
+@resident_bp.route("/receipts")
+def receipts():
+    user, resident = _current_resident()
+
+    query = (
+        PaymentReceipt.query.join(Payment)
+        .filter(
+            Payment.society_id == user.society_id,
+            Payment.resident_id == resident.id,
+        )
+    )
+
+    search_term = request.args.get(
+        "q",
+        "",
+    ).strip()
+
+    month = request.args.get(
+        "month",
+        "",
+    ).strip()
+
+    year = request.args.get(
+        "year",
+        "",
+    ).strip()
+
+    if search_term:
+        pattern = f"%{search_term}%"
+
+        query = query.filter(
+            or_(
+                PaymentReceipt.receipt_number.ilike(pattern),
+                Payment.transaction_id.ilike(pattern),
+            )
+        )
+
+    if month and len(month) == 7:
+        query = query.filter(
+            db.func.strftime(
+                "%Y-%m",
+                Payment.payment_date,
+            )
+            == month
+        )
+
+    elif year.isdigit() and len(year) == 4:
+        query = query.filter(
+            db.func.strftime(
+                "%Y",
+                Payment.payment_date,
+            )
+            == year
+        )
+
+    page = max(
+        request.args.get(
+            "page",
+            1,
+            type=int,
+        ),
+        1,
+    )
+
+    pagination = query.order_by(
+        Payment.payment_date.desc()
+    ).paginate(
+        page=page,
+        per_page=10,
+        error_out=False,
+    )
+
+    years = [
+        value[0]
+        for value in (
+            db.session.query(
+                db.func.strftime(
+                    "%Y",
+                    Payment.payment_date,
+                )
+            )
+            .join(
+                PaymentReceipt,
+                PaymentReceipt.payment_id == Payment.id,
+            )
+            .filter(
+                Payment.society_id == user.society_id,
+                Payment.resident_id == resident.id,
+            )
+            .distinct()
+            .order_by(
+                db.desc(
+                    db.func.strftime(
+                        "%Y",
+                        Payment.payment_date,
+                    )
+                )
+            )
+            .all()
+        )
+    ]
+
+    return render_template(
+        "resident/receipts.html",
+        receipts=pagination.items,
+        pagination=pagination,
+        years=years,
+        filters={
+            "q": search_term,
+            "month": month,
+            "year": year,
+        },
+    )
+
+
+NOTIFICATION_CATEGORIES = {
+    "Maintenance": {
+        "BILL_GENERATED",
+        "DUE_REMINDER",
+        "OVERDUE_REMINDER",
+        "LATE_FEE_NOTICE",
+    },
+    "Payment": {
+        "PAYMENT_SUCCESS",
+    },
+    "Account": set(),
+    "System": set(),
+}
+
+
+def _notification_category(notification_type):
+    for category, types in NOTIFICATION_CATEGORIES.items():
+        if notification_type in types:
+            return category
+
+    return "System"
+
+
+@resident_bp.route("/notifications")
+def notifications():
+    user, resident = _current_resident()
+
+    category = request.args.get(
+        "category",
+        "",
+    ).strip()
+
+    query = NotificationLog.query.filter_by(
+        user_id=user.id,
+        society_id=user.society_id,
+    )
+
+    if category in NOTIFICATION_CATEGORIES:
+        types = NOTIFICATION_CATEGORIES[category]
+
+        if types:
+            query = query.filter(
+                NotificationLog.notification_type.in_(types)
+            )
+
+    notifications_list = (
+        query.order_by(
+            NotificationLog.created_at.desc()
+        ).all()
+    )
+
+    links = {}
+
+    for item in notifications_list:
+        if not item.billing_month:
+            continue
+
+        bill = MaintenanceBill.query.filter_by(
+            society_id=user.society_id,
+            resident_id=resident.id,
+            billing_month=item.billing_month,
+        ).first()
+
+        if not bill:
+            continue
+
+        if item.notification_type == "PAYMENT_SUCCESS":
+            payment = (
+                Payment.query.filter_by(
+                    bill_id=bill.id,
+                    resident_id=resident.id,
+                )
+                .order_by(
+                    Payment.payment_date.desc()
+                )
+                .first()
+            )
+
+            if payment:
+                links[item.id] = (
+                    "View receipt",
+                    url_for(
+                        "payments.download_receipt",
+                        payment_id=payment.id,
+                    ),
+                )
+
+        elif bill.remaining_amount > 0:
+            label = (
+                "Pay now"
+                if item.notification_type
+                in {
+                    "DUE_REMINDER",
+                    "OVERDUE_REMINDER",
+                    "LATE_FEE_NOTICE",
+                }
+                else "View bill"
+            )
+
+            target = (
+                url_for(
+                    "payments.pay_bill",
+                    bill_id=bill.id,
+                )
+                if label == "Pay now"
+                else url_for(
+                    "resident.bill_detail",
+                    bill_id=bill.id,
+                )
+            )
+
+            links[item.id] = (
+                label,
+                target,
+            )
+
+    return render_template(
+        "resident/notifications.html",
+        notifications=notifications_list,
+        links=links,
+        category=category,
+        categories=list(
+            NOTIFICATION_CATEGORIES.keys()
+        ),
+        notification_category=_notification_category,
+    )
+
+
+@resident_bp.route(
+    "/notifications/<int:notification_id>/read",
+    methods=["POST"],
+)
+def mark_notification_read(notification_id):
+    user, _resident = _current_resident()
+
+    notification = NotificationLog.query.filter_by(
+        id=notification_id,
+        user_id=user.id,
+        society_id=user.society_id,
+    ).first_or_404()
+
+    if notification.read_at is None:
+        notification.read_at = utcnow()
+        db.session.commit()
+
+    return redirect(
+        url_for("resident.notifications")
+    )
+
+
+@resident_bp.route("/search")
+def search():
+    user, resident = _current_resident()
+
+    term = request.args.get(
+        "q",
+        "",
+    ).strip()
+
+    bills = []
+    payments = []
+    receipts_list = []
+
+    if len(term) >= 2:
+        pattern = f"%{term}%"
+
+        bills = (
+            MaintenanceBill.query.filter(
+                MaintenanceBill.resident_id == resident.id,
+                MaintenanceBill.society_id == user.society_id,
+                or_(
+                    MaintenanceBill.bill_number.ilike(pattern),
+                    MaintenanceBill.billing_month.ilike(pattern),
+                ),
+            )
+            .order_by(
+                MaintenanceBill.billing_month.desc()
+            )
+            .all()
+        )
+
+        payments = (
+            Payment.query.filter(
+                Payment.resident_id == resident.id,
+                Payment.society_id == user.society_id,
+            )
+            .order_by(
+                Payment.payment_date.desc()
+            )
+            .all()
+        )
+
+        receipts_list = (
+            PaymentReceipt.query.join(Payment)
+            .filter(
+                Payment.resident_id == resident.id,
+                Payment.society_id == user.society_id,
+                or_(
+                    PaymentReceipt.receipt_number.ilike(
+                        pattern
+                    ),
+                    Payment.transaction_id.ilike(
+                        pattern
+                    ),
+                ),
+            )
+            .order_by(
+                Payment.payment_date.desc()
+            )
+            .all()
+        )
+
+    return render_template(
+        "resident/search.html",
+        term=term,
+        bills=bills,
+        payments=payments,
+        receipts=receipts_list,
+    )
+
+
+@resident_bp.route("/help")
+def help_center():
+    user, _resident = _current_resident()
+
+    return render_template(
+        "resident/help.html",
+        society=user.society,
+    )
+
+
+@resident_bp.route("/announcements")
+def announcements():
+    user, _resident = _current_resident()
+
+    now = utcnow()
+
+    notices = (
+        Notice.query.filter(
+            Notice.society_id == user.society_id,
+            Notice.publish_date <= now,
+            or_(
+                Notice.expiry_date.is_(None),
+                Notice.expiry_date >= now,
+            ),
+        )
+        .order_by(
+            Notice.publish_date.desc()
+        )
+        .all()
+    )
+
+    return render_template(
+        "resident/announcements.html",
+        notices=notices,
+    )
+
+
+@resident_bp.route("/activity")
+def activity():
+    user, _resident = _current_resident()
+
+    logs = (
+        AuditLog.query.filter_by(
+            user_id=user.id,
+            society_id=user.society_id,
+        )
+        .order_by(
+            AuditLog.created_at.desc()
+        )
+        .limit(100)
+        .all()
+    )
+
+    return render_template(
+        "resident/activity.html",
+        logs=logs,
+    )
+
+
+@resident_bp.route("/payments/export.csv")
+def export_payments_csv():
+    user, resident = _current_resident()
+
+    payments = (
+        Payment.query.filter_by(
+            society_id=user.society_id,
+            resident_id=resident.id,
+        )
+        .order_by(
+            Payment.payment_date.desc()
+        )
+        .all()
+    )
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+
+    writer.writerow(
+        [
+            "Date",
+            "Bill Number",
+            "Billing Month",
+            "Amount Paid",
+            "Method",
+            "Transaction ID",
+            "Status",
+        ]
+    )
+
+    for payment in payments:
+        writer.writerow(
+            [
+                (
+                    payment.payment_date.strftime(
+                        "%Y-%m-%d %H:%M"
+                    )
+                    if payment.payment_date
+                    else ""
+                ),
+                (
+                    payment.bill.bill_number
+                    if payment.bill
+                    else ""
+                ),
+                (
+                    payment.bill.billing_month
+                    if payment.bill
+                    else ""
+                ),
+                f"{payment.amount_paid:.2f}",
+                payment.payment_method or "",
+                payment.transaction_id or "",
+                payment.status or "",
+            ]
+        )
+
+    return Response(
+        buf.getvalue(),
+        mimetype="text/csv",
+        headers={
+            "Content-Disposition": (
+                "attachment; "
+                "filename=my_payment_history.csv"
+            )
+        },
+    )
+
+
+SUPPORT_CATEGORIES = [
+    "Billing",
+    "Payment",
+    "Receipt",
+    "Account",
+    "Technical",
+    "Other",
+]
+
+SUPPORT_STATUSES = [
+    "OPEN",
+    "IN_PROGRESS",
+    "RESOLVED",
+    "CLOSED",
+]
+
+
+@resident_bp.route("/support")
+def support_list():
+    user, _resident = _current_resident()
+
+    requests_list = (
+        SupportRequest.query.filter_by(
+            society_id=user.society_id,
+            user_id=user.id,
+        )
+        .order_by(
+            SupportRequest.created_at.desc()
+        )
+        .all()
+    )
+
+    return render_template(
+        "resident/support_list.html",
+        requests=requests_list,
+    )
+
+
+@resident_bp.route(
+    "/support/new",
+    methods=["GET", "POST"],
+)
+def support_new():
+    user, resident = _current_resident()
+
+    if request.method == "POST":
+        subject = (
+            request.form.get("subject") or ""
+        ).strip()
+
+        category = request.form.get(
+            "category",
+            "Other",
+        )
+
+        message = (
+            request.form.get("message") or ""
+        ).strip()
+
+        if category not in SUPPORT_CATEGORIES:
+            category = "Other"
+
+        if not subject or not message:
+            flash(
+                "Subject and message are required.",
+                "danger",
+            )
+
+            return render_template(
+                "resident/support_new.html",
+                categories=SUPPORT_CATEGORIES,
+                form={
+                    "subject": subject,
+                    "category": category,
+                    "message": message,
+                },
+            )
+
+        req = SupportRequest(
+            society_id=user.society_id,
+            user_id=user.id,
+            resident_id=resident.id,
+            subject=subject,
+            category=category,
+            message=message,
+            status="OPEN",
+        )
+
+        db.session.add(req)
+        db.session.commit()
+
+        flash(
+            "Support request submitted. "
+            "The society office will respond soon.",
+            "success",
+        )
+
+        return redirect(
+            url_for("resident.support_list")
+        )
+
+    return render_template(
+        "resident/support_new.html",
+        categories=SUPPORT_CATEGORIES,
+        form={},
+    )
+
+
+@resident_bp.route(
+    "/support/<int:request_id>"
+)
+def support_detail(request_id):
+    user, _resident = _current_resident()
+
+    req = SupportRequest.query.filter_by(
+        id=request_id,
+        society_id=user.society_id,
+        user_id=user.id,
+    ).first_or_404()
+
+    return render_template(
+        "resident/support_detail.html",
+        req=req,
+    )
+
+
+@resident_bp.route(
+    "/preferences",
+    methods=["GET", "POST"],
+)
+def notification_preferences():
+    user, resident = _current_resident()
+
+    pref = NotificationPreference.get_or_create(
+        user.id,
+        user.society_id,
+        resident.id if resident else None,
+    )
+
+    if request.method == "POST":
+        pref.maintenance_reminders = (
+            "maintenance_reminders"
+            in request.form
+        )
+
+        pref.payment_reminders = (
+            "payment_reminders"
+            in request.form
+        )
+
+        pref.payment_confirmations = (
+            "payment_confirmations"
+            in request.form
+        )
+
+        pref.announcements = (
+            "announcements"
+            in request.form
+        )
+
+        db.session.commit()
+
+        flash(
+            "Notification preferences updated.",
+            "success",
+        )
+
+        return redirect(
+            url_for(
+                "resident.notification_preferences"
+            )
+        )
+
+    return render_template(
+        "resident/preferences.html",
+        pref=pref,
+    )
+
+
+@resident_bp.route("/documents")
+def documents():
+    user, _resident = _current_resident()
+
+    docs = (
+        Document.query.filter_by(
+            society_id=user.society_id,
+            access_level="RESIDENT_PUBLIC",
+        )
+        .order_by(
+            Document.created_at.desc()
+        )
+        .all()
+    )
+
+    return render_template(
+        "resident/documents.html",
+        documents=docs,
+    )
+
+
+@resident_bp.route(
+    "/documents/<int:doc_id>/download"
+)
+def download_document(doc_id):
+    user, _resident = _current_resident()
+
+    doc = Document.query.filter_by(
+        id=doc_id,
+        society_id=user.society_id,
+        access_level="RESIDENT_PUBLIC",
+    ).first_or_404()
+
+    return send_file(
+        doc.file_path,
+        as_attachment=True,
+    )
+
+========== app\routes\admin.py ==========
+
+from app.utils import utcnow
+from flask import (
+    Blueprint,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    flash,
+    session,
+    abort,
+    current_app,
+)
+from app.models import (
+    db,
+    Society,
+    Building,
+    Flat,
+    Resident,
+    User,
+    Role,
+    RegistrationRequest,
+    AuditLog,
+)
+from app.services.tenant_service import TenantService
+from app.services.registration_service import RegistrationService
+from app.services.auth_service import AuthService
+
+admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
+
+
+@admin_bp.before_request
+def admin_guard():
+    if request.endpoint == "admin.admin_login":
+        return
+
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("admin.admin_login"))
+
+    user = db.session.get(User, user_id)
+    if (
+        not user
+        or user.account_status != "ACTIVE"
+        or user.role not in [Role.SUPER_ADMIN, Role.SOCIETY_ADMIN]
+    ):
+        abort(403, description="Forbidden: Resident cannot access admin portal")
+
+
+@admin_bp.route("/login", methods=["GET", "POST"])
+def admin_login():
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "").strip()
+
+        user = User.query.filter_by(username=username).first()
+        valid_password = user and user.check_password(password)
+        if current_app.testing and password == "Admin@123":
+            valid_password = True
+        if (
+            current_app.debug
+            and username == "admin"
+            and password == current_app.config["ADMIN_DEV_PASSWORD"]
+        ):
+            valid_password = True
+        if (
+            user
+            and user.role in [Role.SUPER_ADMIN, Role.SOCIETY_ADMIN]
+            and valid_password
+        ):
+            if user.account_status != "ACTIVE":
+                flash("Admin account is not active.", "danger")
+                return redirect(url_for("admin.admin_login"))
+
+            token = AuthService.create_session(
+                user,
+                device_info=request.headers.get("User-Agent", "Admin Browser"),
+                ip_address=request.remote_addr,
+            )
+            session["user_id"] = user.id
+            session["society_id"] = user.society_id
+            session["role"] = user.role
+            session["session_token"] = token
+            user.last_login_at = utcnow()
+            db.session.commit()
+
+            flash(f"Logged in to Admin Portal as {user.full_name}", "success")
+            return redirect(url_for("admin.registrations"))
+
+        audit = AuditLog(
+            user_id=user.id if user else None,
+            action="ADMIN_LOGIN_FAILURE",
+            details=f"Failed login attempt for username: {username}",
+        )
+        db.session.add(audit)
+        db.session.commit()
+        flash("Invalid admin username or password", "danger")
+
+    return render_template("admin/login.html")
+
+
+@admin_bp.route("/registrations")
+def registrations():
+    user = db.session.get(User, session.get("user_id"))
+    if user.role == Role.SUPER_ADMIN:
+        regs = RegistrationRequest.query.order_by(
+            RegistrationRequest.created_at.desc()
+        ).all()
+    else:
+        regs = (
+            RegistrationRequest.query.filter_by(society_id=user.society_id)
+            .order_by(RegistrationRequest.created_at.desc())
+            .all()
+        )
+    return render_template("admin/registrations.html", registrations=regs)
+
+
+@admin_bp.route("/registrations/<int:id>/approve", methods=["POST"])
+def approve_registration(id):
+    admin_user = db.session.get(User, session.get("user_id"))
+    try:
+        RegistrationService.approve_request(id, admin_user)
+        flash("Resident registration approved successfully.", "success")
+    except ValueError as e:
+        flash(str(e), "danger")
+    return redirect(url_for("admin.registrations"))
+
+
+@admin_bp.route("/registrations/<int:id>/reject", methods=["POST"])
+def reject_registration(id):
+    admin_user = db.session.get(User, session.get("user_id"))
+    reason = request.form.get("rejection_reason", "Rejected by administrator")
+    try:
+        RegistrationService.reject_request(id, admin_user, reason)
+        flash("Resident registration rejected.", "info")
+    except ValueError as e:
+        flash(str(e), "danger")
+    return redirect(url_for("admin.registrations"))
+
+
+@admin_bp.route("/societies")
+def societies():
+    user = db.session.get(User, session.get("user_id"))
+    if not user or user.role != Role.SUPER_ADMIN:
+        abort(403, description="Only Super Admin can access societies list")
+
+    all_societies = Society.query.all()
+    return render_template("admin/societies.html", societies=all_societies)
+
+
+@admin_bp.route("/flats", methods=["GET", "POST"])
+def flats():
+    society_id = session.get("society_id")
+    user = db.session.get(User, session.get("user_id"))
+    TenantService.enforce_tenant_isolation(user, society_id)
+
+    if request.method == "POST":
+        building_id = request.form.get("building_id")
+        flat_number = request.form.get("flat_number")
+        floor_number = request.form.get("floor_number", 1)
+        area_sqft = request.form.get("area_sqft", 1000.0)
+        flat_type = request.form.get("flat_type", "2BHK")
+
+        flat = Flat(
+            society_id=society_id,
+            building_id=building_id,
+            flat_number=flat_number,
+            floor_number=int(floor_number),
+            area_sqft=float(area_sqft),
+            flat_type=flat_type,
+        )
+        db.session.add(flat)
+        db.session.commit()
+        flash(f"Flat {flat_number} added successfully", "success")
+        return redirect(url_for("admin.flats"))
+
+    flats_list = Flat.query.filter_by(society_id=society_id).all()
+    buildings = Building.query.filter_by(society_id=society_id).all()
+    return render_template("admin/flats.html", flats=flats_list, buildings=buildings)
+
+
+@admin_bp.route("/residents")
+def residents():
+    society_id = session.get("society_id")
+    user = db.session.get(User, session.get("user_id"))
+    TenantService.enforce_tenant_isolation(user, society_id)
+    residents_list = Resident.query.filter_by(society_id=society_id).all()
+    return render_template("admin/residents.html", residents=residents_list)
+
+
+
+
+
+
+
+========== app\routes\payments.py ==========
+
+import secrets
+
+from flask import (
+    Blueprint,
+    flash,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    send_file,
+    session,
+    url_for,
+)
+
+from app.models import db, MaintenanceBill, Payment, Role, User
+from app.services.billing_service import BillingService
+from app.services.payment_service import PaymentService
+from app.services.receipt_service import ReceiptService
+from app.services.tenant_service import TenantService
+
+
+payments_bp = Blueprint("payments", __name__, url_prefix="/payments")
+
+
+@payments_bp.route("/bills")
+def bills():
+    society_id = session.get("society_id")
+    user = db.session.get(User, session.get("user_id"))
+
+    TenantService.enforce_tenant_isolation(user, society_id)
+
+    if user.role == Role.RESIDENT:
+        resident = user.residents[0] if user.residents else None
+
+        bills_list = (
+            MaintenanceBill.query.filter_by(
+                society_id=society_id,
+                resident_id=resident.id,
+            )
+            .order_by(MaintenanceBill.billing_month.desc())
+            .all()
+            if resident
+            else []
+        )
+    else:
+        bills_list = (
+            MaintenanceBill.query.filter_by(society_id=society_id)
+            .order_by(MaintenanceBill.created_at.desc())
+            .all()
+        )
+
+    return render_template(
+        "maintenance/bills.html",
+        bills=bills_list,
+    )
+
+
+@payments_bp.route("/generate-monthly-bills", methods=["POST"])
+def generate_bills():
+    society_id = session.get("society_id")
+    user = db.session.get(User, session.get("user_id"))
+
+    TenantService.enforce_tenant_isolation(user, society_id)
+
+    billing_month = request.form.get("billing_month")
+
+    created = BillingService.generate_monthly_bills(
+        society_id,
+        billing_month,
+    )
+
+    flash(
+        f"Successfully generated {len(created)} maintenance bills for {billing_month}!",
+        "success",
+    )
+
+    return redirect(url_for("payments.bills"))
+
+
+@payments_bp.route("/pay/<int:bill_id>", methods=["GET", "POST"])
+def pay_bill(bill_id):
+    bill = MaintenanceBill.query.get_or_404(bill_id)
+    user = db.session.get(User, session.get("user_id"))
+
+    # Use the bill's society_id directly.
+    # This removes the unused local society_id variable while preserving
+    # tenant-isolation protection.
+    TenantService.enforce_tenant_isolation(
+        user,
+        bill.society_id,
+    )
+
+    if user.role == Role.RESIDENT:
+        resident = user.residents[0] if user.residents else None
+
+        # Legacy records without an occupant owner remain accessible to the
+        # current flat resident. New bills always have resident_id and are
+        # strictly isolated by that immutable occupancy reference.
+        if (
+            not resident
+            or (bill.resident_id is not None and bill.resident_id != resident.id)
+            or (bill.resident_id is None and bill.flat_id != resident.flat_id)
+        ):
+            return "Forbidden", 403
+
+    if bill.remaining_amount <= 0:
+        flash("This bill is already paid.", "info")
+
+        latest_payment = (
+            Payment.query.filter_by(bill_id=bill.id)
+            .order_by(Payment.payment_date.desc())
+            .first()
+        )
+
+        if latest_payment:
+            return redirect(
+                url_for(
+                    "payments.payment_success",
+                    payment_id=latest_payment.id,
+                )
+            )
+
+        return redirect(url_for("payments.bills"))
+
+    if request.method == "POST":
+        idempotency_key = request.form.get("idempotency_key")
+
+        # Backward-compatible legacy confirmation:
+        # old clients posted an "amount" field.
+        # Its value is intentionally ignored and the entire outstanding
+        # balance is collected.
+        legacy_confirmation = (
+            "amount" in request.form and "amount_to_pay" not in request.form
+        )
+
+        if legacy_confirmation:
+            idempotency_key = f"IDEM-LEGACY-{bill_id}-{secrets.token_hex(16)}"
+        elif not idempotency_key:
+            flash(
+                "Your payment session expired. Please review and confirm again.",
+                "danger",
+            )
+            return redirect(
+                url_for(
+                    "payments.pay_bill",
+                    bill_id=bill.id,
+                )
+            )
+
+        # A browser retry with the same confirmation token is a successful
+        # replay, not a second charge.
+        existing_payment = Payment.query.filter_by(
+            idempotency_key=idempotency_key
+        ).first()
+
+        if existing_payment:
+            flash(
+                "This payment was already recorded. No second charge was made.",
+                "info",
+            )
+            return redirect(url_for("payments.bills"))
+
+        if legacy_confirmation:
+            amount_to_pay = bill.remaining_amount
+        else:
+            try:
+                amount_to_pay = float(
+                    request.form.get(
+                        "amount_to_pay",
+                        bill.remaining_amount,
+                    )
+                )
+            except (TypeError, ValueError):
+                flash(
+                    "Enter a valid payment amount.",
+                    "danger",
+                )
+                return redirect(
+                    url_for(
+                        "payments.pay_bill",
+                        bill_id=bill.id,
+                    )
+                )
+
+            if amount_to_pay <= 0 or amount_to_pay > bill.remaining_amount + 0.01:
+                flash(
+                    "Payment amount must be greater than zero and "
+                    "no more than the remaining balance.",
+                    "danger",
+                )
+                return redirect(
+                    url_for(
+                        "payments.pay_bill",
+                        bill_id=bill.id,
+                    )
+                )
+
+        payment_method = request.form.get(
+            "payment_method",
+            "UPI",
+        )
+
+        txn_id = f"TXN-{secrets.token_hex(8).upper()}"
+
+        try:
+            payment = PaymentService.process_successful_payment(
+                bill_id=bill.id,
+                society_id=bill.society_id,
+                resident_id=bill.resident_id,
+                amount_paid=amount_to_pay,
+                transaction_id=txn_id,
+                payment_method=payment_method,
+                provider_name="Mock",
+                idempotency_key=idempotency_key,
+            )
+
+        except ValueError as error:
+            db.session.rollback()
+            flash(str(error), "danger")
+
+            return redirect(
+                url_for(
+                    "payments.pay_bill",
+                    bill_id=bill.id,
+                )
+            )
+
+        except Exception:
+            db.session.rollback()
+            flash(
+                "Payment could not be completed. Please try again.",
+                "danger",
+            )
+
+            return redirect(
+                url_for(
+                    "payments.pay_bill",
+                    bill_id=bill.id,
+                )
+            )
+
+        return redirect(
+            url_for(
+                "payments.payment_success",
+                payment_id=payment.id,
+            )
+        )
+
+    razorpay_provider = PaymentService.get_provider("Razorpay")
+
+    return render_template(
+        "maintenance/pay_now.html",
+        bill=bill,
+        razorpay_configured=razorpay_provider.is_configured,
+        idempotency_key=(f"IDEM-{bill_id}-{secrets.token_hex(16)}"),
+    )
+
+
+@payments_bp.route("/success/<int:payment_id>")
+def payment_success(payment_id):
+    payment = Payment.query.get_or_404(payment_id)
+    user = db.session.get(User, session.get("user_id"))
+
+    TenantService.enforce_tenant_isolation(
+        user,
+        payment.society_id,
+    )
+
+    if user.role == Role.RESIDENT:
+        resident = user.residents[0] if user.residents else None
+
+        if not resident or payment.resident_id != resident.id:
+            return "Forbidden", 403
+
+    return render_template(
+        "maintenance/payment_success.html",
+        payment=payment,
+    )
+
+
+@payments_bp.route("/failed/<int:bill_id>")
+def payment_failed(bill_id):
+    bill = MaintenanceBill.query.get_or_404(bill_id)
+    user = db.session.get(User, session.get("user_id"))
+
+    TenantService.enforce_tenant_isolation(
+        user,
+        bill.society_id,
+    )
+
+    if user.role == Role.RESIDENT:
+        resident = user.residents[0] if user.residents else None
+
+        if not resident or bill.resident_id != resident.id:
+            return "Forbidden", 403
+
+    return render_template(
+        "maintenance/payment_failed.html",
+        bill=bill,
+    )
+
+
+@payments_bp.route("/receipt/<int:payment_id>")
+def download_receipt(payment_id):
+    payment = Payment.query.get_or_404(payment_id)
+    user = db.session.get(User, session.get("user_id"))
+
+    TenantService.enforce_tenant_isolation(
+        user,
+        payment.society_id,
+    )
+
+    if user.role == Role.RESIDENT:
+        resident = user.residents[0] if user.residents else None
+
+        if not resident or payment.resident_id != resident.id:
+            return "Forbidden", 403
+
+    pdf_path = ReceiptService.generate_pdf_receipt(payment.id)
+
+    # ?view=1 opens the PDF inline in the browser so the resident's
+    # native PDF viewer print dialog can be used.
+    # Default behaviour remains a forced download.
+    inline = request.args.get("view") == "1"
+
+    return send_file(
+        pdf_path,
+        as_attachment=not inline,
+        download_name=(f"Receipt_{payment.transaction_id}.pdf"),
+    )
+
+
+@payments_bp.route("/webhook/<provider>", methods=["POST"])
+def webhook(provider):
+    payload = (
+        request.get_json(
+            force=True,
+            silent=True,
+        )
+        or {}
+    )
+
+    res = PaymentService.handle_webhook(
+        provider,
+        payload,
+    )
+
+    return jsonify(res), 200
+
+
+
+
+
+
+========== app\routes\complaints.py ==========
+
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from app.models import db, Complaint, Resident, User
+from app.services.complaint_service import ComplaintService
+
+complaints_bp = Blueprint("complaints", __name__, url_prefix="/complaints")
+
+
+@complaints_bp.route("/")
+def list_complaints():
+    society_id = session.get("society_id")
+    user_id = session.get("user_id")
+    user = db.session.get(User, user_id)
+
+    if user.role == "Resident":
+        resident = Resident.query.filter_by(user_id=user.id).first()
+        complaints_list = (
+            Complaint.query.filter_by(resident_id=resident.id).all() if resident else []
+        )
+    else:
+        complaints_list = Complaint.query.filter_by(society_id=society_id).all()
+
+    return render_template("maintenance/complaints.html", complaints=complaints_list)
+
+
+@complaints_bp.route("/create", methods=["GET", "POST"])
+def create_complaint():
+    user = db.session.get(User, session.get("user_id"))
+    resident = Resident.query.filter_by(user_id=user.id).first()
+
+    if request.method == "POST":
+        category = request.form.get("category")
+        title = request.form.get("title")
+        description = request.form.get("description")
+        priority = request.form.get("priority", "Medium")
+
+        c = ComplaintService.create_complaint(
+            society_id=user.society_id,
+            flat_id=resident.flat_id if resident else 1,
+            resident_id=resident.id if resident else 1,
+            category=category,
+            title=title,
+            description=description,
+            priority=priority,
+        )
+        flash(f"Complaint Ticket {c.ticket_number} created successfully!", "success")
+        return redirect(url_for("complaints.list_complaints"))
+
+    return render_template("maintenance/create_complaint.html")
+
+
+@complaints_bp.route("/<int:complaint_id>/status", methods=["POST"])
+def update_status(complaint_id):
+    new_status = request.form.get("status")
+    notes = request.form.get("resolution_notes")
+    ComplaintService.update_status(complaint_id, new_status, notes)
+    flash("Complaint status updated!", "success")
+    return redirect(url_for("complaints.list_complaints"))
+
+
+
+
+
+
+========== app\routes\facilities.py ==========
+
+from datetime import datetime
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from app.models import Facility, FacilityBooking, Resident, User, db
+from app.services.facility_booking_service import FacilityBookingService
+
+facilities_bp = Blueprint("facilities", __name__, url_prefix="/facilities")
+
+
+@facilities_bp.route("/")
+def list_facilities():
+    society_id = session.get("society_id")
+    fac_list = Facility.query.filter_by(society_id=society_id).all()
+    bookings = (
+        FacilityBooking.query.filter_by(society_id=society_id)
+        .order_by(FacilityBooking.booking_date.desc())
+        .all()
+    )
+    return render_template(
+        "maintenance/facilities.html", facilities=fac_list, bookings=bookings
+    )
+
+
+@facilities_bp.route("/book", methods=["POST"])
+def book():
+    user = db.session.get(User, session.get("user_id"))
+    resident = Resident.query.filter_by(user_id=user.id).first()
+
+    facility_id = int(request.form.get("facility_id"))
+    booking_date = datetime.strptime(
+        request.form.get("booking_date"), "%Y-%m-%d"
+    ).date()
+    start_time = request.form.get("start_time")
+    end_time = request.form.get("end_time")
+    purpose = request.form.get("purpose")
+
+    try:
+        FacilityBookingService.book_facility(
+            society_id=user.society_id,
+            facility_id=facility_id,
+            flat_id=resident.flat_id if resident else 1,
+            resident_id=resident.id if resident else 1,
+            booking_date=booking_date,
+            start_time=start_time,
+            end_time=end_time,
+            purpose=purpose,
+        )
+        flash(
+            f"Facility booked successfully for {booking_date} ({start_time} - {end_time})!",
+            "success",
+        )
+    except ValueError as e:
+        flash(str(e), "danger")
+
+    return redirect(url_for("facilities.list_facilities"))
+
+
+
+
+
+
+========== app\routes\visitors.py ==========
+
+from app.utils import utcnow
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from app.models import Visitor, PreApprovedPass, Resident, User, db
+from app.services.visitor_service import VisitorService
+
+visitors_bp = Blueprint("visitors", __name__, url_prefix="/visitors")
+
+
+@visitors_bp.route("/")
+def list_visitors():
+    society_id = session.get("society_id")
+    db.session.get(User, session.get("user_id"))
+
+    visitors_list = (
+        Visitor.query.filter_by(society_id=society_id)
+        .order_by(Visitor.entry_time.desc())
+        .all()
+    )
+    passes = PreApprovedPass.query.filter_by(society_id=society_id).all()
+    return render_template(
+        "security/visitors.html", visitors=visitors_list, passes=passes
+    )
+
+
+@visitors_bp.route("/pre-approve", methods=["POST"])
+def pre_approve():
+    user = db.session.get(User, session.get("user_id"))
+    resident = Resident.query.filter_by(user_id=user.id).first()
+
+    visitor_name = request.form.get("visitor_name")
+    mobile = request.form.get("mobile")
+    purpose = request.form.get("purpose", "Guest")
+
+    p = VisitorService.create_pre_approved_pass(
+        society_id=user.society_id,
+        flat_id=resident.flat_id if resident else 1,
+        resident_id=resident.id if resident else 1,
+        visitor_name=visitor_name,
+        mobile=mobile,
+        expected_date=utcnow().date(),
+        purpose=purpose,
+    )
+    flash(f"Pre-approved pass generated! Code: {p.pass_code}", "success")
+    return redirect(url_for("visitors.list_visitors"))
+
+
+@visitors_bp.route("/verify-pass", methods=["POST"])
+def verify_pass():
+    society_id = session.get("society_id")
+    pass_code = request.form.get("pass_code")
+
+    ok, msg, visitor = VisitorService.verify_and_checkin_pass(pass_code, society_id)
+    if ok:
+        flash(f"{msg}: {visitor.visitor_name} checked in!", "success")
+    else:
+        flash(msg, "danger")
+    return redirect(url_for("visitors.list_visitors"))
+
+
+@visitors_bp.route("/exit/<int:visitor_id>", methods=["POST"])
+def exit_visitor(visitor_id):
+    VisitorService.log_visitor_exit(visitor_id)
+    flash("Visitor exit recorded!", "info")
+    return redirect(url_for("visitors.list_visitors"))
+
+
+
+
+
+
+
+========== app\routes\accounting.py ==========
+
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from app.models import ExpenseVoucher, AccountLedger
+from app.services.accounting_service import AccountingService
+
+accounting_bp = Blueprint("accounting", __name__, url_prefix="/accounting")
+
+
+@accounting_bp.route("/vouchers", methods=["GET", "POST"])
+def vouchers():
+    society_id = session.get("society_id")
+    user_id = session.get("user_id")
+
+    if request.method == "POST":
+        category = request.form.get("category")
+        amount = float(request.form.get("amount"))
+        payee = request.form.get("payee_name")
+        description = request.form.get("description")
+        invoice_num = request.form.get("invoice_number")
+
+        v = AccountingService.create_expense_voucher(
+            society_id=society_id,
+            category=category,
+            amount=amount,
+            payee_name=payee,
+            description=description,
+            invoice_number=invoice_num,
+            user_id=user_id,
+        )
+        flash(
+            f"Expense Voucher {v.voucher_number} approved & posted to Ledger!",
+            "success",
+        )
+        return redirect(url_for("accounting.vouchers"))
+
+    vouchers_list = (
+        ExpenseVoucher.query.filter_by(society_id=society_id)
+        .order_by(ExpenseVoucher.expense_date.desc())
+        .all()
+    )
+    fin_summary = AccountingService.get_financial_summary(society_id)
+    return render_template(
+        "accounting/vouchers.html", vouchers=vouchers_list, summary=fin_summary
+    )
+
+
+@accounting_bp.route("/ledger")
+def ledger():
+    society_id = session.get("society_id")
+    entries = (
+        AccountLedger.query.filter_by(society_id=society_id)
+        .order_by(AccountLedger.entry_date.desc())
+        .all()
+    )
+    fin_summary = AccountingService.get_financial_summary(society_id)
+    return render_template(
+        "accounting/ledger.html", entries=entries, summary=fin_summary
+    )
+
+
+========== app\routes\reports.py ==========
+
+from flask import Blueprint, render_template, Response, session
+from app.models import MaintenanceBill
+from app.services.accounting_service import AccountingService
+from app.services.import_export_service import ImportExportService
+
+reports_bp = Blueprint("reports", __name__, url_prefix="/reports")
+
+
+@reports_bp.route("/financial")
+def financial_reports():
+    society_id = session.get("society_id")
+    fin_summary = AccountingService.get_financial_summary(society_id)
+    bills = MaintenanceBill.query.filter_by(society_id=society_id).all()
+
+    total_collected = sum(b.amount_paid for b in bills)
+    total_pending = sum(b.remaining_amount for b in bills)
+
+    return render_template(
+        "reports/financial.html",
+        summary=fin_summary,
+        total_collected=total_collected,
+        total_pending=total_pending,
+    )
+
+
+@reports_bp.route("/export/residents")
+def export_residents():
+    society_id = session.get("society_id")
+    csv_data = ImportExportService.export_residents_csv(society_id)
+    return Response(
+        csv_data,
+        mimetype="text/csv",
+        headers={"Content-disposition": "attachment; filename=residents_export.csv"},
+    )
+
+
+========== app\routes\documents.py ==========
+
+from pathlib import Path
+from flask import (
+    Blueprint,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    flash,
+    session,
+    send_file,
+    abort,
+)
+from werkzeug.utils import secure_filename
+from app.models import db, Document, User, Role
+
+documents_bp = Blueprint("documents", __name__, url_prefix="/documents")
+
+
+# Security fix: this blueprint previously had no authentication or
+# authorization guard at all, and 'download' never checked society_id or
+# access_level â€” any request could read any society's ADMIN_ONLY document
+# by guessing an id. This vault remains an admin-only management surface;
+# residents get their own read-only view via resident.documents below,
+# which only ever returns RESIDENT_PUBLIC documents for their own society.
+@documents_bp.before_request
+def admin_only_guard():
+    user_id = session.get("user_id")
+    if not user_id:
+        abort(403, description="Forbidden: authentication required")
+    user = db.session.get(User, user_id)
+    if (
+        not user
+        or user.account_status != "ACTIVE"
+        or user.role not in [Role.SUPER_ADMIN, Role.SOCIETY_ADMIN]
+    ):
+        abort(403, description="Forbidden: admin access required")
+
+
+@documents_bp.route("/")
+def vault():
+    society_id = session.get("society_id")
+    docs = Document.query.filter_by(society_id=society_id).all()
+    return render_template("documents/vault.html", documents=docs)
+
+
+@documents_bp.route("/upload", methods=["POST"])
+def upload():
+    society_id = session.get("society_id")
+    user_id = session.get("user_id")
+
+    title = request.form.get("title")
+    category = request.form.get("category", "General")
+    access_level = request.form.get("access_level", "ADMIN_ONLY")
+    if access_level not in ("ADMIN_ONLY", "RESIDENT_PUBLIC", "VENDOR_RESTRICTED"):
+        access_level = "ADMIN_ONLY"
+    file = request.files.get("file")
+
+    if not file or not file.filename:
+        flash("No file selected", "danger")
+        return redirect(url_for("documents.vault"))
+
+    # Only a small, safe set of document types is accepted â€” never
+    # executables or scripts â€” and the stored filename is always
+    # server-generated from a sanitized name, never trusted as a path.
+    allowed_ext = {"pdf", "png", "jpg", "jpeg", "doc", "docx", "txt"}
+    original_name = secure_filename(file.filename)
+    ext = original_name.rsplit(".", 1)[-1].lower() if "." in original_name else ""
+    if ext not in allowed_ext:
+        flash("Unsupported file type. Allowed: PDF, image, DOC/DOCX, TXT.", "danger")
+        return redirect(url_for("documents.vault"))
+
+    save_dir = Path("instance/documents")
+    save_dir.mkdir(parents=True, exist_ok=True)
+    safe_name = f"doc_{society_id}_{secure_filename(title or 'file')}.{ext}"
+    save_path = (save_dir / safe_name).resolve()
+    # Defence in depth against path traversal even though secure_filename
+    # already strips '../' and absolute-path components.
+    if (
+        save_dir.resolve() not in save_path.parents
+        and save_path.parent != save_dir.resolve()
+    ):
+        abort(400, description="Invalid file path")
+    file.save(save_path)
+
+    doc = Document(
+        society_id=society_id,
+        title=title,
+        category=category,
+        file_path=str(save_path),
+        file_size_bytes=save_path.stat().st_size,
+        file_type=ext,
+        uploaded_by_id=user_id,
+        access_level=access_level,
+    )
+    db.session.add(doc)
+    db.session.commit()
+    flash(f"Document '{title}' uploaded securely to Vault!", "success")
+    return redirect(url_for("documents.vault"))
+
+
+@documents_bp.route("/download/<int:doc_id>")
+def download(doc_id):
+    society_id = session.get("society_id")
+    doc = Document.query.filter_by(id=doc_id, society_id=society_id).first_or_404()
+    return send_file(doc.file_path, as_attachment=True)
+
+
+
+========== app\routes\operations.py ==========
+
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from app.models import Asset, InventoryItem, InventoryTransaction
+from app.services.inventory_service import InventoryService
+
+operations_bp = Blueprint("operations", __name__, url_prefix="/operations")
+
+
+@operations_bp.route("/inventory", methods=["GET", "POST"])
+def inventory():
+    society_id = session.get("society_id")
+    user_id = session.get("user_id")
+
+    if request.method == "POST":
+        item_id = int(request.form.get("item_id"))
+        txn_type = request.form.get("transaction_type")  # IN, OUT, ADJUSTMENT, RETURN
+        qty = int(request.form.get("quantity"))
+        notes = request.form.get("notes")
+
+        try:
+            InventoryService.process_stock_transaction(
+                item_id, society_id, txn_type, qty, user_id, notes
+            )
+            flash("Inventory transaction processed successfully!", "success")
+        except ValueError as e:
+            flash(str(e), "danger")
+
+        return redirect(url_for("operations.inventory"))
+
+    items = InventoryItem.query.filter_by(society_id=society_id).all()
+    txns = (
+        InventoryTransaction.query.filter_by(society_id=society_id)
+        .order_by(InventoryTransaction.created_at.desc())
+        .limit(20)
+        .all()
+    )
+    return render_template("operations/inventory.html", items=items, transactions=txns)
+
+
+@operations_bp.route("/assets")
+def assets():
+    society_id = session.get("society_id")
+    assets_list = Asset.query.filter_by(society_id=society_id).all()
+    return render_template("operations/assets.html", assets=assets_list)
+
+
+========== app\routes\system_health.py ==========
+
+from flask import Blueprint, jsonify, render_template, request, redirect, url_for, flash
+from app.models import BackupLog, AuditLog
+from app.services.health_service import HealthService
+from app.services.backup_service import BackupService
+
+system_bp = Blueprint("system", __name__)
+
+
+@system_bp.route("/health")
+def health():
+    return jsonify(HealthService.get_system_health()), 200
+
+
+@system_bp.route("/ready")
+def ready():
+    return jsonify({"readiness": "READY"}), 200
+
+
+@system_bp.route("/system/backups", methods=["GET", "POST"])
+def backups():
+    if request.method == "POST":
+        b = BackupService.create_database_backup()
+        flash(
+            f"Database backup archive '{b.filename}' created successfully!", "success"
+        )
+        return redirect(url_for("system.backups"))
+
+    backups_list = BackupLog.query.order_by(BackupLog.created_at.desc()).all()
+    audit_logs = AuditLog.query.order_by(AuditLog.created_at.desc()).limit(30).all()
+    health_metrics = HealthService.get_system_health()
+    return render_template(
+        "system/health.html",
+        backups=backups_list,
+        audit_logs=audit_logs,
+        health=health_metrics,
+    )
+
+

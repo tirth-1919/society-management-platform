@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Residents Directory — Admin Portal{% endblock %}
+
+{% block content %}
+<div style="max-width:1200px; margin:32px auto; padding:0 16px;">
+
+  <!-- Header -->
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
+    <div>
+      <h1 style="font-size:24px; font-weight:800; margin:0;">
+        <i class="fa-solid fa-users" style="color:var(--primary);"></i>
+        Residents Directory
+      </h1>
+      <p style="color:var(--text-secondary); margin:4px 0 0; font-size:14px;">
+        Manage all active and historical residents in the society
+      </p>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <a href="{{ url_for('admin.registrations') }}" class="btn btn-secondary" style="font-size:13px;">
+        <i class="fa-solid fa-user-plus"></i> Pending Applications
+      </a>
+      <a href="{{ url_for('reports.export_residents') }}" class="btn btn-primary" style="font-size:13px;">
+        <i class="fa-solid fa-file-csv"></i> Export CSV
+      </a>
+    </div>
+  </div>
+
+  <!-- Search & Filter -->
+  <div class="card" style="padding:16px; margin-bottom:20px;">
+    <form method="GET" action="{{ url_for('admin.residents') }}" style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;">
+      <div style="flex:1; min-width:200px;">
+        <label style="font-size:11px; text-transform:uppercase; color:var(--text-secondary); font-weight:600;">Search Residents</label>
+        <input type="text" name="q" value="{{ search_q or '' }}" placeholder="Search by name, mobile, email..." class="form-control" style="font-size:13px;">
+      </div>
+      <div style="min-width:160px;">
+        <label style="font-size:11px; text-transform:uppercase; color:var(--text-secondary); font-weight:600;">Status</label>
+        <select name="status" class="form-control" style="font-size:13px;">
+          <option value="">All Statuses</option>
+          <option value="Active" {% if status_filter == 'Active' %}selected{% endif %}>Active</option>
+          <option value="Inactive" {% if status_filter == 'Inactive' %}selected{% endif %}>Inactive</option>
+          <option value="Moved Out" {% if status_filter == 'Moved Out' %}selected{% endif %}>Moved Out</option>
+        </select>
+      </div>
+      <div>
+        <button type="submit" class="btn btn-primary" style="height:38px; font-size:13px;">
+          <i class="fa-solid fa-magnifying-glass"></i> Search
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Residents Table -->
+  <div class="card" style="padding:0; overflow:hidden;">
+    <div style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; font-size:13px;">
+        <thead>
+          <tr style="background:var(--bg-primary);">
+            <th style="padding:12px 16px; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-secondary);">Resident Name</th>
+            <th style="padding:12px 16px; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-secondary);">Property</th>
+            <th style="padding:12px 16px; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-secondary);">Mobile</th>
+            <th style="padding:12px 16px; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-secondary);">Email</th>
+            <th style="padding:12px 16px; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-secondary);">Type</th>
+            <th style="padding:12px 16px; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-secondary);">Status</th>
+            <th style="padding:12px 16px; text-align:right; font-size:11px; text-transform:uppercase; color:var(--text-secondary);">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in residents %}
+          <tr style="border-bottom:1px solid var(--border-color);" onmouseover="this.style.background='var(--bg-primary)'" onmouseout="this.style.background='transparent'">
+            <td style="padding:12px 16px;">
+              <a href="{{ url_for('admin.resident_profile', resident_id=r.id) }}" style="font-weight:700; color:var(--text-primary); text-decoration:none;">
+                {{ r.full_name }}
+              </a>
+            </td>
+            <td style="padding:12px 16px;">
+              {% if r.flat %}
+              <span style="background:var(--bg-primary); border:1px solid var(--border-color); padding:3px 8px; border-radius:6px; font-weight:700; font-size:12px;">
+                {{ r.flat.property_key }}
+              </span>
+              {% else %}—{% endif %}
+            </td>
+            <td style="padding:12px 16px; font-weight:600;">{{ r.mobile }}</td>
+            <td style="padding:12px 16px; color:var(--text-secondary);">{{ r.email or '—' }}</td>
+            <td style="padding:12px 16px;">
+              <span style="padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; background:rgba(79,70,229,0.12); color:#4338ca;">
+                {{ r.resident_type }}
+              </span>
+            </td>
+            <td style="padding:12px 16px;">
+              <span style="padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700;
+                {% if r.occupancy_status == 'Active' %}background:rgba(16,185,129,0.15); color:#059669;
+                {% else %}background:rgba(107,114,128,0.15); color:#4b5563;{% endif %}">
+                {{ r.occupancy_status }}
+              </span>
+            </td>
+            <td style="padding:12px 16px; text-align:right;">
+              <a href="{{ url_for('admin.resident_profile', resident_id=r.id) }}" class="btn btn-sm btn-secondary" style="font-size:11px; padding:4px 10px;">
+                <i class="fa-solid fa-eye"></i> View Profile
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="7" style="padding:30px; text-align:center; color:var(--text-secondary);">No residents found matching search.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

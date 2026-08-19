@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block title %}Yearly Summary {{ year }} · Society SaaS{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumb-nav" aria-label="Breadcrumb">
+    <a href="{{ url_for('main.dashboard') }}"><i class="fa-solid fa-house"></i> Home</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current" data-i18n="yearly_summary">Yearly Summary</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow" data-i18n="billing_history">Billing History</p>
+        <h1 data-i18n="yearly_summary">Yearly Payment Summary</h1>
+        <p style="color: var(--text-secondary);">A full overview of your billing and payments for {{ year }}.</p>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        {% for y in available_years %}
+        <a href="{{ url_for('resident.yearly_summary', year=y) }}"
+           class="btn {{ 'btn-primary' if y == year else 'btn-secondary' }}"
+           style="padding: 8px 16px;">{{ y }}</a>
+        {% endfor %}
+    </div>
+</div>
+
+{# ---- Summary cards ---- #}
+<div class="metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); margin-bottom: 24px;">
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(79,70,229,0.12); color: var(--primary);"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+        <div>
+            <div class="metric-val">₹{{ "{:,.2f}".format(total_billed) }}</div>
+            <div class="metric-lbl" data-i18n="total_billed">Total Billed</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(16,185,129,0.12); color: var(--success);"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+        <div>
+            <div class="metric-val" style="color: var(--success);">₹{{ "{:,.2f}".format(total_paid) }}</div>
+            <div class="metric-lbl" data-i18n="total_paid">Total Paid</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(239,68,68,0.12); color: var(--danger);"><i class="fa-solid fa-hourglass-half"></i></div>
+        <div>
+            <div class="metric-val" style="color: var(--danger);">₹{{ "{:,.2f}".format(total_pending) }}</div>
+            <div class="metric-lbl" data-i18n="pending_dues">Total Pending</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(245,158,11,0.12); color: var(--warning);"><i class="fa-solid fa-clock"></i></div>
+        <div>
+            <div class="metric-val" style="color: var(--warning);">₹{{ "{:,.2f}".format(total_late_fees) }}</div>
+            <div class="metric-lbl" data-i18n="late_fee">Late Fees</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(6,182,212,0.12); color: var(--secondary);"><i class="fa-solid fa-calendar-check"></i></div>
+        <div>
+            <div class="metric-val">{{ bills|selectattr('status','equalto','Paid')|list|length }}/{{ bills|length }}</div>
+            <div class="metric-lbl">Months Paid</div>
+        </div>
+    </div>
+</div>
+
+{# ---- Month-wise breakdown ---- #}
+<div class="card" style="margin-bottom: 24px;">
+    <div class="card-title">
+        <i class="fa-solid fa-calendar-days" style="color: var(--primary);"></i>
+        <span data-i18n="month_wise_breakdown">Month-wise Breakdown — {{ year }}</span>
+    </div>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th data-i18n="billing_month">Month</th>
+                    <th data-i18n="maintenance">Maintenance</th>
+                    <th data-i18n="late_fee">Late Fee</th>
+                    <th>Discount</th>
+                    <th data-i18n="total_amount">Total</th>
+                    <th data-i18n="amount_paid">Paid</th>
+                    <th data-i18n="remaining_amount">Remaining</th>
+                    <th data-i18n="status">Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for bill in bills %}
+            <tr>
+                <td>
+                    <strong>{{ bill.billing_month }}</strong>
+                    <div style="font-size: 11px; color: var(--text-secondary);">{{ bill.bill_number }}</div>
+                </td>
+                <td>₹{{ "{:,.2f}".format(bill.base_amount) }}</td>
+                <td>{{ '₹{:,.2f}'.format(bill.late_fee) if bill.late_fee > 0 else '—' }}</td>
+                <td>{{ '₹{:,.2f}'.format(bill.discount) if bill.discount > 0 else '—' }}</td>
+                <td><strong>₹{{ "{:,.2f}".format(bill.total_amount) }}</strong></td>
+                <td style="color: var(--success);">₹{{ "{:,.2f}".format(bill.amount_paid) }}</td>
+                <td style="color: {{ 'var(--danger)' if bill.remaining_amount > 0 else 'var(--success)' }};">
+                    <strong>₹{{ "{:,.2f}".format(bill.remaining_amount) }}</strong>
+                </td>
+                <td>
+                    <span class="badge badge-{{ 'success' if bill.status == 'Paid' else ('info' if bill.status == 'Partially Paid' else ('danger' if bill.status == 'Overdue' else 'warning')) }}">
+                        {{ bill.status }}
+                    </span>
+                </td>
+                <td class="bill-actions">
+                    <a class="btn btn-secondary btn-small" href="{{ url_for('resident.bill_detail', bill_id=bill.id) }}">View</a>
+                    <a class="btn btn-secondary btn-small" href="{{ url_for('resident.bill_pdf', bill_id=bill.id) }}" title="Download PDF">
+                        <i class="fa-solid fa-file-pdf"></i>
+                    </a>
+                    {% if bill.remaining_amount > 0 %}
+                    <a class="btn btn-primary btn-small" href="{{ url_for('payments.pay_bill', bill_id=bill.id) }}" data-i18n="pay_now">Pay</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="9" class="empty-cell">
+                    <i class="fa-regular fa-calendar-xmark"></i>
+                    <strong data-i18n="no_results_found">No bills for {{ year }}.</strong>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{# ---- Payment transactions ---- #}
+{% if payments %}
+<div class="card">
+    <div class="card-title">
+        <i class="fa-solid fa-money-bill-transfer" style="color: var(--success);"></i>
+        <span>Successful Payments in {{ year }}</span>
+    </div>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th data-i18n="payment_date">Date</th>
+                    <th data-i18n="amount_paid">Amount</th>
+                    <th data-i18n="payment_method">Method</th>
+                    <th data-i18n="transaction_id">Transaction ID</th>
+                    <th>Receipt</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for p in payments %}
+            <tr>
+                <td>{{ p.payment_date.strftime('%d %b %Y, %I:%M %p') }}</td>
+                <td style="font-weight: 700; color: var(--success);">₹{{ "{:,.2f}".format(p.amount_paid) }}</td>
+                <td><span class="badge badge-info">{{ p.payment_method }}</span></td>
+                <td style="font-family: monospace; font-size: 12px;">{{ p.transaction_id }}</td>
+                <td>
+                    {% if p.receipt %}
+                    <a href="{{ url_for('payments.download_receipt', payment_id=p.id) }}" class="btn btn-secondary btn-small">
+                        <i class="fa-solid fa-download"></i> PDF
+                    </a>
+                    {% else %}—{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

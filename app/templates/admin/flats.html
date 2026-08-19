@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Flats & Wings - Society SaaS{% endblock %}
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <h2>Flats & Wings Management</h2>
+</div>
+
+<div class="card">
+    <div class="card-title">All Society Flats</div>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Flat No</th>
+                    <th>Building / Block</th>
+                    <th>Floor</th>
+                    <th>Area (sqft)</th>
+                    <th>Flat Type</th>
+                    <th>Occupancy Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in flats %}
+                <tr>
+                    <td><strong>{{ f.flat_number }}</strong></td>
+                    <td>{{ f.building.name if f.building else 'Block A' }}</td>
+                    <td>{{ f.floor_number }}</td>
+                    <td>{{ f.area_sqft }} sqft</td>
+                    <td>{{ f.flat_type }}</td>
+                    <td><span class="badge badge-success">{{ f.occupancy_status }}</span></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" style="text-align: center;">No flats registered.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}My Bills · Society SaaS{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumb-nav" aria-label="Breadcrumb">
+    <a href="{{ url_for('main.dashboard') }}"><i class="fa-solid fa-house"></i> Home</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current" data-i18n="my_bills">My Bills</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+  <div>
+    <p class="eyebrow" data-i18n="maintenance">Maintenance billing</p>
+    <h1 data-i18n="my_bills">My Bills</h1>
+    <p>Review each monthly charge, payment, and remaining balance.</p>
+  </div>
+  <div>
+    <button type="button" class="btn btn-secondary" onclick="window.print()">
+      <i class="fa-solid fa-print"></i> Print
+    </button>
+  </div>
+</div>
+<form class="bill-filters card" method="get" aria-label="Filter bills">
+  <input name="q" value="{{ filters.q }}" data-i18n-placeholder="search_placeholder_resident" placeholder="Search bill number or month" aria-label="Search bill number or month">
+  <select name="status" aria-label="Filter by status"><option value="" data-i18n="all">All statuses</option>{% for value in ['Pending', 'Partially Paid', 'Paid', 'Overdue'] %}<option value="{{ value }}" {{ 'selected' if filters.status == value }} data-i18n="{{ value|lower|replace(' ', '_') }}">{{ value }}</option>{% endfor %}</select>
+  <input type="month" name="month" value="{{ filters.month }}" aria-label="Filter by billing month">
+  <select name="year" aria-label="Filter by year"><option value="" data-i18n="all">All years</option>{% for value in years %}<option value="{{ value }}" {{ 'selected' if filters.year == value }}>{{ value }}</option>{% endfor %}</select>
+  <select name="sort" aria-label="Sort bills"><option value="month_desc" {{ 'selected' if filters.sort == 'month_desc' }}>Newest first</option><option value="month_asc" {{ 'selected' if filters.sort == 'month_asc' }}>Oldest first</option><option value="amount_desc" {{ 'selected' if filters.sort == 'amount_desc' }}>Amount: high to low</option><option value="amount_asc" {{ 'selected' if filters.sort == 'amount_asc' }}>Amount: low to high</option></select>
+  <button class="btn btn-primary" data-i18n="filter">Apply</button>
+</form>
+<section class="card bills-desktop"><div class="table-responsive"><table class="data-table"><thead><tr><th data-i18n="bill_number">Bill number</th><th data-i18n="billing_month">Billing month</th><th data-i18n="maintenance">Maintenance</th><th>Late fee</th><th data-i18n="total_amount">Total</th><th data-i18n="amount_paid">Paid</th><th data-i18n="remaining_amount">Remaining</th><th data-i18n="status">Status</th><th>Action</th></tr></thead><tbody>
+{% for bill in bills %}<tr><td><strong>{{ bill.bill_number }}</strong></td><td>{{ bill.billing_month }}</td><td>₹{{ '{:,.2f}'.format(bill.base_amount) }}</td><td>₹{{ '{:,.2f}'.format(bill.late_fee) }}</td><td>₹{{ '{:,.2f}'.format(bill.total_amount) }}</td><td>₹{{ '{:,.2f}'.format(bill.amount_paid) }}</td><td><strong>₹{{ '{:,.2f}'.format(bill.remaining_amount) }}</strong></td><td><span class="badge badge-{{ 'success' if bill.status == 'Paid' else ('info' if bill.status == 'Partially Paid' else ('danger' if bill.status == 'Overdue' else 'warning')) }}" data-i18n="{{ bill.status|lower|replace(' ', '_') }}">{{ bill.status }}</span></td><td class="bill-actions"><a class="btn btn-secondary btn-small" href="{{ url_for('resident.bill_detail', bill_id=bill.id) }}">View</a>{% if bill.remaining_amount > 0 %}<a class="btn btn-primary btn-small" href="{{ url_for('payments.pay_bill', bill_id=bill.id) }}" data-i18n="pay_now">Pay</a>{% elif bill.payments %}<a class="btn btn-secondary btn-small" href="{{ url_for('payments.download_receipt', payment_id=bill.payments[-1].id) }}" data-i18n="download">Download</a>{% endif %}</td></tr>
+{% else %}<tr><td colspan="9" class="empty-cell"><i class="fa-regular fa-file-lines"></i><strong data-i18n="no_results_found">No maintenance bills available.</strong><span>When a bill is issued, it will appear here.</span></td></tr>{% endfor %}
+</tbody></table></div></section>
+<section class="bills-mobile">{% for bill in bills %}<article class="bill-card"><div class="bill-card-top"><strong>{{ bill.billing_month }}</strong><span class="badge badge-{{ 'success' if bill.status == 'Paid' else ('info' if bill.status == 'Partially Paid' else ('danger' if bill.status == 'Overdue' else 'warning')) }}" data-i18n="{{ bill.status|lower|replace(' ', '_') }}">{{ bill.status }}</span></div><small>{{ bill.bill_number }}</small><dl><dt data-i18n="maintenance">Maintenance</dt><dd>₹{{ '{:,.2f}'.format(bill.base_amount) }}</dd><dt>Late fee</dt><dd>₹{{ '{:,.2f}'.format(bill.late_fee) }}</dd><dt data-i18n="total_amount">Total</dt><dd>₹{{ '{:,.2f}'.format(bill.total_amount) }}</dd><dt data-i18n="amount_paid">Paid</dt><dd>₹{{ '{:,.2f}'.format(bill.amount_paid) }}</dd><dt data-i18n="remaining_amount">Remaining</dt><dd><strong>₹{{ '{:,.2f}'.format(bill.remaining_amount) }}</strong></dd></dl><div class="bill-actions"><a class="btn btn-secondary btn-small" href="{{ url_for('resident.bill_detail', bill_id=bill.id) }}">View</a>{% if bill.remaining_amount > 0 %}<a class="btn btn-primary btn-small" href="{{ url_for('payments.pay_bill', bill_id=bill.id) }}" data-i18n="pay_now">Pay now</a>{% endif %}</div></article>{% else %}<div class="card empty-state"><i class="fa-regular fa-file-lines"></i><h2 data-i18n="no_results_found">No maintenance bills available.</h2></div>{% endfor %}</section>
+{% if pagination.pages > 1 %}<nav class="pagination" aria-label="Bill pagination">{% if pagination.has_prev %}<a href="{{ url_for('resident.bills', page=pagination.prev_num, **filters) }}">Previous</a>{% endif %}<span>Page {{ pagination.page }} of {{ pagination.pages }}</span>{% if pagination.has_next %}<a href="{{ url_for('resident.bills', page=pagination.next_num, **filters) }}">Next</a>{% endif %}</nav>{% endif %}
+{% endblock %}

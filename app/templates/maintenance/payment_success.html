@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Payment Successful · Society SaaS{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div>
+    <p class="eyebrow" data-i18n="payment_success">Payment Complete</p>
+    <h1>Payment Successful</h1>
+  </div>
+</div>
+
+<section class="card" style="max-width:640px; margin:0 auto;">
+  <!-- Success Icon -->
+  <div style="text-align:center; padding:20px 0 8px;">
+    <div style="width:72px; height:72px; background:linear-gradient(135deg,#22c55e,#16a34a); border-radius:50%; display:inline-flex; align-items:center; justify-content:center; margin-bottom:16px;">
+      <i class="fa-solid fa-check" style="font-size:32px; color:#fff;"></i>
+    </div>
+    <h2 style="color:var(--success,#22c55e); margin:0 0 6px;">Payment Confirmed</h2>
+    <p style="color:var(--text-secondary); margin:0;" data-i18n="payment_success">Your maintenance payment has been verified and recorded securely.</p>
+  </div>
+
+  <hr style="border:none; border-top:1px solid var(--border-color); margin:20px 0;">
+
+  <!-- Payment Details -->
+  <dl class="payment-summary">
+    {% if payment.bill %}
+    <dt data-i18n="bill_number">Bill Number</dt>
+    <dd>{{ payment.bill.bill_number }}</dd>
+    <dt data-i18n="billing_month">Billing Month</dt>
+    <dd>{{ payment.bill.billing_month }}</dd>
+    {% endif %}
+
+    <dt data-i18n="amount_paid">Amount Paid</dt>
+    <dd style="font-size:18px; font-weight:700; color:var(--success,#22c55e);">₹{{ '{:,.2f}'.format(payment.amount_paid) }}</dd>
+
+    <dt data-i18n="payment_date">Payment Date</dt>
+    <dd>{{ payment.payment_date.strftime('%d %b %Y, %I:%M %p') }}</dd>
+
+    <dt data-i18n="payment_method">Payment Method</dt>
+    <dd>{{ payment.payment_method }}</dd>
+
+    <dt data-i18n="transaction_id">Internal Transaction ID</dt>
+    <dd><code style="font-size:12px; background:var(--bg-surface); padding:2px 6px; border-radius:4px;">{{ payment.transaction_id }}</code></dd>
+
+    {% if payment.provider_payment_id %}
+    <dt data-i18n="razorpay_payment_id">Razorpay Payment ID</dt>
+    <dd><code style="font-size:12px; background:var(--bg-surface); padding:2px 6px; border-radius:4px;">{{ payment.provider_payment_id }}</code></dd>
+    {% endif %}
+
+    {% if payment.provider_order_id %}
+    <dt data-i18n="order_id">Razorpay Order ID</dt>
+    <dd><code style="font-size:12px; background:var(--bg-surface); padding:2px 6px; border-radius:4px;">{{ payment.provider_order_id }}</code></dd>
+    {% endif %}
+
+    {% if payment.receipt %}
+    <dt data-i18n="receipt_number">Receipt Number</dt>
+    <dd style="font-weight:600; color:var(--primary);">{{ payment.receipt.receipt_number }}</dd>
+    {% endif %}
+
+    {% if payment.webhook_verified %}
+    <dt>Verification Status</dt>
+    <dd><span style="background:#dcfce7; color:#166534; padding:2px 10px; border-radius:20px; font-size:12px; font-weight:600;"><i class="fa-solid fa-shield-halved"></i> Verified</span></dd>
+    {% endif %}
+  </dl>
+
+  <hr style="border:none; border-top:1px solid var(--border-color); margin:20px 0;">
+
+  <!-- Action Buttons -->
+  <div class="bill-detail-actions" style="display:flex; gap:12px; flex-wrap:wrap;">
+    {% if payment.id %}
+    <a class="btn btn-primary" href="{{ url_for('payments.download_receipt', payment_id=payment.id, view=1) }}" target="_blank">
+      <i class="fa-solid fa-receipt"></i> <span data-i18n="download_receipt">View Receipt</span>
+    </a>
+    <a class="btn btn-secondary" href="{{ url_for('payments.download_receipt', payment_id=payment.id) }}">
+      <i class="fa-solid fa-download"></i> Download PDF
+    </a>
+    {% endif %}
+    <a class="btn btn-secondary" href="{{ url_for('payments.payment_history') }}">
+      <i class="fa-solid fa-clock-rotate-left"></i> <span data-i18n="payment_history">Payment History</span>
+    </a>
+    <a class="btn btn-secondary" href="{{ url_for('main.dashboard') }}">
+      <i class="fa-solid fa-house"></i> Dashboard
+    </a>
+  </div>
+</section>
+{% endblock %}

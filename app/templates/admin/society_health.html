@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Society Health Intelligence - Society ERP{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800"><i class="bi bi-heart-pulse text-danger me-2"></i>Society Health Intelligence</h1>
+            <p class="text-muted mb-0">Deterministic 0–100 Operational Health Score Across 10 Core Society Pillars</p>
+        </div>
+        <form action="{{ url_for('admin.run_automation_action', action_name='RUN_DAILY_HEALTH_CHECK') }}" method="POST">
+            <button type="submit" class="btn btn-danger shadow-sm">
+                <i class="bi bi-arrow-clockwise me-1"></i> Re-Calculate Health Score
+            </button>
+        </form>
+    </div>
+
+    <!-- Health Score Hero Card -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-3 h-100 text-center p-4">
+                <div class="mb-3">
+                    <div class="display-1 fw-bold text-{{ health.badge }} mb-0">{{ health.score }}</div>
+                    <div class="text-muted fw-bold">/ 100 POINTS</div>
+                </div>
+                <div class="mb-3">
+                    <span class="badge bg-{{ health.badge }} fs-6 px-3 py-2 text-uppercase">{{ health.tier }}</span>
+                </div>
+                <p class="small text-muted mb-0">Calculated deterministically using real financial collections, overdue ratios, gateway captures, and ledger integrity.</p>
+            </div>
+        </div>
+
+        <!-- Pillar Breakdown -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-bar-chart-fill text-primary me-2"></i>10 Operational Health Pillars</h5>
+                </div>
+                <div class="card-body">
+                    {% for p_key, p in health.pillars.items() %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-semibold small">{{ p.name }}</span>
+                            <span class="small fw-bold">{{ p.score }}/{{ p.max }} pts <span class="text-muted fw-normal">({{ p.details }})</span></span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-{{ 'success' if (p.score / p.max) >= 0.85 else ('warning' if (p.score / p.max) >= 0.6 else 'danger') }}"
+                                 role="progressbar"
+                                 style="width: {{ (p.score / p.max) * 100 }}%">
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deductions & Remediation Recommendations -->
+    {% if health.deductions %}
+    <div class="card border-0 shadow-sm rounded-3 mb-4 border-start border-warning border-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-bold text-warning"><i class="bi bi-exclamation-triangle-fill me-2"></i>Areas Requiring Attention (Point Deductions)</h5>
+        </div>
+        <div class="card-body">
+            <ul class="list-group list-group-flush">
+                {% for d in health.deductions %}
+                <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                    <div><i class="bi bi-dot text-danger fs-4 align-middle"></i> {{ d }}</div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

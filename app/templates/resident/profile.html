@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block title %}My Profile · Society SaaS{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumb-nav" aria-label="Breadcrumb">
+    <a href="{{ url_for('main.dashboard') }}"><i class="fa-solid fa-house"></i> Home</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current" data-i18n="my_profile">My Profile</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow" data-i18n="my_profile">Resident account</p>
+        <h1 data-i18n="my_profile">My Profile</h1>
+        <p style="color: var(--text-secondary);">Keep your contact details current. Society and flat details are managed by the office.</p>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <a href="{{ url_for('resident.security') }}" class="btn btn-secondary">
+            <i class="fa-solid fa-shield-halved"></i> Security
+        </a>
+        <a href="{{ url_for('resident.household') }}" class="btn btn-secondary">
+            <i class="fa-solid fa-people-roof"></i> Household
+        </a>
+    </div>
+</div>
+
+{# Feature 47: Profile Completion Bar #}
+{% set completion_score = 0 %}
+{% if user.full_name %}{% set completion_score = completion_score + 20 %}{% endif %}
+{% if user.email %}{% set completion_score = completion_score + 20 %}{% endif %}
+{% if user.mobile %}{% set completion_score = completion_score + 20 %}{% endif %}
+{% if resident.profile_photo %}{% set completion_score = completion_score + 20 %}{% endif %}
+{% if resident.move_in_date %}{% set completion_score = completion_score + 10 %}{% endif %}
+{% if resident.emergency_contacts %}{% set completion_score = completion_score + 10 %}{% endif %}
+
+<div class="card" style="margin-bottom: 20px; padding: 16px 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-weight: 700; font-size: 14px;">
+            <i class="fa-solid fa-circle-user" style="color: var(--primary);"></i>
+            Profile Completion
+        </span>
+        <span style="font-weight: 800; font-size: 15px; color: {{ 'var(--success)' if completion_score >= 80 else ('var(--warning)' if completion_score >= 50 else 'var(--danger)') }};">
+            {{ completion_score }}%
+        </span>
+    </div>
+    <div class="progress-bar-container" style="height: 10px; margin-bottom: 8px;">
+        <div class="progress-bar-fill {{ 'progress-bar-success' if completion_score >= 80 else ('progress-bar-warning' if completion_score >= 50 else 'progress-bar-danger') }}"
+             style="width: {{ completion_score }}%;"></div>
+    </div>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--text-secondary);">
+        <span style="color: {{ 'var(--success)' if user.full_name else 'var(--danger)' }};">
+            <i class="fa-solid {{ 'fa-check-circle' if user.full_name else 'fa-circle-xmark' }}"></i> Name
+        </span>
+        <span style="color: {{ 'var(--success)' if user.mobile else 'var(--danger)' }};">
+            <i class="fa-solid {{ 'fa-check-circle' if user.mobile else 'fa-circle-xmark' }}"></i> Mobile
+        </span>
+        <span style="color: {{ 'var(--success)' if user.email else 'var(--warning)' }};">
+            <i class="fa-solid {{ 'fa-check-circle' if user.email else 'fa-circle-exclamation' }}"></i> Email
+        </span>
+        <span style="color: {{ 'var(--success)' if resident.profile_photo else 'var(--warning)' }};">
+            <i class="fa-solid {{ 'fa-check-circle' if resident.profile_photo else 'fa-circle-exclamation' }}"></i> Photo
+        </span>
+        <span style="color: {{ 'var(--success)' if resident.emergency_contacts else 'var(--warning)' }};">
+            <i class="fa-solid {{ 'fa-check-circle' if resident.emergency_contacts else 'fa-circle-exclamation' }}"></i> Emergency Contact
+        </span>
+    </div>
+</div>
+
+<div class="profile-grid">
+    {# ---- Personal Information ---- #}
+    <section class="card">
+        <h2 class="card-title" data-i18n="profile_details">
+            Personal information <span class="badge badge-info" style="margin-left:8px;">Editable</span>
+        </h2>
+        <div style="display:flex; align-items:center; gap:14px; margin-bottom:16px;">
+            {% if resident.profile_photo %}
+            <img src="{{ resident.profile_photo }}" alt="Profile photo" style="width:56px; height:56px; border-radius:50%; object-fit:cover; border:2px solid var(--border-color);">
+            {% else %}
+            <div style="width:56px; height:56px; border-radius:50%; background:var(--primary-light); color:var(--primary); display:grid; place-items:center; font:700 20px var(--font-heading);">
+                {{ user.full_name[0]|upper if user.full_name else '?' }}
+            </div>
+            {% endif %}
+            <div>
+                <strong>{{ user.full_name }}</strong><br>
+                <small style="color:var(--text-secondary);">{{ resident.resident_type }} &middot; {{ resident.flat.flat_number if resident.flat else '—' }}</small>
+            </div>
+        </div>
+        <form method="post" class="stack-form">
+            <label>
+                <span data-i18n="full_name">Full name</span>
+                <input name="full_name" value="{{ user.full_name }}" required maxlength="120">
+            </label>
+            <label>
+                <span data-i18n="mobile_number">Mobile number</span>
+                <input value="{{ user.mobile }}" disabled aria-describedby="mobile-help">
+                <small id="mobile-help">Contact the society office to change your mobile number.</small>
+            </label>
+            <label>
+                <span data-i18n="email">Email address</span>
+                <input name="email" type="email" value="{{ user.email or '' }}" placeholder="you@example.com">
+                {% if not user.email %}
+                <small style="color: var(--warning);"><i class="fa-solid fa-circle-exclamation"></i> Add your email to improve profile completion.</small>
+                {% endif %}
+            </label>
+            <button class="btn btn-primary" type="submit" data-i18n="save_changes">Save changes</button>
+        </form>
+    </section>
+
+    {# ---- Society Info (read-only) ---- #}
+    <section class="card">
+        <h2 class="card-title">Society information <span class="badge badge-warning" style="margin-left:8px;">Admin controlled</span></h2>
+        <dl class="details-list">
+            <dt data-i18n="societies">Society</dt>
+            <dd>{{ user.society.name if user.society else '—' }}</dd>
+            <dt data-i18n="flats_and_wings">Wing / Block</dt>
+            <dd>{{ resident.flat.building.name if resident.flat and resident.flat.building else '—' }} / {{ resident.flat.block.name if resident.flat and resident.flat.block else '—' }}</dd>
+            <dt data-i18n="select_flat">Flat number</dt>
+            <dd>{{ resident.flat.flat_number if resident.flat else '—' }}</dd>
+            <dt>Flat Type</dt>
+            <dd>{{ resident.flat.flat_type if resident.flat else '—' }}</dd>
+            <dt data-i18n="occupancy_type">Resident type</dt>
+            <dd>{{ resident.resident_type }}</dd>
+            <dt data-i18n="status">Account status</dt>
+            <dd><span class="badge badge-success">{{ user.account_status }}</span></dd>
+            <dt>Maintenance start</dt>
+            <dd>{{ user.maintenance_start_month or '—' }}</dd>
+            <dt>Move-in Date</dt>
+            <dd>{{ resident.move_in_date.strftime('%d %b %Y') if resident.move_in_date else '—' }}</dd>
+            <dt>Registered</dt>
+            <dd>{{ user.created_at.strftime('%d %b %Y') }}</dd>
+            <dt>Approved</dt>
+            <dd>{{ approval.approved_at.strftime('%d %b %Y') if approval and approval.approved_at else '—' }}</dd>
+        </dl>
+        <small style="color:var(--text-secondary); display:block; margin-top:10px;">
+            These details are managed by the society office and can't be changed from your account.
+        </small>
+    </section>
+
+    {# ---- Password Change ---- #}
+    <section class="card" id="change-password">
+        <h2 class="card-title" data-i18n="change_password">
+            <i class="fa-solid fa-key" style="color: var(--warning);"></i> Security
+        </h2>
+        <form method="post" action="{{ url_for('resident.change_password') }}" class="stack-form">
+            <label>
+                <span data-i18n="current_password">Current password</span>
+                <input type="password" name="current_password" required autocomplete="current-password">
+            </label>
+            <label>
+                <span data-i18n="new_password">New password</span>
+                <input type="password" name="new_password" required minlength="8" autocomplete="new-password">
+                <small style="color: var(--text-secondary);">Minimum 8 characters.</small>
+            </label>
+            <label>
+                <span data-i18n="confirm_password">Confirm new password</span>
+                <input type="password" name="confirm_password" required minlength="8" autocomplete="new-password">
+            </label>
+            <button class="btn btn-secondary" type="submit" data-i18n="change_password">
+                <i class="fa-solid fa-lock"></i> Change password
+            </button>
+        </form>
+        <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border-color);">
+            <a href="{{ url_for('resident.security') }}" class="btn btn-secondary btn-small">
+                <i class="fa-solid fa-shield-halved"></i> View Active Sessions &amp; Security
+            </a>
+        </div>
+    </section>
+
+    {# ---- Quick links ---- #}
+    <section class="card">
+        <h2 class="card-title"><i class="fa-solid fa-bolt" style="color: var(--warning);"></i> Quick Links</h2>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            <a href="{{ url_for('resident.household') }}" class="btn btn-secondary" style="justify-content: flex-start;">
+                <i class="fa-solid fa-people-roof" style="color: var(--primary);"></i> Manage Household Members
+            </a>
+            <a href="{{ url_for('resident.notification_preferences') }}" class="btn btn-secondary" style="justify-content: flex-start;">
+                <i class="fa-solid fa-sliders" style="color: var(--secondary);"></i> Notification Preferences
+            </a>
+            <a href="{{ url_for('resident.yearly_summary') }}" class="btn btn-secondary" style="justify-content: flex-start;">
+                <i class="fa-solid fa-chart-bar" style="color: var(--success);"></i> Yearly Payment Summary
+            </a>
+            <a href="{{ url_for('resident.activity') }}" class="btn btn-secondary" style="justify-content: flex-start;">
+                <i class="fa-solid fa-clock-rotate-left" style="color: var(--text-secondary);"></i> My Activity History
+            </a>
+        </div>
+    </section>
+</div>
+{% endblock %}

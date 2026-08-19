@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Support Requests · Society SaaS{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">Contact support</p><h1>Support Requests</h1><p>Questions about billing, payments, or your account.</p></div><a href="{{ url_for('resident.support_new') }}" class="btn btn-primary"><i class="fa-solid fa-plus" aria-hidden="true"></i> Create Support Request</a></div>
+<section class="card"><div class="table-responsive"><table class="data-table"><thead><tr><th>Subject</th><th>Category</th><th>Status</th><th>Created</th><th>Updated</th><th>Action</th></tr></thead><tbody>
+{% for req in requests %}<tr>
+  <td><strong>{{ req.subject }}</strong></td>
+  <td>{{ req.category }}</td>
+  <td><span class="badge {{ 'badge-success' if req.status == 'RESOLVED' else ('badge-secondary' if req.status == 'CLOSED' else ('badge-info' if req.status == 'IN_PROGRESS' else 'badge-warning')) }}">{{ req.status|replace('_',' ')|title }}</span></td>
+  <td>{{ req.created_at.strftime('%d %b %Y') }}</td>
+  <td>{{ req.updated_at.strftime('%d %b %Y') }}</td>
+  <td><a class="btn btn-secondary btn-small" href="{{ url_for('resident.support_detail', request_id=req.id) }}">View</a></td>
+</tr>
+{% else %}<tr><td colspan="6" class="empty-cell"><i class="fa-regular fa-life-ring" aria-hidden="true"></i><strong>No support requests yet.</strong><span>Need help? Create a request and the society office will respond.</span></td></tr>{% endfor %}
+</tbody></table></div></section>
+{% endblock %}

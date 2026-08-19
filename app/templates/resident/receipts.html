@@ -1,0 +1,147 @@
+﻿{% extends "base.html" %}
+{% block title %}My Receipts · Society SaaS{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumb-nav" aria-label="Breadcrumb">
+    <a href="{{ url_for('main.dashboard') }}"><i class="fa-solid fa-house"></i> Home</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current" data-i18n="receipts">My Receipts</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow" data-i18n="receipts">Payment records</p>
+        <h1 data-i18n="receipts">My Receipts</h1>
+        <p style="color: var(--text-secondary);">Download, view, or share receipts for every successful payment.</p>
+    </div>
+    <a href="{{ url_for('resident.export_payments_csv') }}" class="btn btn-secondary">
+        <i class="fa-solid fa-file-csv" aria-hidden="true"></i> Export CSV
+    </a>
+</div>
+
+{# Feature 33: Filters #}
+<form class="receipt-filters card" method="get" aria-label="Filter receipts">
+    <input name="q" value="{{ filters.q }}" placeholder="Search receipt number or transaction ID" aria-label="Search">
+    <input type="month" name="month" value="{{ filters.month }}" aria-label="Filter by payment month">
+    <select name="year" aria-label="Filter by year">
+        <option value="">All years</option>
+        {% for value in years %}
+        <option value="{{ value }}" {{ 'selected' if filters.year == value }}>{{ value }}</option>
+        {% endfor %}
+    </select>
+    <button class="btn btn-primary" data-i18n="filter">Apply</button>
+    {% if filters.q or filters.month or filters.year %}
+    <a href="{{ url_for('resident.receipts') }}" class="btn btn-secondary" data-i18n="clear">Clear</a>
+    {% endif %}
+</form>
+
+{# Feature 31: Receipt Library table #}
+<section class="card">
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Receipt Number</th>
+                    <th data-i18n="payment_date">Date</th>
+                    <th>Bill</th>
+                    <th data-i18n="amount_paid">Amount</th>
+                    <th data-i18n="payment_method">Method</th>
+                    <th data-i18n="status">Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for receipt in receipts %}
+            <tr>
+                <td>
+                    <strong style="color: var(--primary);">{{ receipt.receipt_number }}</strong>
+                </td>
+                <td style="font-size: 12px;">{{ receipt.payment.payment_date.strftime('%d %b %Y, %I:%M %p') }}</td>
+                <td>
+                    <a href="{{ url_for('resident.bill_detail', bill_id=receipt.payment.bill_id) }}" style="font-size: 13px;">
+                        {{ receipt.payment.bill.billing_month if receipt.payment.bill else '—' }}
+                    </a>
+                    <div style="font-size: 11px; color: var(--text-secondary);">{{ receipt.payment.bill.bill_number if receipt.payment.bill else '' }}</div>
+                </td>
+                <td style="font-weight: 700; color: var(--success);">₹{{ '{:,.2f}'.format(receipt.payment.amount_paid) }}</td>
+                <td><span class="badge badge-info">{{ receipt.payment.payment_method }}</span></td>
+                <td><span class="badge badge-success">{{ receipt.payment.status }}</span></td>
+                <td>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        {# View inline #}
+                        <a class="btn btn-secondary btn-small"
+                           href="{{ url_for('payments.download_receipt', payment_id=receipt.payment_id, view=1) }}"
+                           target="_blank" title="View PDF" aria-label="View receipt">
+                            <i class="fa-solid fa-eye"></i>
+                        </a>
+                        {# Download #}
+                        <a class="btn btn-primary btn-small"
+                           href="{{ url_for('payments.download_receipt', payment_id=receipt.payment_id) }}"
+                           title="Download PDF" aria-label="Download receipt">
+                            <i class="fa-solid fa-download"></i>
+                        </a>
+                        {# Feature 34: QR verify #}
+                        <a class="btn btn-secondary btn-small"
+                           href="{{ url_for('payments.verify_receipt', receipt_number=receipt.receipt_number) }}"
+                           target="_blank" title="Verify receipt QR" aria-label="Verify receipt">
+                            <i class="fa-solid fa-qrcode"></i>
+                        </a>
+                        {# Feature 35: Share receipt #}
+                        <button type="button" class="btn btn-secondary btn-small"
+                                onclick="shareReceipt('{{ receipt.receipt_number }}')"
+                                title="Share receipt" aria-label="Share receipt">
+                            <i class="fa-solid fa-share-nodes"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7" class="empty-cell">
+                    <i class="fa-regular fa-file-lines"></i>
+                    <strong data-i18n="no_results_found">No receipts yet.</strong>
+                    <span>Receipts appear here after a successful payment.</span>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+{# Pagination #}
+{% if pagination and pagination.pages > 1 %}
+<nav class="pagination" aria-label="Receipt pagination">
+    {% if pagination.has_prev %}
+    <a href="{{ url_for('resident.receipts', page=pagination.prev_num, **filters) }}">Previous</a>
+    {% endif %}
+    <span>Page {{ pagination.page }} of {{ pagination.pages }}</span>
+    {% if pagination.has_next %}
+    <a href="{{ url_for('resident.receipts', page=pagination.next_num, **filters) }}">Next</a>
+    {% endif %}
+</nav>
+{% endif %}
+
+<script>
+function shareReceipt(receiptNum) {
+    const url = window.location.origin + '/payments/receipt/verify/' + receiptNum;
+    if (navigator.share) {
+        navigator.share({
+            title: 'Society Payment Receipt',
+            text: 'Receipt reference: ' + receiptNum,
+            url: url
+        }).catch(() => copyToClipboard(url, receiptNum));
+    } else {
+        copyToClipboard(url, receiptNum);
+    }
+}
+function copyToClipboard(url, receiptNum) {
+    navigator.clipboard.writeText(url).then(() => {
+        if (window.showToast) window.showToast('Receipt link copied: ' + receiptNum, 'success');
+        else alert('Copied receipt verification link to clipboard.');
+    });
+}
+</script>
+{% endblock %}

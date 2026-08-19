@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Notifications · Society SaaS{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumb-nav" aria-label="Breadcrumb">
+    <a href="{{ url_for('main.dashboard') }}"><i class="fa-solid fa-house"></i> Home</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current" data-i18n="notifications">Notifications</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow" data-i18n="notifications">Updates &amp; Alerts</p>
+        <h1 data-i18n="notifications">Notifications</h1>
+        <p style="color: var(--text-secondary);">Billing, payment, and account updates in one place.</p>
+    </div>
+    {# Feature 45: Mark all read button #}
+    <form method="post" action="{{ url_for('resident.mark_all_notifications_read') }}" style="display: inline;">
+        <button type="submit" class="btn btn-secondary">
+            <i class="fa-solid fa-check-double"></i> <span data-i18n="mark_all_read">Mark All Read</span>
+        </button>
+    </form>
+</div>
+
+{# Feature 45: Category tabs #}
+<div class="notification-filters" role="tablist" aria-label="Notification categories" style="margin-bottom: 16px;">
+    <a href="{{ url_for('resident.notifications') }}"
+       class="{{ 'active' if not category }}"
+       role="tab" aria-selected="{{ 'true' if not category else 'false' }}">
+       <i class="fa-solid fa-list"></i> All
+    </a>
+    {% for c in categories %}
+    <a href="{{ url_for('resident.notifications', category=c) }}"
+       class="{{ 'active' if category == c }}"
+       role="tab" aria-selected="{{ 'true' if category == c else 'false' }}">
+        <i class="fa-solid {{
+            'fa-indian-rupee-sign' if c == 'Payment' else
+            ('fa-file-invoice' if c == 'Maintenance' else
+            ('fa-bullhorn' if c == 'Announcements' else
+            ('fa-user' if c == 'Account' else 'fa-gear')))
+        }}"></i> {{ c }}
+    </a>
+    {% endfor %}
+</div>
+
+<section class="card notification-list">
+    {% for item in notifications %}
+    <article class="notification-item {{ 'unread' if not item.read_at else '' }}"
+             style="display: flex; gap: 14px; align-items: flex-start; padding: 14px 16px; border-bottom: 1px solid var(--border-color); background: {{ 'var(--bg-surface)' if not item.read_at else 'transparent' }};">
+
+        {# Icon #}
+        <div style="width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+                    background: {{ 'rgba(34,197,94,0.15)' if item.notification_type == 'PAYMENT_SUCCESS' else ('rgba(239,68,68,0.15)' if item.notification_type in ['OVERDUE_REMINDER','LATE_FEE_NOTICE'] else ('rgba(245,158,11,0.15)' if item.notification_type == 'DUE_REMINDER' else 'rgba(79,70,229,0.15)')) }};
+                    color: {{ 'var(--success)' if item.notification_type == 'PAYMENT_SUCCESS' else ('var(--danger)' if item.notification_type in ['OVERDUE_REMINDER','LATE_FEE_NOTICE'] else ('var(--warning)' if item.notification_type == 'DUE_REMINDER' else 'var(--primary)')) }};">
+            <i class="fa-solid {{ 'fa-circle-check' if item.notification_type == 'PAYMENT_SUCCESS' else ('fa-triangle-exclamation' if item.notification_type in ['OVERDUE_REMINDER','LATE_FEE_NOTICE'] else ('fa-clock' if item.notification_type == 'DUE_REMINDER' else 'fa-bell')) }}"></i>
+        </div>
+
+        {# Content #}
+        <div class="notification-copy" style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 3px;">
+                <span style="font-weight: {{ '700' if not item.read_at else '600' }}; font-size: 14px; color: var(--text-primary);">
+                    {{ item.subject or (item.notification_type|replace('_', ' ')|title) }}
+                </span>
+                <span class="badge badge-info" style="font-size: 10px; padding: 2px 7px;">{{ notification_category(item.notification_type) }}</span>
+                {% if not item.read_at %}
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--primary); flex-shrink: 0;" aria-label="Unread"></span>
+                {% endif %}
+            </div>
+            <p style="font-size: 13px; color: var(--text-secondary); margin: 0 0 4px; white-space: pre-wrap;">{{ item.message }}</p>
+            <small style="color: var(--text-secondary); font-size: 11px;">
+                <i class="fa-regular fa-clock"></i> {{ item.created_at.strftime('%d %b %Y, %I:%M %p') }}
+            </small>
+        </div>
+
+        {# Actions #}
+        <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-end; flex-shrink: 0;">
+            {% if item.id in links %}
+            <a class="btn btn-primary btn-small" href="{{ links[item.id][1] }}" style="white-space: nowrap;">
+                {{ links[item.id][0] }}
+            </a>
+            {% endif %}
+            {% if not item.read_at %}
+            <form method="post" action="{{ url_for('resident.mark_notification_read', notification_id=item.id) }}">
+                <button class="btn btn-secondary btn-small" type="submit" style="font-size: 11px; padding: 4px 8px;">
+                    <i class="fa-solid fa-check"></i> Mark read
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </article>
+
+    {% else %}
+    <div class="empty-state" style="padding: 40px;">
+        <i class="fa-regular fa-bell" style="font-size: 40px; color: var(--text-secondary);"></i>
+        <h2 data-i18n="no_notifications">You're all caught up</h2>
+        <p style="color: var(--text-secondary);">
+            {{ 'No notifications in this category yet.' if category else 'New maintenance and payment updates will appear here.' }}
+        </p>
+    </div>
+    {% endfor %}
+</section>
+{% endblock %}

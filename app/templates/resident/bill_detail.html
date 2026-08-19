@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+{% block title %}Invoice {{ bill.bill_number }} · Society SaaS{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumb-nav" aria-label="Breadcrumb">
+    <a href="{{ url_for('main.dashboard') }}"><i class="fa-solid fa-house"></i> Home</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{{ url_for('resident.bills') }}" data-i18n="my_bills">My Bills</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">{{ bill.bill_number }}</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow" data-i18n="maintenance">Official Maintenance Invoice</p>
+        <h1>Invoice #{{ bill.bill_number }}</h1>
+        <p>Billing Period: {{ bill.billing_month }}</p>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <span class="badge badge-{{ 'success' if bill.status == 'Paid' else ('info' if bill.status == 'Partially Paid' else ('danger' if bill.status == 'Overdue' else 'warning')) }}" style="font-size: 14px; padding: 6px 14px;">
+            {{ bill.status }}
+        </span>
+        <a href="{{ url_for('resident.bill_pdf', bill_id=bill.id) }}" class="btn btn-secondary">
+            <i class="fa-solid fa-file-pdf"></i> Download Bill PDF
+        </a>
+        <button type="button" class="btn btn-secondary" onclick="window.print()">
+            <i class="fa-solid fa-print"></i> Print Invoice
+        </button>
+        {% if bill.remaining_amount > 0 %}
+        <a class="btn btn-primary" href="{{ url_for('payments.pay_bill', bill_id=bill.id) }}">
+            <i class="fa-solid fa-credit-card"></i> Pay ₹{{ '{:,.2f}'.format(bill.remaining_amount) }}
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; max-width: 1080px;">
+    <!-- Main Invoice Card (76-90) -->
+    <section class="card invoice-card" style="padding: 32px;">
+        <!-- Society Header Branding (77, 78) -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid var(--border-color); padding-bottom: 20px; margin-bottom: 24px;">
+            <div>
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                    <div class="brand-icon" style="width: 36px; height: 36px; font-size: 18px;"><i class="fa-solid fa-building-user"></i></div>
+                    <h2 style="font-size: 20px; margin: 0;">{{ bill.society.name if bill.society else 'Society SaaS' }}</h2>
+                </div>
+                <p style="color: var(--text-secondary); font-size: 12.5px; margin: 0;">Maintenance Management & Billing Engine</p>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 12px; color: var(--text-secondary);">Invoice Number</div>
+                <strong style="font-size: 16px; font-family: var(--font-heading);">{{ bill.bill_number }}</strong>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                    Issued: {{ bill.created_at.strftime('%d %b %Y') if bill.created_at else bill.billing_month }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Resident & Flat Meta (79, 80) -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background: var(--bg-primary); padding: 18px; border-radius: var(--radius-md); margin-bottom: 24px;">
+            <div>
+                <div style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary); font-weight: 700;">Billed To</div>
+                <div style="font-weight: 700; font-size: 15px; margin-top: 2px;">{{ resident.full_name if resident else 'Resident' }}</div>
+                <div style="font-size: 13px; color: var(--text-secondary);">
+                    Flat {{ bill.flat.flat_number if bill.flat else 'N/A' }} · {{ bill.flat.building.name if bill.flat and bill.flat.building else 'Wing A' }}
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary); font-weight: 700;">Payment Due Date</div>
+                <div style="font-weight: 700; font-size: 15px; margin-top: 2px; color: {{ 'var(--danger)' if bill.status == 'Overdue' else 'var(--text-primary)' }};">
+                    {{ bill.due_date.strftime('%d %b %Y') if bill.due_date else 'Immediate' }}
+                </div>
+                <div style="font-size: 12px; color: var(--text-secondary);">
+                    Status: <strong>{{ bill.status }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Itemized Breakdown (84-89) -->
+        <table class="data-table" style="margin-bottom: 24px;">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th style="text-align: right;">Amount (INR)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <div style="font-weight: 600;">Monthly Society Maintenance</div>
+                        <small style="color: var(--text-secondary);">Base residential maintenance charge for {{ bill.billing_month }}</small>
+                    </td>
+                    <td style="text-align: right; font-weight: 600;">₹{{ '{:,.2f}'.format(bill.base_amount) }}</td>
+                </tr>
+                {% if bill.late_fee > 0 %}
+                <tr>
+                    <td>
+                        <div style="font-weight: 600; color: var(--danger);">Late Payment Surcharge / Penalty</div>
+                        <small style="color: var(--text-secondary);">Applied after payment due date deadline</small>
+                    </td>
+                    <td style="text-align: right; font-weight: 600; color: var(--danger);">₹{{ '{:,.2f}'.format(bill.late_fee) }}</td>
+                </tr>
+                {% endif %}
+                {% if bill.additional_charges > 0 %}
+                <tr>
+                    <td>
+                        <div style="font-weight: 600;">Additional Amenity / Utility Charges</div>
+                    </td>
+                    <td style="text-align: right; font-weight: 600;">₹{{ '{:,.2f}'.format(bill.additional_charges) }}</td>
+                </tr>
+                {% endif %}
+                {% if bill.discount > 0 %}
+                <tr>
+                    <td>
+                        <div style="font-weight: 600; color: var(--success);">Early Payment Concession / Discount</div>
+                    </td>
+                    <td style="text-align: right; font-weight: 600; color: var(--success);">-₹{{ '{:,.2f}'.format(bill.discount) }}</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        <!-- Summary Totals -->
+        <div style="margin-left: auto; max-width: 320px; border-top: 2px solid var(--border-color); padding-top: 14px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13.5px;">
+                <span style="color: var(--text-secondary);">Subtotal</span>
+                <span>₹{{ '{:,.2f}'.format(bill.total_amount) }}</span>
+            </div>
+            {% if bill.amount_paid > 0 %}
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13.5px; color: var(--success);">
+                <span>Amount Paid</span>
+                <span>-₹{{ '{:,.2f}'.format(bill.amount_paid) }}</span>
+            </div>
+            {% endif %}
+            <div style="display: flex; justify-content: space-between; font-size: 18px; font-weight: 800; border-top: 1px solid var(--border-color); padding-top: 10px;">
+                <span>Balance Due</span>
+                <span style="color: {{ 'var(--danger)' if bill.remaining_amount > 0 else 'var(--success)' }};">
+                    ₹{{ '{:,.2f}'.format(bill.remaining_amount) }}
+                </span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Side Panel: Actions & Payment Timeline (90, 91) -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <section class="card">
+            <h3 class="card-title"><i class="fa-solid fa-credit-card" style="color: var(--primary);"></i> Payment Actions</h3>
+            {% if bill.remaining_amount > 0 %}
+            <a class="btn btn-primary" href="{{ url_for('payments.pay_bill', bill_id=bill.id) }}" style="width: 100%; justify-content: center; padding: 14px; font-size: 15px; margin-bottom: 10px;">
+                <i class="fa-solid fa-lock"></i> Pay ₹{{ '{:,.2f}'.format(bill.remaining_amount) }} Online
+            </a>
+            <p style="font-size: 12px; color: var(--text-secondary); text-align: center; margin: 0;">
+                <i class="fa-solid fa-shield-halved"></i> Secured by Razorpay. Supports UPI, Card, Net Banking.
+            </p>
+            {% else %}
+            <div style="background: #dcfce7; color: #166534; padding: 14px; border-radius: var(--radius-md); text-align: center; font-weight: 700; font-size: 14px;">
+                <i class="fa-solid fa-circle-check"></i> Bill Fully Settled
+            </div>
+            {% if latest_payment %}
+            <a class="btn btn-secondary" href="{{ url_for('payments.download_receipt', payment_id=latest_payment.id, view=1) }}" target="_blank" style="width: 100%; justify-content: center; margin-top: 10px;">
+                <i class="fa-solid fa-receipt"></i> View Official Receipt
+            </a>
+            {% endif %}
+            {% endif %}
+        </section>
+
+        <!-- Bill Activity Timeline (91) -->
+        <section class="card">
+            <h3 class="card-title"><i class="fa-solid fa-timeline" style="color: var(--secondary);"></i> Activity History</h3>
+            <div class="timeline-container">
+                <div class="timeline-item">
+                    <div class="timeline-dot dot-success"><i class="fa-solid fa-check"></i></div>
+                    <div class="timeline-title">Bill Generated</div>
+                    <div class="timeline-time">{{ bill.billing_month }}</div>
+                    <div class="timeline-description">Invoice issued for amount ₹{{ '{:,.2f}'.format(bill.total_amount) }}</div>
+                </div>
+
+                {% if bill.payments %}
+                {% for p in bill.payments %}
+                <div class="timeline-item">
+                    <div class="timeline-dot {{ 'dot-success' if p.status in ['Success', 'captured'] else 'dot-danger' }}"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+                    <div class="timeline-title">Payment Attempt: {{ p.status }}</div>
+                    <div class="timeline-time">{{ p.payment_date.strftime('%d %b %Y, %I:%M %p') }}</div>
+                    <div class="timeline-description">₹{{ '{:,.2f}'.format(p.amount_paid) }} via {{ p.payment_method }} (Txn: {{ p.transaction_id[:14] }}…)</div>
+                </div>
+                {% endfor %}
+                {% endif %}
+
+                {% if bill.status == 'Overdue' %}
+                <div class="timeline-item">
+                    <div class="timeline-dot dot-danger"><i class="fa-solid fa-exclamation"></i></div>
+                    <div class="timeline-title">Overdue Notice</div>
+                    <div class="timeline-time">Past Due Date</div>
+                    <div class="timeline-description">Late fee applied to outstanding balance.</div>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+
+        {# Feature 13: Bill Calculation Explanation #}
+        <section class="card">
+            <h3 class="card-title"><i class="fa-solid fa-circle-info" style="color: var(--primary);"></i> How This Bill Was Calculated</h3>
+            <div style="font-size: 13px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>Base monthly maintenance charge</span>
+                    <strong>₹{{ '{:,.2f}'.format(bill.base_amount) }}</strong>
+                </div>
+                {% if bill.late_fee > 0 %}
+                <div style="display: flex; justify-content: space-between; color: var(--danger);">
+                    <span>
+                        Late payment fee
+                        {% if bill.due_date %}
+                        <br><small style="font-size: 11px;">Due date was {{ bill.due_date.strftime('%d %b %Y') }}</small>
+                        {% endif %}
+                    </span>
+                    <strong>₹{{ '{:,.2f}'.format(bill.late_fee) }}</strong>
+                </div>
+                {# Feature 14: Late fee explanation #}
+                <div style="background: #fff9f0; border-left: 3px solid var(--warning); padding: 10px 14px; border-radius: var(--radius-sm); font-size: 12px;">
+                    <strong style="color: var(--warning);"><i class="fa-solid fa-circle-info"></i> Late Fee Applied</strong><br>
+                    A late fee of ₹{{ '{:,.2f}'.format(bill.late_fee) }} was added because this bill was not paid by the due date
+                    {% if bill.due_date %}({{ bill.due_date.strftime('%d %b %Y') }}){% endif %}.
+                    This is a one-time charge per overdue billing period as per society rules.
+                </div>
+                {% endif %}
+                {% if bill.additional_charges > 0 %}
+                <div style="display: flex; justify-content: space-between;">
+                    <span>Additional charges</span>
+                    <strong>₹{{ '{:,.2f}'.format(bill.additional_charges) }}</strong>
+                </div>
+                {% endif %}
+                {% if bill.discount > 0 %}
+                <div style="display: flex; justify-content: space-between; color: var(--success);">
+                    <span>Discount applied</span>
+                    <strong>-₹{{ '{:,.2f}'.format(bill.discount) }}</strong>
+                </div>
+                {% endif %}
+                <div style="border-top: 1px solid var(--border-color); padding-top: 8px; display: flex; justify-content: space-between; font-weight: 700; color: var(--text-primary);">
+                    <span>Total payable</span>
+                    <span>₹{{ '{:,.2f}'.format(bill.total_amount) }}</span>
+                </div>
+                {% if bill.amount_paid > 0 %}
+                <div style="display: flex; justify-content: space-between; color: var(--success);">
+                    <span>Amount already paid</span>
+                    <strong>-₹{{ '{:,.2f}'.format(bill.amount_paid) }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-weight: 700; color: {{ 'var(--danger)' if bill.remaining_amount > 0 else 'var(--success)' }};">
+                    <span>Balance due</span>
+                    <span>₹{{ '{:,.2f}'.format(bill.remaining_amount) }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+</div>
+
+<style media="print">
+  .sidebar, .mobile-nav, .top-navbar, .page-heading .badge, .btn, .ai-chatbot-widget, .skip-link, .timeline-container, .breadcrumb-nav { display:none !important; }
+  .app-container { display:block !important; }
+  .main-content { margin-left: 0 !important; }
+  .card { border: none !important; box-shadow: none !important; padding: 0 !important; }
+</style>
+{% endblock %}

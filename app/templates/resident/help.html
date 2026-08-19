@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Help & Support · Society SaaS{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">Support</p><h1>Help & Support</h1><p>Quick answers for using your resident portal.</p></div></div>
+<div class="help-grid">
+  <section class="card"><h2 class="card-title">How do I pay a bill?</h2><p>Open <a href="{{ url_for('payments.bills') }}">My Bills</a>, select a pending bill, choose a payment method, and confirm your payment.</p></section>
+  <section class="card"><h2 class="card-title">What does Pending mean?</h2><p>Pending means there is an unpaid balance on the bill. Partially Paid means some, but not all, of the bill has been paid. Overdue means the due date has passed and a late fee applies.</p></section>
+  <section class="card"><h2 class="card-title">What is the late fee?</h2><p>A one-time late fee is added to a bill once it passes its due date without being paid in full. It appears as a separate line on the bill and does not increase again for the same month.</p></section>
+  <section class="card"><h2 class="card-title">How do I download or print a receipt?</h2><p>Open <a href="{{ url_for('resident.receipts') }}">My Receipts</a>. Choose Download to save the PDF, or Print to open it in your browser's PDF viewer and print from there.</p></section>
+  <section class="card"><h2 class="card-title">Login help</h2><p>Use your registered mobile number and password to sign in. If you've forgotten your password, contact the society office to reset it — residents don't currently have a self-service reset.</p></section>
+  <section class="card"><h2 class="card-title">Registration help</h2><p>New residents register through the sign-up form and select their wing, block, and flat. Your account becomes active once the society office reviews and approves the request.</p></section>
+  <section class="card"><h2 class="card-title">Still need help?</h2><p>Submit a support request and the society office will get back to you.</p><a class="btn btn-primary" href="{{ url_for('resident.support_new') }}"><i class="fa-solid fa-headset" aria-hidden="true"></i> Contact Support</a></section>
+  <section class="card" style="text-align:center;"><h2 class="card-title">Open on your phone</h2><img src="{{ url_for('main.portal_qr') }}" alt="QR code to open the resident portal" style="width:140px; height:140px; margin:6px auto; display:block; border-radius:var(--radius-sm);"><p class="muted" style="font-size:12.5px;">Scan with your phone camera to open this portal.</p></section>
+  <section class="card"><h2 class="card-title">Contact the society office</h2><p>{{ society.name }}<br>{{ society.phone }}{% if society.email %}<br>{{ society.email }}{% endif %}</p></section>
+</div>
+{% endblock %}

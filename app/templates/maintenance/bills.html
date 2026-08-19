@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% block title %}Maintenance Bills · Society SaaS{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumb-nav" aria-label="Breadcrumb">
+    <a href="{{ url_for('main.dashboard') }}"><i class="fa-solid fa-house"></i> Home</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current" data-i18n="maintenance">Maintenance Billing</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow" data-i18n="maintenance">Maintenance Invoices</p>
+        <h1 data-i18n="bills">Society Maintenance Bills</h1>
+        <p>Manage, search, export, and collect society dues.</p>
+    </div>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button type="button" class="btn btn-secondary" onclick="window.print()">
+            <i class="fa-solid fa-print"></i> Print
+        </button>
+        <button type="button" class="btn btn-secondary" id="export-csv-btn" onclick="exportBillsTableToCSV()">
+            <i class="fa-solid fa-file-csv"></i> Export CSV
+        </button>
+        {% if session.role in ['Super Admin', 'Society Admin'] %}
+        <form action="{{ url_for('payments.generate_bills') }}" method="POST" style="margin:0;">
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-calculator"></i> Run Auto-Billing</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Bulk Selection Toolbar (168, 169, 170) -->
+<div class="bulk-action-toolbar" id="bulk-toolbar">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-weight: 700; font-size: 13.5px;"><i class="fa-solid fa-check-double"></i> <span id="selected-count-badge">0</span> bills selected</span>
+    </div>
+    <div style="display: flex; gap: 8px;">
+        <button type="button" class="btn btn-primary" onclick="bulkPaySelected()">
+            <i class="fa-solid fa-credit-card"></i> Pay Selected
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="clearBulkSelection()">
+            <i class="fa-solid fa-xmark"></i> Deselect All
+        </button>
+    </div>
+</div>
+
+<!-- Search & Quick Filter Bar (58-66) -->
+<section class="card" style="margin-bottom: 20px; padding: 16px 20px;">
+    <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+        <div style="display: flex; gap: 10px; flex: 1; min-width: 260px; max-width: 480px; position: relative;">
+            <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);"></i>
+            <input type="search" id="bill-table-search" placeholder="Search bill no, flat, resident, month..." 
+                   style="width: 100%; padding: 10px 14px 10px 38px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); font-size: 13.5px;"
+                   oninput="filterBillsTable()">
+        </div>
+
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            <!-- Status filter dropdown -->
+            <select id="bill-status-filter" onchange="filterBillsTable()"
+                    style="padding: 9px 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); font-size: 13px;">
+                <option value="">All Statuses</option>
+                <option value="Paid">Paid</option>
+                <option value="Partially Paid">Partially Paid</option>
+                <option value="Pending">Pending / Unpaid</option>
+                <option value="Overdue">Overdue</option>
+            </select>
+
+            <!-- Table Density Toggle (194) -->
+            <button type="button" class="navbar-icon-btn" id="table-density-btn" title="Toggle compact table density" onclick="toggleTableDensity()">
+                <i class="fa-solid fa-table-cells-large"></i>
+            </button>
+        </div>
+    </div>
+</section>
+
+<div class="card" style="padding: 0; overflow: hidden;">
+    <div class="table-responsive">
+        <table class="data-table sticky-table-header" id="bills-table">
+            <thead>
+                <tr>
+                    <th style="width: 40px; text-align: center;">
+                        <input type="checkbox" id="select-all-bills" onclick="toggleSelectAllBills(this)" aria-label="Select all bills">
+                    </th>
+                    <th data-i18n="bill_number">Bill Number</th>
+                    <th data-i18n="flat">Flat</th>
+                    <th data-i18n="billing_month">Month</th>
+                    <th data-i18n="maintenance">Base Charge</th>
+                    <th data-i18n="late_fee">Late Fee</th>
+                    <th data-i18n="total_amount">Total Bill</th>
+                    <th data-i18n="amount_paid">Paid</th>
+                    <th data-i18n="remaining_amount">Remaining</th>
+                    <th data-i18n="status">Status</th>
+                    <th style="text-align: right;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in bills %}
+                <tr class="bill-row" data-bill-id="{{ b.id }}" data-status="{{ b.status }}" data-remaining="{{ b.remaining_amount }}">
+                    <td style="text-align: center;">
+                        <input type="checkbox" class="bill-checkbox" value="{{ b.id }}" onchange="handleBillCheckboxChange()">
+                    </td>
+                    <td><strong>{{ b.bill_number }}</strong></td>
+                    <td>
+                        <span style="font-weight: 600;">{{ b.flat.flat_number if b.flat else 'N/A' }}</span>
+                        {% if b.flat and b.flat.building %}
+                        <small style="display: block; color: var(--text-secondary); font-size: 11px;">{{ b.flat.building.name }}</small>
+                        {% endif %}
+                    </td>
+                    <td>{{ b.billing_month }}</td>
+                    <td>₹{{ "{:,.2f}".format(b.base_amount) }}</td>
+                    <td style="{{ 'color: var(--danger); font-weight: 600;' if b.late_fee > 0 else '' }}">
+                        ₹{{ "{:,.2f}".format(b.late_fee) }}
+                    </td>
+                    <td style="font-weight: 700;">₹{{ "{:,.2f}".format(b.total_amount) }}</td>
+                    <td style="color: var(--success);">₹{{ "{:,.2f}".format(b.amount_paid) }}</td>
+                    <td>
+                        <strong style="color: {{ 'var(--danger)' if b.remaining_amount > 0 else 'var(--text-secondary)' }};">
+                            ₹{{ "{:,.2f}".format(b.remaining_amount) }}
+                        </strong>
+                    </td>
+                    <td>
+                        <span class="badge badge-{{ 'success' if b.status == 'Paid' else ('warning' if b.status == 'Partially Paid' else 'danger') }}" data-i18n="{{ b.status|lower|replace(' ', '_') }}">
+                            {{ b.status }}
+                        </span>
+                    </td>
+                    <td style="text-align: right; white-space: nowrap;">
+                        {% if b.remaining_amount > 0 %}
+                        <a href="{{ url_for('payments.pay_bill', bill_id=b.id) }}" class="btn btn-primary" style="padding: 4px 12px; font-size: 12px;">
+                            <i class="fa-solid fa-credit-card"></i> Pay
+                        </a>
+                        {% elif b.payments and b.payments|length > 0 %}
+                        <a href="{{ url_for('payments.download_receipt', payment_id=b.payments[0].id, view=1) }}" target="_blank" class="btn btn-secondary" style="padding: 4px 10px; font-size: 12px;">
+                            <i class="fa-solid fa-eye"></i> Receipt
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="11" style="text-align: center; padding: 36px;" data-i18n="no_results_found">No bills available. Your maintenance bills will appear here when issued.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function filterBillsTable() {
+    const q = document.getElementById('bill-table-search').value.toLowerCase().trim();
+    const status = document.getElementById('bill-status-filter').value;
+    const rows = document.querySelectorAll('#bills-table tbody tr.bill-row');
+
+    rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        const rowStatus = row.getAttribute('data-status') || '';
+
+        const matchQ = !q || text.includes(q);
+        const matchStatus = !status || rowStatus.toLowerCase() === status.toLowerCase();
+
+        row.style.display = (matchQ && matchStatus) ? '' : 'none';
+    });
+}
+
+function toggleSelectAllBills(master) {
+    const checkboxes = document.querySelectorAll('.bill-checkbox');
+    checkboxes.forEach(cb => {
+        if (cb.closest('tr').style.display !== 'none') {
+            cb.checked = master.checked;
+        }
+    });
+    handleBillCheckboxChange();
+}
+
+function handleBillCheckboxChange() {
+    const selected = document.querySelectorAll('.bill-checkbox:checked');
+    const toolbar = document.getElementById('bulk-toolbar');
+    const badge = document.getElementById('selected-count-badge');
+
+    if (badge) badge.textContent = selected.length;
+    if (toolbar) {
+        if (selected.length > 0) {
+            toolbar.classList.add('active');
+        } else {
+            toolbar.classList.remove('active');
+        }
+    }
+}
+
+function clearBulkSelection() {
+    const checkboxes = document.querySelectorAll('.bill-checkbox');
+    checkboxes.forEach(cb => cb.checked = false);
+    const master = document.getElementById('select-all-bills');
+    if (master) master.checked = false;
+    handleBillCheckboxChange();
+}
+
+function bulkPaySelected() {
+    const selected = Array.from(document.querySelectorAll('.bill-checkbox:checked')).map(cb => cb.value);
+    if (selected.length === 0) return;
+    if (selected.length === 1) {
+        window.location.href = `/payments/pay/${selected[0]}`;
+    } else {
+        // Multi month checkout flow
+        window.toast(`Proceeding with ${selected.length} bills checkout...`, 'info');
+        window.location.href = `/payments/pay/${selected[0]}`;
+    }
+}
+
+function toggleTableDensity() {
+    const table = document.getElementById('bills-table');
+    if (!table) return;
+    const isCompact = table.classList.toggle('table-compact');
+    localStorage.setItem('table_density_compact', isCompact ? 'true' : 'false');
+    window.toast(isCompact ? 'Compact table density enabled' : 'Comfortable density enabled', 'info');
+}
+
+// Restore saved table density
+document.addEventListener('DOMContentLoaded', () => {
+    if (localStorage.getItem('table_density_compact') === 'true') {
+        const table = document.getElementById('bills-table');
+        if (table) table.classList.add('table-compact');
+    }
+});
+
+function exportBillsTableToCSV() {
+    const table = document.getElementById('bills-table');
+    let csv = [];
+    const rows = table.querySelectorAll('tr');
+    
+    rows.forEach(row => {
+        if (row.style.display === 'none') return;
+        const cols = row.querySelectorAll('th, td');
+        let rowData = [];
+        cols.forEach((col, i) => {
+            if (i === 0 || i === cols.length - 1) return; // Skip checkbox and actions
+            let text = col.innerText.replace(/(\r\n|\n|\r)/gm, ' ').replace(/"/g, '""').trim();
+            rowData.push(`"${text}"`);
+        });
+        if (rowData.length > 0) csv.push(rowData.join(','));
+    });
+
+    const csvFile = new Blob([csv.join('\n')], { type: 'text/csv' });
+    const downloadLink = document.createElement('a');
+    downloadLink.download = `maintenance_bills_${new Date().toISOString().slice(0,10)}.csv`;
+    downloadLink.href = window.URL.createObjectURL(csvFile);
+    downloadLink.style.display = 'none';
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    downloadLink.remove();
+    window.toast('Bills exported to CSV successfully', 'success');
+}
+</script>
+{% endblock %}

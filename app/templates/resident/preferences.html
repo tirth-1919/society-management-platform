@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Notification Preferences · Society SaaS{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">Settings</p><h1>Notification Preferences</h1><p>Choose which optional updates you receive. Account and payment-confirmation records are always kept regardless of these settings.</p></div></div>
+<section class="card" style="max-width:520px;">
+  <form method="post" class="stack-form">
+    <div class="pref-row">
+      <div><strong>Maintenance reminders</strong><br><small class="muted">Upcoming and overdue maintenance due dates.</small></div>
+      <label class="switch"><input type="checkbox" name="maintenance_reminders" {{ 'checked' if pref.maintenance_reminders }}><span class="switch-track" aria-hidden="true"></span><span class="sr-only">Maintenance reminders</span></label>
+    </div>
+    <div class="pref-row">
+      <div><strong>Payment reminders</strong><br><small class="muted">Reminders before a payment is due.</small></div>
+      <label class="switch"><input type="checkbox" name="payment_reminders" {{ 'checked' if pref.payment_reminders }}><span class="switch-track" aria-hidden="true"></span><span class="sr-only">Payment reminders</span></label>
+    </div>
+    <div class="pref-row">
+      <div><strong>Payment confirmations</strong><br><small class="muted">A note when a payment is recorded successfully.</small></div>
+      <label class="switch"><input type="checkbox" name="payment_confirmations" {{ 'checked' if pref.payment_confirmations }}><span class="switch-track" aria-hidden="true"></span><span class="sr-only">Payment confirmations</span></label>
+    </div>
+    <div class="pref-row">
+      <div><strong>Announcements</strong><br><small class="muted">Society notices and announcements.</small></div>
+      <label class="switch"><input type="checkbox" name="announcements" {{ 'checked' if pref.announcements }}><span class="switch-track" aria-hidden="true"></span><span class="sr-only">Announcements</span></label>
+    </div>
+    <button type="submit" class="btn btn-primary" style="margin-top:8px;">Save preferences</button>
+  </form>
+</section>
+{% endblock %}

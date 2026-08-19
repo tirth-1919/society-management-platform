@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Payment Reconciliation Center - Society ERP{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800"><i class="bi bi-shield-check text-primary me-2"></i>Payment Reconciliation Center</h1>
+            <p class="text-muted mb-0">12-Point Automated Financial Audit & Anomaly Detection</p>
+        </div>
+        <div class="d-flex gap-2">
+            <form action="{{ url_for('admin.run_automation_action', action_name='RECONCILE_PAYMENTS') }}" method="POST">
+                <button type="submit" class="btn btn-primary shadow-sm">
+                    <i class="bi bi-arrow-repeat me-1"></i> Run Reconciliation Audit
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Metrics Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body">
+                    <div class="text-uppercase text-muted small fw-bold mb-1">Today's Net Collection</div>
+                    <div class="h4 mb-0 fw-bold text-success">₹{{ "{:,.2f}".format(summary.today_collection) }}</div>
+                    <small class="text-muted">Gross: ₹{{ "{:,.2f}".format(summary.today_gross) }}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body">
+                    <div class="text-uppercase text-muted small fw-bold mb-1">This Month's Net</div>
+                    <div class="h4 mb-0 fw-bold text-primary">₹{{ "{:,.2f}".format(summary.month_collection) }}</div>
+                    <small class="text-muted">Gross: ₹{{ "{:,.2f}".format(summary.month_gross) }}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body">
+                    <div class="text-uppercase text-muted small fw-bold mb-1">Total Outstanding</div>
+                    <div class="h4 mb-0 fw-bold text-danger">₹{{ "{:,.2f}".format(summary.total_outstanding) }}</div>
+                    <small class="text-muted">Overdue: ₹{{ "{:,.2f}".format(summary.total_overdue) }}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body">
+                    <div class="text-uppercase text-muted small fw-bold mb-1">Open Audit Issues</div>
+                    <div class="h4 mb-0 fw-bold {% if issues %}text-danger{% else %}text-success{% endif %}">
+                        {{ issues|length }}
+                    </div>
+                    <small class="text-muted">{% if issues %}Action required{% else %}All records reconciled{% endif %}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Issues Table -->
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold"><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Reconciliation Issues Detected</h5>
+            <span class="badge bg-secondary">{{ issues|length }} issues</span>
+        </div>
+        <div class="card-body p-0">
+            {% if issues %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Severity</th>
+                            <th>Issue Type</th>
+                            <th>Description</th>
+                            <th>Detected At</th>
+                            <th>Linked IDs</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for issue in issues %}
+                        <tr>
+                            <td>
+                                {% if issue.severity == 'CRITICAL' %}
+                                <span class="badge bg-danger">CRITICAL</span>
+                                {% elif issue.severity == 'WARNING' %}
+                                <span class="badge bg-warning text-dark">WARNING</span>
+                                {% else %}
+                                <span class="badge bg-info">INFO</span>
+                                {% endif %}
+                            </td>
+                            <td class="fw-semibold">{{ issue.issue_type.replace('_', ' ') }}</td>
+                            <td>{{ issue.description }}</td>
+                            <td class="small text-muted">{{ issue.detected_at.strftime('%Y-%m-%d %H:%M') if issue.detected_at else 'N/A' }}</td>
+                            <td class="small">
+                                {% if issue.payment_id %}<div>Payment #{{ issue.payment_id }}</div>{% endif %}
+                                {% if issue.bill_id %}<div>Bill #{{ issue.bill_id }}</div>{% endif %}
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <form action="{{ url_for('admin.resolve_reconciliation', id=issue.id) }}" method="POST" class="d-inline">
+                                        <button type="submit" class="btn btn-success btn-sm">
+                                            <i class="bi bi-check-circle me-1"></i> Resolve & Fix
+                                        </button>
+                                    </form>
+                                    <form action="{{ url_for('admin.dismiss_reconciliation', id=issue.id) }}" method="POST" class="d-inline ms-1">
+                                        <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                            <i class="bi bi-x-circle me-1"></i> Dismiss
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-check-circle-fill text-success fs-1 mb-2"></i>
+                <h5 class="fw-bold">All Financial Records Reconciled</h5>
+                <p class="text-muted">No reconciliation anomalies or missing receipts detected across the society ledger.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

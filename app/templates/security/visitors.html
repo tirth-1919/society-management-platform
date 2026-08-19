@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Visitor Security Desk - Security Desk{% endblock %}
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">Security Desk</p>
+        <h2>Visitor Security Desk</h2>
+        <p style="color: var(--text-secondary);">Verify pre-approved visitor passes and monitor real-time gate entries.</p>
+    </div>
+</div>
+
+{# Main Visitor / Security Section #}
+<div class="card" style="margin-bottom: 24px;">
+    <div class="card-title">
+        <i class="fa-solid fa-shield-halved" style="color: var(--primary);"></i> Verify Pre-Approved Pass
+    </div>
+    <form action="{{ url_for('visitors.verify_pass') }}" method="POST" style="margin-top: 16px; max-width: 480px;">
+        <div style="margin-bottom: 16px;">
+            <label style="font-weight: 600; display: block; margin-bottom: 6px;">Pass Code</label>
+            <input type="text" name="pass_code" required placeholder="e.g. PASS4921" style="width: 100%; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); text-transform: uppercase; font-family: monospace; font-weight: 700; font-size: 16px; letter-spacing: 1px;">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; min-height: 44px;">
+            <i class="fa-solid fa-qrcode"></i> Verify &amp; Check-In
+        </button>
+    </form>
+</div>
+
+{# Today's Gate Entries — Appears BELOW the main section #}
+<div class="card" id="todays-gate-entries-section">
+    <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <span><i class="fa-solid fa-person-walking-arrow-right" style="color: var(--secondary);"></i> Today's Gate Entries</span>
+        <span class="badge badge-info" style="font-size: 12px;">{{ visitors|length }} logged today</span>
+    </div>
+
+    {# Desktop View: Table #}
+    <div class="table-responsive visitors-desktop">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Visitor Name</th>
+                    <th>Mobile</th>
+                    <th>Purpose</th>
+                    <th>Entry Time</th>
+                    <th>Exit Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in visitors %}
+                <tr>
+                    <td><strong>{{ v.visitor_name }}</strong></td>
+                    <td>{{ v.mobile }}</td>
+                    <td><span class="badge badge-info">{{ v.purpose }}</span></td>
+                    <td>{{ v.entry_time.strftime('%H:%M') }}</td>
+                    <td>
+                        {% if v.exit_time %}
+                        {{ v.exit_time.strftime('%H:%M') }}
+                        {% else %}
+                        <form action="{{ url_for('visitors.exit_visitor', visitor_id=v.id) }}" method="POST" style="margin:0;">
+                            <button type="submit" class="btn btn-secondary btn-small" style="padding: 4px 8px; font-size: 11px;">Log Exit</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">No visitors recorded today.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {# Mobile View: Responsive Cards #}
+    <div class="visitors-mobile" style="display: none; gap: 12px;">
+        {% for v in visitors %}
+        <div style="padding: 14px 16px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-surface);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                <div>
+                    <strong style="font-size: 14px;">{{ v.visitor_name }}</strong>
+                    <div style="font-size: 12px; color: var(--text-secondary);">{{ v.mobile }}</div>
+                </div>
+                <span class="badge badge-info">{{ v.purpose }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-secondary); margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-color);">
+                <span><i class="fa-solid fa-clock"></i> In: {{ v.entry_time.strftime('%H:%M') }}</span>
+                <span>
+                    {% if v.exit_time %}
+                    Out: {{ v.exit_time.strftime('%H:%M') }}
+                    {% else %}
+                    <form action="{{ url_for('visitors.exit_visitor', visitor_id=v.id) }}" method="POST" style="margin:0; display: inline;">
+                        <button type="submit" class="btn btn-secondary btn-small" style="padding: 4px 10px; font-size: 11px;">Log Exit</button>
+                    </form>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 20px; color: var(--text-secondary);">No visitors recorded today.</div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+@media (max-width: 768px) {
+    .visitors-desktop { display: none !important; }
+    .visitors-mobile { display: grid !important; }
+}
+</style>
+{% endblock %}

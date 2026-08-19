@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Invite Visitor · Society SaaS{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumb-nav" aria-label="Breadcrumb">
+    <a href="{{ url_for('main.dashboard') }}"><i class="fa-solid fa-house"></i> Home</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{{ url_for('resident.resident_visitors') }}" data-i18n="visitors">Visitors</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current" data-i18n="invite_visitor">Invite Visitor</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow" data-i18n="visitors">Visitor Security Desk</p>
+        <h1 data-i18n="invite_visitor">Invite a Visitor</h1>
+        <p style="color: var(--text-secondary);">Create a pre-approved pass for your visitor. Share the 6-digit code for entry.</p>
+    </div>
+    <a href="{{ url_for('resident.resident_visitors') }}" class="btn btn-secondary">
+        <i class="fa-solid fa-arrow-left"></i> Back
+    </a>
+</div>
+
+<section class="card" style="max-width: 600px;">
+    <form method="post" action="{{ url_for('resident.invite_visitor') }}" class="stack-form">
+
+        <label>
+            <span data-i18n="visitor_name">Visitor Name <span style="color: var(--danger);">*</span></span>
+            <input type="text" name="visitor_name" required maxlength="100" placeholder="Full name of your visitor" autocomplete="off">
+        </label>
+
+        <label>
+            <span data-i18n="mobile_number">Mobile Number <span style="color: var(--danger);">*</span></span>
+            <input type="tel" name="mobile" required minlength="10" maxlength="15" placeholder="Visitor's phone number" autocomplete="off">
+        </label>
+
+        <label>
+            <span data-i18n="expected_date">Expected Date <span style="color: var(--danger);">*</span></span>
+            <input type="date" name="expected_date" required min="{{ min_date }}">
+        </label>
+
+        <label>
+            <span>Expected Time (optional)</span>
+            <input type="time" name="expected_time" placeholder="Expected arrival time">
+        </label>
+
+        <label>
+            <span data-i18n="purpose">Purpose of Visit</span>
+            <select name="purpose" aria-label="Purpose of visit">
+                <option value="Guest">Guest</option>
+                <option value="Delivery">Delivery</option>
+                <option value="Service">Service / Repair</option>
+                <option value="Vendor">Vendor</option>
+                <option value="Other">Other</option>
+            </select>
+        </label>
+
+        <label>
+            <span>Notes (optional)</span>
+            <textarea name="notes" rows="2" maxlength="200" placeholder="Any notes for security staff…"></textarea>
+        </label>
+
+        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: var(--radius-md); padding: 12px 16px; font-size: 13px; color: #1e40af;">
+            <i class="fa-solid fa-circle-info"></i>
+            A unique 6-digit pass code will be generated. Share it with your visitor to present at the gate.
+        </div>
+
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <button type="submit" class="btn btn-primary">
+                <i class="fa-solid fa-ticket"></i> <span data-i18n="create_pass">Create Visitor Pass</span>
+            </button>
+            <a href="{{ url_for('resident.resident_visitors') }}" class="btn btn-secondary" data-i18n="cancel">Cancel</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

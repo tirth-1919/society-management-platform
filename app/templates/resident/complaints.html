@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}My Complaints · Society SaaS{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumb-nav" aria-label="Breadcrumb">
+    <a href="{{ url_for('main.dashboard') }}"><i class="fa-solid fa-house"></i> Home</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current" data-i18n="complaints">My Complaints</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow" data-i18n="complaints">Service Requests</p>
+        <h1 data-i18n="complaints">My Complaints</h1>
+        <p style="color: var(--text-secondary);">Track the status of your service requests and complaints.</p>
+    </div>
+    <a href="{{ url_for('complaints.create_complaint') }}" class="btn btn-primary">
+        <i class="fa-solid fa-plus"></i> <span data-i18n="new_complaint">New Complaint</span>
+    </a>
+</div>
+
+{# ---- Feature 36: Status summary cards ---- #}
+<div class="metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); margin-bottom: 20px;">
+    <a href="{{ url_for('resident.resident_complaints') }}" style="text-decoration: none;">
+        <div class="metric-card" style="cursor: pointer; border-left: 3px solid var(--primary);">
+            <div class="metric-icon" style="background: rgba(79,70,229,0.12); color: var(--primary);"><i class="fa-solid fa-circle-dot"></i></div>
+            <div>
+                <div class="metric-val">{{ status_counts.Open }}</div>
+                <div class="metric-lbl">Open</div>
+            </div>
+        </div>
+    </a>
+    <a href="{{ url_for('resident.resident_complaints', status='In Progress') }}" style="text-decoration: none;">
+        <div class="metric-card" style="cursor: pointer; border-left: 3px solid var(--warning);">
+            <div class="metric-icon" style="background: rgba(245,158,11,0.12); color: var(--warning);"><i class="fa-solid fa-gears"></i></div>
+            <div>
+                <div class="metric-val">{{ status_counts['In Progress'] }}</div>
+                <div class="metric-lbl">In Progress</div>
+            </div>
+        </div>
+    </a>
+    <a href="{{ url_for('resident.resident_complaints', status='Resolved') }}" style="text-decoration: none;">
+        <div class="metric-card" style="cursor: pointer; border-left: 3px solid var(--success);">
+            <div class="metric-icon" style="background: rgba(16,185,129,0.12); color: var(--success);"><i class="fa-solid fa-circle-check"></i></div>
+            <div>
+                <div class="metric-val">{{ status_counts.Resolved }}</div>
+                <div class="metric-lbl">Resolved</div>
+            </div>
+        </div>
+    </a>
+    <a href="{{ url_for('resident.resident_complaints', status='Closed') }}" style="text-decoration: none;">
+        <div class="metric-card" style="cursor: pointer; border-left: 3px solid var(--text-secondary);">
+            <div class="metric-icon" style="background: rgba(107,114,128,0.12); color: var(--text-secondary);"><i class="fa-solid fa-lock"></i></div>
+            <div>
+                <div class="metric-val">{{ status_counts.Closed }}</div>
+                <div class="metric-lbl">Closed</div>
+            </div>
+        </div>
+    </a>
+</div>
+
+{# ---- Filter pills ---- #}
+<div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
+    <a href="{{ url_for('resident.resident_complaints') }}" class="btn {{ 'btn-primary' if not status_filter else 'btn-secondary' }}" style="padding: 6px 14px; font-size: 13px;">All</a>
+    {% for s in ['Submitted', 'In Progress', 'Resolved', 'Closed'] %}
+    <a href="{{ url_for('resident.resident_complaints', status=s) }}" class="btn {{ 'btn-primary' if status_filter == s else 'btn-secondary' }}" style="padding: 6px 14px; font-size: 13px;">{{ s }}</a>
+    {% endfor %}
+</div>
+
+{# ---- Complaints list ---- #}
+<div class="card">
+    {% if complaints %}
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+        {% for complaint in complaints %}
+        <div style="border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; background: var(--bg-surface);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 0;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap;">
+                        <span style="font-family: monospace; font-size: 12px; background: var(--bg-primary); padding: 2px 8px; border-radius: 4px; color: var(--text-secondary);">{{ complaint.ticket_number }}</span>
+                        <span class="badge badge-{{
+                            'danger' if complaint.priority == 'High' or complaint.priority == 'Emergency' else
+                            ('warning' if complaint.priority == 'Medium' else 'info')
+                        }}" style="font-size: 11px;">{{ complaint.priority }}</span>
+                        <span class="badge badge-{{
+                            'warning' if complaint.status == 'Submitted' else
+                            ('info' if complaint.status in ('Assigned', 'In Progress') else
+                            ('success' if complaint.status == 'Resolved' else 'secondary'))
+                        }}">{{ complaint.status }}</span>
+                    </div>
+                    <h3 style="font-size: 15px; font-weight: 700; margin: 0 0 4px; word-break: break-word;">{{ complaint.title }}</h3>
+                    <p style="font-size: 13px; color: var(--text-secondary); margin: 0 0 6px;">
+                        <i class="fa-solid fa-tag"></i> {{ complaint.category }}
+                        &nbsp;&middot;&nbsp;
+                        <i class="fa-solid fa-clock"></i> {{ complaint.created_at.strftime('%d %b %Y') }}
+                    </p>
+                    <p style="font-size: 13px; color: var(--text-secondary); margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;">
+                        {{ complaint.description[:120] }}{% if complaint.description|length > 120 %}…{% endif %}
+                    </p>
+                </div>
+                <div style="display: flex; flex-direction: row; gap: 6px; align-items: center; flex-wrap: wrap;">
+                    <a href="{{ url_for('resident.complaint_detail', complaint_id=complaint.id) }}" class="btn btn-secondary btn-small">
+                        <i class="fa-solid fa-eye"></i> View &amp; Track
+                    </a>
+                    {% if complaint.status in ('Resolved', 'Closed') %}
+                    <a href="{{ url_for('resident.complaint_detail', complaint_id=complaint.id) }}#rating" class="btn btn-secondary btn-small">
+                        <i class="fa-solid fa-star"></i> Rate
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fa-solid fa-headset"></i>
+        <h2 data-i18n="no_results_found">No complaints found.</h2>
+        <p>{{ 'No complaints with status: ' + status_filter if status_filter else 'You have not submitted any service requests yet.' }}</p>
+        <a href="{{ url_for('complaints.create_complaint') }}" class="btn btn-primary" style="margin-top: 12px;">
+            <i class="fa-solid fa-plus"></i> Submit a Complaint
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

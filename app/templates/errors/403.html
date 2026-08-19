@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}403 Access Denied · Society SaaS{% endblock %}
+{% block content %}
+<div class="error-page-container">
+    <div class="error-illustration" style="color: var(--danger);"><i class="fa-solid fa-shield-halved"></i></div>
+    <div class="error-code-badge" style="color: var(--danger);">403</div>
+    <h2 class="page-title">Access Restricted</h2>
+    <p class="error-desc" style="color: var(--text-secondary); margin: 12px auto 24px auto;">
+        You do not have permission to view or execute this resource. Please contact your society administrator if you believe this is an error.
+    </p>
+    <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+        <button type="button" onclick="history.back()" class="btn btn-outline">
+            <i class="fa-solid fa-arrow-left"></i> Go Back
+        </button>
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">
+            <i class="fa-solid fa-house"></i> Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

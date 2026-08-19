@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Payment Failed · Society SaaS{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div>
+    <p class="eyebrow" style="color:var(--danger);" data-i18n="payment_failed">Payment Failed</p>
+    <h1>Payment Was Not Successful</h1>
+  </div>
+</div>
+
+<section class="card" style="max-width:620px; margin:0 auto;">
+  <div style="text-align:center; padding:20px 0 8px;">
+    <div style="width:72px; height:72px; background:linear-gradient(135deg,#ef4444,#dc2626); border-radius:50%; display:inline-flex; align-items:center; justify-content:center; margin-bottom:16px;">
+      <i class="fa-solid fa-xmark" style="font-size:32px; color:#fff;"></i>
+    </div>
+    <h2 style="color:var(--danger); margin:0 0 6px;" data-i18n="payment_failed">Payment Failed</h2>
+    <p style="color:var(--text-secondary); margin:0;">Your payment could not be completed. Your bill remains unpaid.</p>
+  </div>
+
+  <hr style="border:none; border-top:1px solid var(--border-color); margin:20px 0;">
+
+  <dl class="payment-summary">
+    <dt data-i18n="bill_number">Bill Number</dt>
+    <dd>{{ bill.bill_number }}</dd>
+
+    <dt data-i18n="billing_month">Billing Month</dt>
+    <dd>{{ bill.billing_month }}</dd>
+
+    <dt data-i18n="remaining_amount">Amount Due</dt>
+    <dd style="font-weight:700; color:var(--danger);">₹{{ '{:,.2f}'.format(bill.remaining_amount) }}</dd>
+
+    {% if failed_payment %}
+    <dt data-i18n="transaction_id">Transaction Reference</dt>
+    <dd><code style="font-size:12px; background:var(--bg-surface); padding:2px 6px; border-radius:4px;">{{ failed_payment.transaction_id }}</code></dd>
+
+    {% if failed_payment.provider_payment_id %}
+    <dt data-i18n="razorpay_payment_id">Razorpay ID</dt>
+    <dd><code style="font-size:12px; background:var(--bg-surface); padding:2px 6px; border-radius:4px;">{{ failed_payment.provider_payment_id }}</code></dd>
+    {% endif %}
+
+    {% if failed_payment.failure_reason %}
+    <dt>Reason</dt>
+    <dd style="color:var(--danger);">{{ failed_payment.failure_reason }}</dd>
+    {% endif %}
+
+    <dt data-i18n="payment_date">Date/Time</dt>
+    <dd>{{ failed_payment.payment_date.strftime('%d %b %Y, %I:%M %p') }}</dd>
+    {% endif %}
+  </dl>
+
+  <div style="background:#fff9f9; border:1px solid #fecaca; border-radius:var(--radius-md); padding:14px 18px; margin:16px 0; font-size:13px; color:var(--danger);">
+    <i class="fa-solid fa-circle-info"></i>
+    If your account was debited, please contact your bank. If the amount was not deducted, you may retry below.
+  </div>
+
+  <div class="bill-detail-actions" style="display:flex; gap:12px; flex-wrap:wrap;">
+    <a class="btn btn-primary" href="{{ url_for('payments.pay_bill', bill_id=bill.id) }}">
+      <i class="fa-solid fa-rotate-right"></i> <span data-i18n="retry_payment">Retry Payment</span>
+    </a>
+    <a class="btn btn-secondary" href="{{ url_for('resident.bill_detail', bill_id=bill.id) }}">
+      <i class="fa-solid fa-file-invoice"></i> View Bill
+    </a>
+    <a class="btn btn-secondary" href="{{ url_for('main.dashboard') }}">
+      <i class="fa-solid fa-house"></i> Dashboard
+    </a>
+  </div>
+</section>
+{% endblock %}

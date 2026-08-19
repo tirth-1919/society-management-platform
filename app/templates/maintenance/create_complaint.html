@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Create Complaint - Society SaaS{% endblock %}
+{% block content %}
+<div style="max-width: 600px; margin: 20px auto;">
+    <div class="card">
+        <h2>Lodge a Complaint</h2>
+        <form action="{{ url_for('complaints.create_complaint') }}" method="POST">
+            <div style="margin-bottom: 16px;">
+                <label style="font-weight: 600; display: block; margin-bottom: 6px;">Category</label>
+                <select name="category" required style="width: 100%; padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary);">
+                    <option value="Plumbing">Plumbing</option>
+                    <option value="Electrical">Electrical</option>
+                    <option value="Water">Water Supply</option>
+                    <option value="Lift">Lift / Elevator</option>
+                    <option value="Cleaning">Cleaning / Garbage</option>
+                    <option value="Security">Security</option>
+                    <option value="Parking">Parking</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label style="font-weight: 600; display: block; margin-bottom: 6px;">Subject Title</label>
+                <input type="text" name="title" required placeholder="Brief title of the issue" style="width: 100%; padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary);">
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label style="font-weight: 600; display: block; margin-bottom: 6px;">Description</label>
+                <textarea name="description" rows="4" required placeholder="Detailed explanation" style="width: 100%; padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary);"></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;"><i class="fa-solid fa-paper-plane"></i> Submit Ticket</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

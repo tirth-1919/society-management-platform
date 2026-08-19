@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}Household Members · Society SaaS{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumb-nav" aria-label="Breadcrumb">
+    <a href="{{ url_for('main.dashboard') }}"><i class="fa-solid fa-house"></i> Home</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{{ url_for('resident.profile') }}" data-i18n="my_profile">My Profile</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Household</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow" data-i18n="household">Household</p>
+        <h1><i class="fa-solid fa-people-roof" style="color: var(--primary);"></i> Household Members</h1>
+        <p style="color: var(--text-secondary);">Manage family members and emergency contacts for Flat {{ resident.flat.flat_number if resident.flat else '' }}.</p>
+    </div>
+    <a href="{{ url_for('resident.profile') }}" class="btn btn-secondary">
+        <i class="fa-solid fa-arrow-left"></i> Profile
+    </a>
+</div>
+
+<div class="household-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 24px; max-width: 1080px;">
+
+    {# ---- Dependents / Family Members ---- #}
+    <section class="card">
+        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+            <span><i class="fa-solid fa-users" style="color: var(--primary);"></i> Family / Dependents ({{ dependents|length }})</span>
+            <button type="button" class="btn btn-primary btn-small" onclick="toggleForm('add-dep-form')">
+                <i class="fa-solid fa-plus"></i> Add
+            </button>
+        </div>
+
+        {# Add Dependent Form #}
+        <div id="add-dep-form" style="display: none; background: var(--bg-primary); border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px;">
+            <form method="post" action="{{ url_for('resident.add_dependent') }}" class="stack-form" style="gap: 10px;">
+                <label><span>Name <span style="color: var(--danger);">*</span></span>
+                    <input type="text" name="name" required maxlength="100" placeholder="Full name"></label>
+                <label><span>Relation <span style="color: var(--danger);">*</span></span>
+                    <select name="relation" aria-label="Relation">
+                        <option value="Spouse">Spouse</option>
+                        <option value="Child">Child</option>
+                        <option value="Parent">Parent</option>
+                        <option value="Sibling">Sibling</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </label>
+                <label><span>Age (optional)</span>
+                    <input type="number" name="age" min="0" max="120" placeholder="Age"></label>
+                <div style="display: flex; gap: 8px;">
+                    <button type="submit" class="btn btn-primary btn-small"><i class="fa-solid fa-check"></i> Add Member</button>
+                    <button type="button" class="btn btn-secondary btn-small" onclick="toggleForm('add-dep-form')">Cancel</button>
+                </div>
+            </form>
+        </div>
+
+        {% if dependents %}
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            {% for dep in dependents %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(79,70,229,0.13); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px;">
+                        {{ dep.name[0]|upper }}
+                    </div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 14px;">{{ dep.name }}</div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">
+                            {{ dep.relation }}{% if dep.age %} · Age {{ dep.age }}{% endif %}
+                        </div>
+                    </div>
+                </div>
+                <form method="post" action="{{ url_for('resident.remove_dependent', dep_id=dep.id) }}"
+                      onsubmit="return confirm('Remove {{ dep.name }} from your household?')">
+                    <button type="submit" class="btn btn-danger btn-small" aria-label="Remove {{ dep.name }}">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state" style="padding: 20px;">
+            <i class="fa-solid fa-users"></i>
+            <p style="font-size: 13px;">No family members added yet.</p>
+        </div>
+        {% endif %}
+    </section>
+
+    {# ---- Emergency Contacts ---- #}
+    <section class="card">
+        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+            <span><i class="fa-solid fa-phone-volume" style="color: var(--danger);"></i> Emergency Contacts ({{ emergency_contacts|length }})</span>
+            <button type="button" class="btn btn-primary btn-small" onclick="toggleForm('add-ec-form')">
+                <i class="fa-solid fa-plus"></i> Add
+            </button>
+        </div>
+
+        {# Add Emergency Contact Form #}
+        <div id="add-ec-form" style="display: none; background: var(--bg-primary); border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px;">
+            <form method="post" action="{{ url_for('resident.add_emergency_contact') }}" class="stack-form" style="gap: 10px;">
+                <label><span>Name <span style="color: var(--danger);">*</span></span>
+                    <input type="text" name="name" required maxlength="100" placeholder="Contact name"></label>
+                <label><span>Relation <span style="color: var(--danger);">*</span></span>
+                    <select name="relation" aria-label="Relation type">
+                        <option value="Spouse">Spouse</option>
+                        <option value="Parent">Parent</option>
+                        <option value="Sibling">Sibling</option>
+                        <option value="Doctor">Doctor</option>
+                        <option value="Friend">Friend</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </label>
+                <label><span>Phone <span style="color: var(--danger);">*</span></span>
+                    <input type="tel" name="phone" required minlength="10" maxlength="15" placeholder="Phone number"></label>
+                <div style="display: flex; gap: 8px;">
+                    <button type="submit" class="btn btn-primary btn-small"><i class="fa-solid fa-check"></i> Add Contact</button>
+                    <button type="button" class="btn btn-secondary btn-small" onclick="toggleForm('add-ec-form')">Cancel</button>
+                </div>
+            </form>
+        </div>
+
+        {% if emergency_contacts %}
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            {% for ec in emergency_contacts %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(239,68,68,0.12); color: var(--danger); display: flex; align-items: center; justify-content: center; font-size: 15px;">
+                        <i class="fa-solid fa-phone"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 14px;">{{ ec.name }}</div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">{{ ec.relation }} · {{ ec.phone }}</div>
+                    </div>
+                </div>
+                <form method="post" action="{{ url_for('resident.remove_emergency_contact', ec_id=ec.id) }}"
+                      onsubmit="return confirm('Remove emergency contact {{ ec.name }}?')">
+                    <button type="submit" class="btn btn-danger btn-small" aria-label="Remove {{ ec.name }}">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state" style="padding: 20px;">
+            <i class="fa-solid fa-phone-slash"></i>
+            <p style="font-size: 13px;">No emergency contacts added yet.</p>
+        </div>
+        {% endif %}
+    </section>
+</div>
+
+<script>
+function toggleForm(id) {
+    const el = document.getElementById(id);
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+{% endblock %}

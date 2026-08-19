@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}Transaction {{ payment.transaction_id }} · Society SaaS{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div>
+    <p class="eyebrow" data-i18n="payments">Payments</p>
+    <h1>Transaction Details</h1>
+    <p><code>{{ payment.transaction_id }}</code></p>
+  </div>
+  <div>
+    <a href="{{ url_for('payments.payment_history') }}" class="btn btn-secondary">
+      <i class="fa-solid fa-arrow-left"></i> Payment History
+    </a>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; max-width:900px;">
+  <!-- Payment Details -->
+  <section class="card">
+    <h2 class="card-title">Payment Information</h2>
+    <dl class="payment-summary">
+      <dt data-i18n="transaction_id">Transaction ID</dt>
+      <dd><code style="font-size:12px; background:var(--bg-surface); padding:3px 8px; border-radius:4px;">{{ payment.transaction_id }}</code></dd>
+
+      <dt data-i18n="status">Status</dt>
+      <dd>
+        {% if payment.status in ('captured', 'Success') %}
+        <span style="background:#dcfce7; color:#166534; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600;"><i class="fa-solid fa-check"></i> Captured/Paid</span>
+        {% elif payment.status == 'failed' %}
+        <span style="background:#fee2e2; color:#dc2626; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600;"><i class="fa-solid fa-xmark"></i> Failed</span>
+        {% elif payment.status == 'refunded' %}
+        <span style="background:#fef3c7; color:#92400e; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600;"><i class="fa-solid fa-rotate-left"></i> Refunded</span>
+        {% elif payment.status == 'created' %}
+        <span style="background:#e0e7ff; color:#3730a3; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600;"><i class="fa-solid fa-clock"></i> Pending</span>
+        {% else %}
+        <span style="background:var(--bg-surface); padding:4px 12px; border-radius:20px; font-size:12px;">{{ payment.status }}</span>
+        {% endif %}
+      </dd>
+
+      <dt data-i18n="amount_paid">Amount</dt>
+      <dd style="font-size:20px; font-weight:800; color:var(--primary);">₹{{ '{:,.2f}'.format(payment.amount_paid) }}</dd>
+
+      <dt data-i18n="payment_date">Date &amp; Time</dt>
+      <dd>{{ payment.payment_date.strftime('%d %b %Y, %I:%M %p') }}</dd>
+
+      <dt data-i18n="payment_method">Payment Method</dt>
+      <dd>{{ payment.payment_method }}</dd>
+
+      <dt>Provider</dt>
+      <dd>{{ payment.provider_name }}</dd>
+
+      {% if payment.failure_reason %}
+      <dt>Failure Reason</dt>
+      <dd style="color:var(--danger);">{{ payment.failure_reason }}</dd>
+      {% endif %}
+
+      {% if payment.notes %}
+      <dt>Notes</dt>
+      <dd>{{ payment.notes }}</dd>
+      {% endif %}
+    </dl>
+  </section>
+
+  <!-- Razorpay Details -->
+  <section class="card">
+    <h2 class="card-title"><i class="fa-solid fa-shield-halved" style="color:var(--primary);"></i> Razorpay Details</h2>
+    <dl class="payment-summary">
+      {% if payment.provider_order_id %}
+      <dt data-i18n="order_id">Order ID</dt>
+      <dd><code style="font-size:11px; word-break:break-all;">{{ payment.provider_order_id }}</code></dd>
+      {% endif %}
+
+      {% if payment.provider_payment_id %}
+      <dt data-i18n="razorpay_payment_id">Payment ID</dt>
+      <dd><code style="font-size:11px; word-break:break-all;">{{ payment.provider_payment_id }}</code></dd>
+      {% endif %}
+
+      {% if payment.provider_signature %}
+      <dt>Signature</dt>
+      <dd><code style="font-size:10px; word-break:break-all; color:var(--text-secondary);">{{ payment.provider_signature[:40] }}…</code></dd>
+      {% endif %}
+
+      <dt>Signature Verified</dt>
+      <dd>
+        {% if payment.webhook_verified %}
+        <span style="color:var(--success,#22c55e);"><i class="fa-solid fa-shield-halved"></i> Yes</span>
+        {% else %}
+        <span style="color:var(--text-secondary);">Not verified via webhook</span>
+        {% endif %}
+      </dd>
+
+      {% if payment.verified_at %}
+      <dt>Verified At</dt>
+      <dd>{{ payment.verified_at.strftime('%d %b %Y, %I:%M %p') }}</dd>
+      {% endif %}
+    </dl>
+
+    {% if payment.refund_amount and payment.refund_amount > 0 %}
+    <hr style="border:none; border-top:1px solid var(--border-color); margin:16px 0;">
+    <h3 style="font-size:14px; font-weight:600; margin:0 0 12px;">Refund Details</h3>
+    <dl class="payment-summary">
+      <dt data-i18n="refund_status">Refund Status</dt>
+      <dd>{{ payment.refund_status or 'N/A' }}</dd>
+      <dt>Refunded Amount</dt>
+      <dd>₹{{ '{:,.2f}'.format(payment.refund_amount) }}</dd>
+      {% if payment.refund_id %}
+      <dt>Razorpay Refund ID</dt>
+      <dd><code style="font-size:11px;">{{ payment.refund_id }}</code></dd>
+      {% endif %}
+    </dl>
+    {% endif %}
+  </section>
+
+  <!-- Bill Details -->
+  {% if payment.bill %}
+  <section class="card">
+    <h2 class="card-title">Bill Details</h2>
+    <dl class="payment-summary">
+      <dt data-i18n="bill_number">Bill Number</dt>
+      <dd>{{ payment.bill.bill_number }}</dd>
+      <dt data-i18n="billing_month">Billing Month</dt>
+      <dd>{{ payment.bill.billing_month }}</dd>
+      <dt>Maintenance</dt>
+      <dd>₹{{ '{:,.2f}'.format(payment.bill.base_amount) }}</dd>
+      <dt>Total Bill</dt>
+      <dd>₹{{ '{:,.2f}'.format(payment.bill.total_amount) }}</dd>
+      <dt>Bill Status</dt>
+      <dd>{{ payment.bill.status }}</dd>
+      <dt>Remaining</dt>
+      <dd>₹{{ '{:,.2f}'.format(payment.bill.remaining_amount) }}</dd>
+    </dl>
+  </section>
+  {% endif %}
+
+  <!-- Receipt & Actions -->
+  <section class="card">
+    <h2 class="card-title">Receipt &amp; Actions</h2>
+    {% if payment.receipt %}
+    <dl class="payment-summary">
+      <dt data-i18n="receipt_number">Receipt Number</dt>
+      <dd style="font-weight:600; color:var(--primary);">{{ payment.receipt.receipt_number }}</dd>
+      <dt>Generated At</dt>
+      <dd>{{ payment.receipt.generated_at.strftime('%d %b %Y, %I:%M %p') }}</dd>
+    </dl>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;">
+      <a href="{{ url_for('payments.download_receipt', payment_id=payment.id, view=1) }}" class="btn btn-primary" target="_blank">
+        <i class="fa-solid fa-eye"></i> View Receipt
+      </a>
+      <a href="{{ url_for('payments.download_receipt', payment_id=payment.id) }}" class="btn btn-secondary">
+        <i class="fa-solid fa-download"></i> Download PDF
+      </a>
+    </div>
+    {% else %}
+    <p style="color:var(--text-secondary); font-size:13px;">No receipt generated yet for this transaction.</p>
+    {% endif %}
+
+    {% if payment.status in ('captured', 'Success') and not payment.refund_requests %}
+    <hr style="border:none; border-top:1px solid var(--border-color); margin:16px 0;">
+    <a href="{{ url_for('payments.refund_request', payment_id=payment.id) }}" class="btn btn-secondary" style="width:100%; justify-content:center;">
+      <i class="fa-solid fa-rotate-left"></i> Request Refund
+    </a>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

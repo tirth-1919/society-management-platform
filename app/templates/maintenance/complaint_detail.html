@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}Complaint Ticket {{ complaint.ticket_number }} · Society SaaS{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumb-nav" aria-label="Breadcrumb">
+    <a href="{{ url_for('main.dashboard') }}"><i class="fa-solid fa-house"></i> Admin</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{{ url_for('complaints.list_complaints') }}">Complaints</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">{{ complaint.ticket_number }}</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">Helpdesk & Support</p>
+        <h1>{{ complaint.title }}</h1>
+        <p style="color: var(--text-secondary);">Ticket #{{ complaint.ticket_number }} · Flat {{
+            complaint.flat.flat_number if complaint.flat else "N/A" }}</p>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        {% if sla_breached %}
+        <span class="badge badge-danger"><i class="fa-solid fa-triangle-exclamation"></i> SLA Breached</span>
+        {% else %}
+        <span class="badge badge-success"><i class="fa-solid fa-clock"></i> SLA On-Track</span>
+        {% endif %}
+        <span class="badge badge-info">{{ complaint.status }}</span>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+    <div>
+        {# Complaint Info Card #}
+        <div class="card" style="margin-bottom: 24px;">
+            <div class="card-title"><i class="fa-solid fa-circle-info" style="color: var(--primary);"></i> Complaint
+                Description</div>
+            <p style="white-space: pre-line; color: var(--text-secondary); margin-bottom: 16px;">{{
+                complaint.description }}</p>
+
+            <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; background: var(--bg-surface); padding: 12px; border-radius: var(--radius-md);">
+                <div><strong>Category:</strong> {{ complaint.category }}</div>
+                <div><strong>Priority:</strong> <span
+                        class="badge badge-{{ 'danger' if complaint.priority in ['High','Emergency'] else 'warning' }}">{{
+                        complaint.priority }}</span></div>
+                <div><strong>Resident:</strong> {{ complaint.resident.full_name if complaint.resident else "-" }}</div>
+                <div><strong>Created:</strong> {{ complaint.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+            </div>
+
+            {% if complaint.resolution_notes %}
+            <div
+                style="margin-top: 16px; padding: 12px; background: rgba(16,185,129,0.1); border-left: 4px solid var(--success); border-radius: var(--radius-sm);">
+                <strong style="color: var(--success);">Resolution Notes:</strong>
+                <p style="margin: 4px 0 0; color: var(--text-secondary);">{{ complaint.resolution_notes }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        {# Comments / Worklog #}
+        <div class="card">
+            <div class="card-title"><i class="fa-solid fa-comments" style="color: var(--primary);"></i> Activity &
+                Comments</div>
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+                {% for c in complaint.comments %}
+                <div style="padding: 10px 14px; background: var(--bg-surface); border-radius: var(--radius-md);">
+                    <div
+                        style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">
+                        <span><strong>{{ c.user.full_name if c.user else "User" }}</strong></span>
+                        <span>{{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    </div>
+                    <div>{{ c.comment }}</div>
+                </div>
+                {% else %}
+                <p style="color: var(--text-muted);">No comments recorded on this ticket yet.</p>
+                {% endfor %}
+            </div>
+
+            <form method="POST" action="{{ url_for('complaints.add_comment', complaint_id=complaint.id) }}">
+                <div class="form-group">
+                    <label for="comment" class="form-label">Add Note / Update</label>
+                    <textarea name="comment" id="comment" class="form-control" rows="2"
+                        placeholder="Write internal note or response to resident..." required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Post
+                    Comment</button>
+            </form>
+        </div>
+    </div>
+
+    <div>
+        {# Actions Card #}
+        <div class="card" style="margin-bottom: 24px;">
+            <div class="card-title"><i class="fa-solid fa-bolt" style="color: var(--primary);"></i> Status Actions</div>
+
+            <form method="POST" action="{{ url_for('complaints.update_status', complaint_id=complaint.id) }}"
+                style="margin-bottom: 16px;">
+                <div class="form-group">
+                    <label for="status" class="form-label">Update Status</label>
+                    <select name="status" id="status" class="form-control">
+                        <option value="Submitted" {% if complaint.status=='Submitted' %}selected{% endif %}>Submitted
+                        </option>
+                        <option value="Assigned" {% if complaint.status=='Assigned' %}selected{% endif %}>Assigned
+                        </option>
+                        <option value="In Progress" {% if complaint.status=='In Progress' %}selected{% endif %}>In
+                            Progress</option>
+                        <option value="Resolved" {% if complaint.status=='Resolved' %}selected{% endif %}>Resolved
+                        </option>
+                        <option value="Closed" {% if complaint.status=='Closed' %}selected{% endif %}>Closed</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="resolution_notes" class="form-label">Resolution Notes</label>
+                    <textarea name="resolution_notes" id="resolution_notes" class="form-control" rows="2"
+                        placeholder="Explain how the issue was resolved...">{{ complaint.resolution_notes or '' }}</textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;"><i class="fa-solid fa-check"></i>
+                    Save Status</button>
+            </form>
+
+            <hr style="margin: 16px 0; border: 0; border-top: 1px solid var(--border-color);">
+
+            {# Assign Staff #}
+            <form method="POST" action="{{ url_for('complaints.assign_staff', complaint_id=complaint.id) }}">
+                <div class="form-group">
+                    <label for="assigned_staff_id" class="form-label">Assign Technician / Admin</label>
+                    <select name="assigned_staff_id" id="assigned_staff_id" class="form-control">
+                        <option value="">-- Unassigned --</option>
+                        {% for s in staff_members %}
+                        <option value="{{ s.id }}" {% if complaint.assigned_staff_id==s.id %}selected{% endif %}>{{
+                            s.full_name }} ({{ s.role.name }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-secondary" style="width: 100%;"><i
+                        class="fa-solid fa-user-tag"></i> Assign Staff</button>
+            </form>
+
+            {% if complaint.status in ['Resolved', 'Closed'] %}
+            <hr style="margin: 16px 0; border: 0; border-top: 1px solid var(--border-color);">
+            <form method="POST" action="{{ url_for('complaints.reopen_complaint', complaint_id=complaint.id) }}">
+                <div class="form-group">
+                    <input type="text" name="reason" class="form-control" placeholder="Reopen reason..." required>
+                </div>
+                <button type="submit" class="btn btn-danger" style="width: 100%;"><i
+                        class="fa-solid fa-arrow-rotate-left"></i> Reopen Ticket</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

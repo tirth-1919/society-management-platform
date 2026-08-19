@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}500 Internal Server Error · Society SaaS{% endblock %}
+{% block content %}
+<div class="error-page-container">
+    <div class="error-illustration" style="color: var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i></div>
+    <div class="error-code-badge" style="color: var(--danger);">500</div>
+    <h2 class="page-title">Internal Server Error</h2>
+    <p class="error-desc" style="color: var(--text-secondary); margin: 12px auto 24px auto;">
+        An unexpected error occurred while processing your request. Our system has logged the details.
+    </p>
+    <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+        <button type="button" onclick="window.location.reload()" class="btn btn-primary retry-btn">
+            <i class="fa-solid fa-rotate-right"></i> Retry Request
+        </button>
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline">
+            <i class="fa-solid fa-house"></i> Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

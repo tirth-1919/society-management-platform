@@ -1,0 +1,492 @@
+{% extends "base.html" %}
+
+{% block title %}Resident 360° — {{ resident.full_name }} — Society ERP{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    {# ─── Page Header ──────────────────────────────────────────────────────── #}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <a href="{{ url_for('admin.residents') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left"></i> Back
+                </a>
+                <h1 class="h3 mb-0 fw-bold">{{ resident.full_name }}</h1>
+                <span class="badge bg-{{ 'success' if resident.occupancy_status == 'Active' else 'secondary' }} fs-6">
+                    {{ resident.occupancy_status }}
+                </span>
+                <span class="badge bg-{{ 'primary' if resident.resident_type == 'Owner' else 'info' }}">
+                    {{ resident.resident_type }}
+                </span>
+            </div>
+            <p class="text-muted mb-0">
+                <i class="bi bi-building"></i>
+                Property: <strong>{{ resident.flat.property_key if resident.flat else 'Unassigned' }}</strong>
+                &middot; Move-In: <strong>{{ resident.move_in_date or 'N/A' }}</strong>
+                {% if resident.mobile %}&middot; <i class="bi bi-phone"></i> {{ resident.mobile }}{% endif %}
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            {% if resident.occupancy_status == 'Active' %}
+            <button type="button" class="btn btn-outline-danger btn-sm shadow-sm" data-bs-toggle="modal" data-bs-target="#moveOutModal">
+                <i class="bi bi-box-arrow-right me-1"></i> Record Move-Out
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    {# ─── Financial Summary Header ─────────────────────────────────────────── #}
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 h-100" style="border-left: 4px solid #10b981 !important;">
+                <div class="card-body py-3 px-4">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                        <small class="text-muted fw-semibold text-uppercase" style="font-size: 11px; letter-spacing:.5px;">Total Paid</small>
+                    </div>
+                    <div class="fw-bold fs-4 text-success">₹{{ "{:,.0f}".format(total_paid or 0) }}</div>
+                    <div class="text-muted" style="font-size: 12px;">{{ bills|selectattr('status','eq','Paid')|list|length }} bills paid</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 h-100" style="border-left: 4px solid #ef4444 !important;">
+                <div class="card-body py-3 px-4">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <i class="bi bi-exclamation-circle-fill text-danger"></i>
+                        <small class="text-muted fw-semibold text-uppercase" style="font-size: 11px; letter-spacing:.5px;">Outstanding</small>
+                    </div>
+                    <div class="fw-bold fs-4 text-danger">₹{{ "{:,.0f}".format(total_outstanding or 0) }}</div>
+                    <div class="text-muted" style="font-size: 12px;">{{ overdue_bill_count or 0 }} overdue bill(s)</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 h-100" style="border-left: 4px solid #f59e0b !important;">
+                <div class="card-body py-3 px-4">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <i class="bi bi-clock-fill text-warning"></i>
+                        <small class="text-muted fw-semibold text-uppercase" style="font-size: 11px; letter-spacing:.5px;">Late Fees</small>
+                    </div>
+                    <div class="fw-bold fs-4 text-warning">₹{{ "{:,.0f}".format(total_late_fees or 0) }}</div>
+                    <div class="text-muted" style="font-size: 12px;">Accumulated charges</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 h-100" style="border-left: 4px solid #4f46e5 !important;">
+                <div class="card-body py-3 px-4">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <i class="bi bi-wallet2 text-primary"></i>
+                        <small class="text-muted fw-semibold text-uppercase" style="font-size: 11px; letter-spacing:.5px;">Advance Balance</small>
+                    </div>
+                    <div class="fw-bold fs-4 text-primary">₹{{ "{:,.0f}".format(resident.advance_balance or 0) }}</div>
+                    <div class="text-muted" style="font-size: 12px;">Pre-paid credit</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ─── AI Insights Panel (conditional) ─────────────────────────────────── #}
+    {% if resident_ai and resident_ai.recommendations %}
+    <div class="card border-0 shadow-sm rounded-3 mb-4" style="border-left: 4px solid #4f46e5 !important; background: linear-gradient(135deg, #f0f0ff, #fff);">
+        <div class="card-body py-3 px-4">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <i class="fa-solid fa-wand-magic-sparkles text-primary"></i>
+                <span class="fw-bold">AI Insights &amp; Risk Assessment</span>
+                {% if resident_ai.risk_level %}
+                <span class="badge bg-{{ 'danger' if resident_ai.risk_level == 'High' else ('warning text-dark' if resident_ai.risk_level == 'Medium' else 'success') }}">
+                    {{ resident_ai.risk_level }} Risk
+                </span>
+                {% endif %}
+            </div>
+            <div class="row g-2">
+                {% for rec in resident_ai.recommendations %}
+                <div class="col-md-6">
+                    <div class="d-flex align-items-start gap-2 p-2 rounded" style="background: rgba(79,70,229,0.06);">
+                        <i class="fa-solid fa-circle-info text-primary mt-1" style="font-size: 12px;"></i>
+                        <small class="text-secondary">{{ rec.text }}</small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {# ─── Main 2-Column Layout ─────────────────────────────────────────────── #}
+    <div class="row g-4">
+
+        {# ── Left Sidebar ───────────────────────────────────────────────────── #}
+        <div class="col-lg-3">
+            {# Contact Info #}
+            <div class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h6 class="mb-0 fw-bold"><i class="bi bi-person-lines-fill text-primary me-2"></i>Contact Information</h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0 small">
+                        <dt class="col-5 text-muted">Mobile</dt>
+                        <dd class="col-7 fw-semibold">{{ resident.mobile }}</dd>
+                        <dt class="col-5 text-muted">Email</dt>
+                        <dd class="col-7">{{ resident.email or '—' }}</dd>
+                        <dt class="col-5 text-muted">Flat</dt>
+                        <dd class="col-7 fw-semibold">{{ resident.flat.property_key if resident.flat else '—' }}</dd>
+                        <dt class="col-5 text-muted">Floor</dt>
+                        <dd class="col-7">{{ resident.flat.floor_number if resident.flat else '—' }}</dd>
+                        <dt class="col-5 text-muted">Move-In</dt>
+                        <dd class="col-7">{{ resident.move_in_date or '—' }}</dd>
+                        {% if resident.move_out_date is defined and resident.move_out_date %}
+                        <dt class="col-5 text-muted">Move-Out</dt>
+                        <dd class="col-7 text-danger fw-semibold">{{ resident.move_out_date }}</dd>
+                        {% endif %}
+                        <dt class="col-5 text-muted">Member Since</dt>
+                        <dd class="col-7">{{ resident.created_at.strftime('%d %b %Y') if resident.created_at else '—' }}</dd>
+                    </dl>
+                </div>
+            </div>
+
+            {# Flat Occupancy History #}
+            <div class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h6 class="mb-0 fw-bold"><i class="bi bi-clock-history text-secondary me-2"></i>Flat Occupancy History</h6>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for occ in occupancy_history %}
+                        <li class="list-group-item py-2 px-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-semibold small">{{ occ.full_name if occ.full_name is defined else (occ.resident.full_name if occ.resident else 'Unknown') }}</span>
+                                <span class="badge bg-{{ 'success' if occ.occupancy_status == 'Active' else 'secondary' }}" style="font-size: 10px;">
+                                    {{ occ.occupancy_status if occ.occupancy_status is defined else '—' }}
+                                </span>
+                            </div>
+                            <small class="text-muted d-block">
+                                {{ occ.resident_type if occ.resident_type is defined else '—' }}
+                                | From: {{ occ.move_in_date }}
+                                {% if occ.move_out_date %} to {{ occ.move_out_date }}{% endif %}
+                            </small>
+                        </li>
+                        {% else %}
+                        <li class="list-group-item text-muted text-center py-3 small">No prior occupancy records.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            {# Quick Stats #}
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h6 class="mb-0 fw-bold"><i class="bi bi-bar-chart-fill text-info me-2"></i>Quick Stats</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <small class="text-muted">Total Bills</small>
+                        <span class="badge bg-secondary">{{ bills|length }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <small class="text-muted">Paid Bills</small>
+                        <span class="badge bg-success">{{ bills|selectattr('status','eq','Paid')|list|length }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <small class="text-muted">Overdue Bills</small>
+                        <span class="badge bg-danger">{{ overdue_bill_count or 0 }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <small class="text-muted">Total Payments</small>
+                        <span class="badge bg-primary">{{ payments|length }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <small class="text-muted">Complaints Filed</small>
+                        <span class="badge bg-warning text-dark">{{ complaints|length }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">Visitor Entries</small>
+                        <span class="badge bg-info text-dark">{{ visitors|length }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# ── Right Content Area (Tabs) ───────────────────────────────────────── #}
+        <div class="col-lg-9">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-white border-bottom p-0">
+                    <ul class="nav nav-tabs border-0 px-3" id="residentTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active fw-semibold py-3" id="financial-tab" data-bs-toggle="tab" data-bs-target="#financial" type="button" role="tab">
+                                <i class="bi bi-receipt me-1"></i> Financial
+                                <span class="badge bg-primary ms-1" style="font-size: 10px;">{{ bills|length }}</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-semibold py-3" id="complaints-tab" data-bs-toggle="tab" data-bs-target="#complaints" type="button" role="tab">
+                                <i class="bi bi-chat-dots me-1"></i> Complaints
+                                {% if complaints %}<span class="badge bg-warning text-dark ms-1" style="font-size: 10px;">{{ complaints|length }}</span>{% endif %}
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-semibold py-3" id="visitors-tab" data-bs-toggle="tab" data-bs-target="#visitors" type="button" role="tab">
+                                <i class="bi bi-person-walking me-1"></i> Visitors
+                                {% if visitors %}<span class="badge bg-info text-dark ms-1" style="font-size: 10px;">{{ visitors|length }}</span>{% endif %}
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-semibold py-3" id="timeline-tab" data-bs-toggle="tab" data-bs-target="#timeline" type="button" role="tab">
+                                <i class="bi bi-clock-history me-1"></i> Timeline
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="tab-content" id="residentTabContent">
+
+                    {# ── Tab 1: Financial ──────────────────────────────────────── #}
+                    <div class="tab-pane fade show active p-0" id="financial" role="tabpanel">
+                        {# Bills #}
+                        <div class="px-4 pt-4 pb-2">
+                            <h6 class="fw-bold text-muted text-uppercase" style="font-size: 11px; letter-spacing: .5px;">Maintenance Bills</h6>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="font-size:12px;">Month</th>
+                                        <th style="font-size:12px;">Base</th>
+                                        <th style="font-size:12px;">Late Fee</th>
+                                        <th style="font-size:12px;">Total</th>
+                                        <th style="font-size:12px;">Paid</th>
+                                        <th style="font-size:12px;">Balance</th>
+                                        <th style="font-size:12px;">Due Date</th>
+                                        <th style="font-size:12px;">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for b in bills %}
+                                    <tr>
+                                        <td class="fw-semibold" style="font-size:13px;">{{ b.billing_month }}</td>
+                                        <td style="font-size:12px;">₹{{ "{:,.0f}".format(b.base_amount) }}</td>
+                                        <td style="font-size:12px;" class="{{ 'text-warning fw-semibold' if b.late_fee > 0 else 'text-muted' }}">
+                                            ₹{{ "{:,.0f}".format(b.late_fee) }}
+                                        </td>
+                                        <td class="fw-semibold" style="font-size:13px;">₹{{ "{:,.0f}".format(b.total_amount) }}</td>
+                                        <td class="text-success fw-semibold" style="font-size:13px;">₹{{ "{:,.0f}".format(b.amount_paid) }}</td>
+                                        <td class="fw-bold {{ 'text-danger' if b.remaining_amount > 0 else 'text-success' }}" style="font-size:13px;">
+                                            ₹{{ "{:,.0f}".format(b.remaining_amount) }}
+                                        </td>
+                                        <td style="font-size:12px;" class="text-muted">{{ b.due_date }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if b.status == 'Paid' else ('danger' if b.status == 'Overdue' else ('info' if b.status == 'Partially Paid' else 'warning text-dark')) }}" style="font-size:10px;">
+                                                {{ b.status }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr><td colspan="8" class="text-center py-4 text-muted">No maintenance bills generated yet.</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {# Payments #}
+                        <div class="px-4 pt-4 pb-2 border-top mt-2">
+                            <h6 class="fw-bold text-muted text-uppercase" style="font-size: 11px; letter-spacing: .5px;">Payment Transactions</h6>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="font-size:12px;">Date &amp; Time</th>
+                                        <th style="font-size:12px;">Amount</th>
+                                        <th style="font-size:12px;">Method</th>
+                                        <th style="font-size:12px;">Provider</th>
+                                        <th style="font-size:12px;">Transaction ID</th>
+                                        <th style="font-size:12px;">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for p in payments %}
+                                    <tr>
+                                        <td style="font-size:12px;" class="text-muted">{{ p.payment_date.strftime('%d %b %Y %H:%M') if p.payment_date else '—' }}</td>
+                                        <td class="fw-bold text-success" style="font-size:14px;">₹{{ "{:,.2f}".format(p.amount_paid) }}</td>
+                                        <td><span class="badge bg-light text-dark border" style="font-size:11px;">{{ p.payment_method }}</span></td>
+                                        <td style="font-size:12px; color:#6b7280;">{{ p.provider_name }}</td>
+                                        <td style="font-size:11px; font-family: monospace; color: #6b7280;">{{ p.transaction_id }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if p.status in ['captured', 'paid', 'Success'] else ('danger' if p.status == 'failed' else 'warning text-dark') }}" style="font-size:10px;">
+                                                {{ p.status }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr><td colspan="6" class="text-center py-4 text-muted">No payment records found.</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {# ── Tab 2: Complaints ─────────────────────────────────────── #}
+                    <div class="tab-pane fade p-0" id="complaints" role="tabpanel">
+                        {% if complaints %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="font-size:12px;">Ticket #</th>
+                                        <th style="font-size:12px;">Date</th>
+                                        <th style="font-size:12px;">Category</th>
+                                        <th style="font-size:12px;">Title</th>
+                                        <th style="font-size:12px;">Priority</th>
+                                        <th style="font-size:12px;">Status</th>
+                                        <th style="font-size:12px;">Age</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for c in complaints %}
+                                    <tr>
+                                        <td style="font-size:11px; font-family:monospace; color:#6b7280;">{{ c.ticket_number }}</td>
+                                        <td style="font-size:12px; color:#6b7280;">{{ c.created_at.strftime('%d %b %Y') if c.created_at else '—' }}</td>
+                                        <td style="font-size:12px;">{{ c.category }}</td>
+                                        <td>
+                                            <div class="fw-semibold" style="font-size:13px;">{{ c.title }}</div>
+                                            {% if c.description %}
+                                            <small class="text-muted" style="font-size:11px;">{{ c.description[:80] }}{% if c.description|length > 80 %}…{% endif %}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ 'danger' if c.priority == 'Emergency' else ('warning text-dark' if c.priority == 'High' else ('info text-dark' if c.priority == 'Medium' else 'secondary')) }}" style="font-size:10px;">
+                                                {{ c.priority }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if c.status in ['Resolved','Closed'] else ('primary' if c.status == 'In Progress' else ('info text-dark' if c.status == 'Assigned' else 'warning text-dark')) }}" style="font-size:10px;">
+                                                {{ c.status }}
+                                            </span>
+                                        </td>
+                                        <td style="font-size:12px; color:#6b7280;">
+                                            {{ c.created_at.strftime('%d %b %Y') if c.created_at else '—' }}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5 text-muted">
+                            <i class="bi bi-chat-dots" style="font-size: 36px; display: block; margin-bottom: 12px; opacity: 0.4;"></i>
+                            <div class="fw-semibold">No complaints filed by this resident.</div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    {# ── Tab 3: Visitors ───────────────────────────────────────── #}
+                    <div class="tab-pane fade p-0" id="visitors" role="tabpanel">
+                        {% if visitors %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="font-size:12px;">Entry Date &amp; Time</th>
+                                        <th style="font-size:12px;">Visitor Name</th>
+                                        <th style="font-size:12px;">Mobile</th>
+                                        <th style="font-size:12px;">Purpose</th>
+                                        <th style="font-size:12px;">Exit Time</th>
+                                        <th style="font-size:12px;">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for v in visitors %}
+                                    <tr>
+                                        <td style="font-size:12px;">{{ v.entry_time.strftime('%d %b %Y %H:%M') if v.entry_time else '—' }}</td>
+                                        <td class="fw-semibold" style="font-size:13px;">{{ v.visitor_name }}</td>
+                                        <td style="font-size:12px; color:#6b7280;">{{ v.mobile }}</td>
+                                        <td><span class="badge bg-light text-dark border" style="font-size:11px;">{{ v.purpose }}</span></td>
+                                        <td style="font-size:12px; color:#6b7280;">{{ v.exit_time.strftime('%H:%M') if v.exit_time else '—' }}</td>
+                                        <td>
+                                            {% if v.exit_time is none %}
+                                            <span class="badge bg-success" style="font-size:10px;">Inside</span>
+                                            {% else %}
+                                            <span class="badge bg-secondary" style="font-size:10px;">Exited</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5 text-muted">
+                            <i class="bi bi-person-walking" style="font-size: 36px; display: block; margin-bottom: 12px; opacity: 0.4;"></i>
+                            <div class="fw-semibold">No visitor entries recorded for this flat.</div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    {# ── Tab 4: Chronological Timeline ────────────────────────── #}
+                    <div class="tab-pane fade p-4" id="timeline" role="tabpanel">
+                        {% if timeline_events %}
+                        <div style="position: relative; padding-left: 28px;">
+                            <div style="position: absolute; left: 10px; top: 0; bottom: 0; width: 2px; background: #e5e7eb; border-radius: 2px;"></div>
+                            {% for event in timeline_events %}
+                            <div style="position: relative; margin-bottom: 20px;">
+                                <div style="position: absolute; left: -24px; top: 3px; width: 14px; height: 14px; border-radius: 50%; background: {{ event.color }}; border: 2px solid #fff; box-shadow: 0 0 0 2px {{ event.color }}30;"></div>
+                                <div class="card border-0 shadow-sm rounded-3" style="background: #fafafa;">
+                                    <div class="card-body py-2 px-3">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <div style="display: flex; align-items: center; gap: 7px;">
+                                                    <i class="{{ event.icon }}" style="color: {{ event.color }}; font-size: 13px;"></i>
+                                                    <span class="fw-semibold" style="font-size: 13px; color: #1f2937;">{{ event.title }}</span>
+                                                </div>
+                                                <div class="text-muted mt-1" style="font-size: 12px;">{{ event.detail }}</div>
+                                            </div>
+                                            <div class="text-muted text-nowrap ms-3" style="font-size: 11px;">
+                                                {{ event.date.strftime('%d %b %Y') if event.date else '' }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5 text-muted">
+                            <i class="bi bi-clock-history" style="font-size: 36px; display: block; margin-bottom: 12px; opacity: 0.4;"></i>
+                            <div class="fw-semibold">No activity recorded yet for this resident.</div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                </div>{# end tab-content #}
+            </div>{# end card #}
+        </div>{# end col-lg-9 #}
+    </div>{# end row #}
+</div>{# end container-fluid #}
+
+{# ── Move-Out Modal (unchanged) ────────────────────────────────────────────── #}
+<div class="modal fade" id="moveOutModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form action="{{ url_for('admin.resident_move_out', id=resident.id) }}" method="POST">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Record Resident Move-Out</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to record move-out for <strong>{{ resident.full_name }}</strong> from flat <strong>{{ resident.flat.property_key if resident.flat else '' }}</strong>?</p>
+                    <div class="mb-3">
+                        <label class="form-label">Move-Out Reason</label>
+                        <input type="text" name="reason" class="form-control" placeholder="e.g. Lease expired, property sold..." required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Confirm Move-Out</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

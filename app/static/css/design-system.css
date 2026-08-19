@@ -1,0 +1,1888 @@
+/* ==========================================================================
+   Society SaaS - Design System Extension & Modern Components (v2.0)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Page Progress Loader Bar
+   -------------------------------------------------------------------------- */
+#page-progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    z-index: 9999;
+    width: 0%;
+    transition: width 0.3s ease, opacity 0.4s ease;
+    pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   2. Page Transition Animation
+   -------------------------------------------------------------------------- */
+.page-body {
+    animation: fadeInPage 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInPage {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --------------------------------------------------------------------------
+   3. Collapsible / Icon-Only Sidebar
+   -------------------------------------------------------------------------- */
+.sidebar {
+    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s ease;
+    will-change: width, transform;
+}
+
+.sidebar.sidebar-collapsed {
+    width: 72px;
+}
+
+.sidebar.sidebar-collapsed .sidebar-header div,
+.sidebar.sidebar-collapsed .nav-item span {
+    display: none !important;
+}
+
+.sidebar.sidebar-collapsed .sidebar-header {
+    justify-content: center;
+    padding: 16px 10px;
+}
+
+.sidebar.sidebar-collapsed .nav-item {
+    justify-content: center;
+    padding: 12px;
+    position: relative;
+}
+
+.sidebar.sidebar-collapsed .nav-item i {
+    font-size: 20px;
+    margin: 0;
+}
+
+/* Tooltip on hover in icon-only mode */
+.sidebar.sidebar-collapsed .nav-item::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: calc(100% + 12px);
+    top: 50%;
+    transform: translateY(-50%) scale(0.95);
+    background: #0f172a;
+    color: #ffffff;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    z-index: 1000;
+    box-shadow: var(--shadow-md);
+}
+
+[data-theme="dark"] .sidebar.sidebar-collapsed .nav-item::after {
+    background: #1e293b;
+    color: #f8fafc;
+    border: 1px solid var(--border-color);
+}
+
+.sidebar.sidebar-collapsed .nav-item:hover::after {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+}
+
+.sidebar-toggle-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: var(--radius-sm);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.sidebar-toggle-btn:hover {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+.main-content.sidebar-collapsed-active {
+    margin-left: 72px;
+}
+
+/* --------------------------------------------------------------------------
+   4. Breadcrumbs Component
+   -------------------------------------------------------------------------- */
+.breadcrumb-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    margin-bottom: 16px;
+    color: var(--text-secondary);
+    flex-wrap: wrap;
+}
+
+.breadcrumb-nav a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.breadcrumb-nav a:hover {
+    color: var(--primary);
+}
+
+.breadcrumb-separator {
+    font-size: 11px;
+    opacity: 0.6;
+}
+
+.breadcrumb-current {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   5. Modern Toast Notification System
+   -------------------------------------------------------------------------- */
+.toast-container {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 380px;
+    width: calc(100% - 48px);
+    pointer-events: none;
+}
+
+.toast-item {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 14px 18px;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    pointer-events: auto;
+    animation: toastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.toast-item.toast-hiding {
+    animation: toastSlideOut 0.25s ease forwards;
+}
+
+@keyframes toastSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(50px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@keyframes toastSlideOut {
+    to {
+        opacity: 0;
+        transform: translateX(50px) scale(0.95);
+    }
+}
+
+.toast-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.toast-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.toast-title {
+    font-weight: 700;
+    font-size: 13.5px;
+    margin-bottom: 2px;
+    color: var(--text-primary);
+}
+
+.toast-message {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.toast-close {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px;
+    line-height: 1;
+}
+
+.toast-close:hover {
+    color: var(--text-primary);
+}
+
+.toast-success { border-left: 4px solid var(--success); }
+.toast-success .toast-icon { color: var(--success); }
+
+.toast-danger, .toast-error { border-left: 4px solid var(--danger); }
+.toast-danger .toast-icon, .toast-error .toast-icon { color: var(--danger); }
+
+.toast-warning { border-left: 4px solid var(--warning); }
+.toast-warning .toast-icon { color: var(--warning); }
+
+.toast-info { border-left: 4px solid var(--info); }
+.toast-info .toast-icon { color: var(--info); }
+
+/* --------------------------------------------------------------------------
+   6. Global Search Palette
+   -------------------------------------------------------------------------- */
+.cmd-palette-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 12vh;
+}
+
+.cmd-palette-backdrop.open {
+    display: flex;
+    animation: fadeInModal 0.2s ease forwards;
+}
+
+.cmd-palette-modal {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    width: min(600px, calc(100vw - 32px));
+    max-height: 520px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.cmd-palette-search-box {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+    gap: 12px;
+}
+
+.cmd-palette-search-box i {
+    color: var(--primary);
+    font-size: 18px;
+}
+
+.cmd-palette-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 16px;
+    outline: none;
+    font-family: inherit;
+}
+
+.cmd-palette-results {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+    max-height: 380px;
+}
+
+.cmd-group-label {
+    padding: 8px 18px 4px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    letter-spacing: 0.05em;
+}
+
+.cmd-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 18px;
+    color: var(--text-primary);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.cmd-item:hover, .cmd-item.selected {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+.cmd-item-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+.cmd-item.selected .cmd-item-icon {
+    background: var(--primary);
+    color: #ffffff;
+}
+
+.cmd-item-text {
+    flex: 1;
+    font-size: 13.5px;
+    font-weight: 500;
+}
+
+.cmd-item-badge {
+    font-size: 11px;
+    color: var(--text-secondary);
+    background: var(--bg-primary);
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+}
+
+/* --------------------------------------------------------------------------
+   7. Back-To-Top Button & Floating Actions
+   -------------------------------------------------------------------------- */
+.back-to-top-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 88px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-md);
+    cursor: pointer;
+    z-index: 900;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(12px);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.back-to-top-btn.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.back-to-top-btn:hover {
+    background: var(--primary);
+    color: #ffffff;
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+/* --------------------------------------------------------------------------
+   8. Skeleton Loaders
+   -------------------------------------------------------------------------- */
+.skeleton {
+    background: linear-gradient(90deg,
+        rgba(226, 232, 240, 0.6) 25%,
+        rgba(241, 245, 249, 0.9) 50%,
+        rgba(226, 232, 240, 0.6) 75%
+    );
+    background-size: 200% 100%;
+    animation: skeletonShimmer 1.5s infinite;
+    border-radius: var(--radius-sm);
+    color: transparent !important;
+}
+
+[data-theme="dark"] .skeleton {
+    background: linear-gradient(90deg,
+        rgba(30, 41, 59, 0.6) 25%,
+        rgba(51, 65, 85, 0.9) 50%,
+        rgba(30, 41, 59, 0.6) 75%
+    );
+    background-size: 200% 100%;
+}
+
+@keyframes skeletonShimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.skeleton-text {
+    height: 14px;
+    margin-bottom: 6px;
+    display: inline-block;
+    width: 100%;
+}
+
+.skeleton-title {
+    height: 24px;
+    width: 60%;
+    margin-bottom: 12px;
+}
+
+.skeleton-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+}
+
+.skeleton-card {
+    min-height: 140px;
+    border-radius: var(--radius-lg);
+}
+
+/* --------------------------------------------------------------------------
+   9. Advanced Filter Drawer & Active Filter Chips
+   -------------------------------------------------------------------------- */
+.filter-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(2px);
+    z-index: 1050;
+    display: none;
+    justify-content: flex-end;
+}
+
+.filter-drawer-backdrop.open {
+    display: flex;
+}
+
+.filter-drawer {
+    background: var(--bg-surface);
+    width: min(420px, 100vw);
+    height: 100%;
+    box-shadow: -4px 0 25px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    animation: drawerSlideIn 0.25s ease forwards;
+}
+
+@keyframes drawerSlideIn {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+}
+
+.filter-drawer-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.filter-drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.filter-drawer-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    gap: 12px;
+    background: var(--bg-primary);
+}
+
+.active-filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+    align-items: center;
+}
+
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--primary-light);
+    color: var(--primary);
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid rgba(79, 70, 229, 0.2);
+}
+
+.filter-chip-remove {
+    background: transparent;
+    border: none;
+    color: var(--primary);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+}
+
+.filter-clear-all {
+    font-size: 12px;
+    color: var(--danger);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+/* --------------------------------------------------------------------------
+   10. Bulk Action Toolbar & Table Density
+   -------------------------------------------------------------------------- */
+.bulk-action-toolbar {
+    background: #1e293b;
+    color: #ffffff;
+    border-radius: var(--radius-md);
+    padding: 12px 20px;
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-lg);
+    animation: toastSlideIn 0.2s ease forwards;
+}
+
+.bulk-action-toolbar.active {
+    display: flex;
+}
+
+.bulk-action-toolbar .btn {
+    font-size: 13px;
+    padding: 6px 14px;
+}
+
+/* Table density modes */
+.table-compact th, .table-compact td {
+    padding: 8px 12px !important;
+    font-size: 12.5px !important;
+}
+
+.table-comfortable th, .table-comfortable td {
+    padding: 16px 20px !important;
+}
+
+/* Sticky table header */
+.sticky-table-header th {
+    position: sticky;
+    top: 70px;
+    z-index: 10;
+    background: var(--bg-surface);
+    box-shadow: 0 1px 0 var(--border-color);
+}
+
+/* --------------------------------------------------------------------------
+   11. Progress Bar & Collection Targets
+   -------------------------------------------------------------------------- */
+.progress-bar-container {
+    width: 100%;
+    height: 10px;
+    background: var(--bg-primary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    margin: 8px 0;
+    border: 1px solid var(--border-color);
+}
+
+.progress-bar-fill {
+    height: 100%;
+    border-radius: var(--radius-full);
+    transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.progress-bar-primary { background: linear-gradient(90deg, var(--primary), #818cf8); }
+.progress-bar-success { background: linear-gradient(90deg, var(--success), #34d399); }
+.progress-bar-warning { background: linear-gradient(90deg, var(--warning), #fbbf24); }
+.progress-bar-danger  { background: linear-gradient(90deg, var(--danger), #f87171); }
+
+/* --------------------------------------------------------------------------
+   12. Activity Timeline Component
+   -------------------------------------------------------------------------- */
+.timeline-container {
+    position: relative;
+    padding-left: 28px;
+    margin: 16px 0;
+}
+
+.timeline-container::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 4px;
+    bottom: 4px;
+    width: 2px;
+    background: var(--border-color);
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-item:last-child {
+    margin-bottom: 0;
+}
+
+.timeline-dot {
+    position: absolute;
+    left: -28px;
+    top: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--bg-surface);
+    border: 2px solid var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    color: var(--primary);
+}
+
+.timeline-dot.dot-success { border-color: var(--success); color: var(--success); }
+.timeline-dot.dot-warning { border-color: var(--warning); color: var(--warning); }
+.timeline-dot.dot-danger  { border-color: var(--danger); color: var(--danger); }
+
+.timeline-title {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.timeline-time {
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.timeline-description {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+}
+
+/* --------------------------------------------------------------------------
+   13. Navbar Profile & Notification Badges
+   -------------------------------------------------------------------------- */
+.navbar-icon-btn {
+    position: relative;
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.navbar-icon-btn:hover {
+    background: var(--primary-light);
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+.nav-badge-count {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: var(--danger);
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 800;
+    min-width: 18px;
+    height: 18px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    border: 2px solid var(--bg-surface);
+}
+
+.user-avatar-pill {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 10px 4px 4px;
+    border-radius: var(--radius-full);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+}
+
+.user-avatar-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+/* --------------------------------------------------------------------------
+   14. Mobile Drawer Overlay for Sidebar & Header Controls
+   -------------------------------------------------------------------------- */
+.sidebar-mobile-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(3px);
+    z-index: 998;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.sidebar-mobile-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+.mobile-menu-btn {
+    display: none;
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    color: var(--text-primary);
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
+    line-height: 1;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-menu-btn:hover, .mobile-menu-btn:focus-visible {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+.header-search-container {
+    display: inline-flex;
+    align-items: center;
+    flex: 1;
+    max-width: 480px;
+    min-width: 0;
+}
+
+.header-search-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 8px 16px;
+    color: var(--text-secondary);
+    font-size: 13.5px;
+    font-family: var(--font-body);
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    width: 100%;
+    text-align: left;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.header-search-btn:hover, .header-search-btn:focus-visible {
+    border-color: var(--primary);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    box-shadow: 0 2px 6px rgba(79, 70, 229, 0.08);
+}
+
+.header-search-btn i {
+    font-size: 14px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.header-search-btn:hover i {
+    color: var(--primary);
+}
+
+.header-search-label {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+/* Language Selector */
+.header-lang-select {
+    height: 38px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-family: var(--font-body);
+    color: var(--text-primary);
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+    max-width: 135px;
+}
+
+.header-lang-select:hover, .header-lang-select:focus-visible {
+    border-color: var(--primary);
+}
+
+@media (max-width: 768px) {
+    .mobile-menu-btn {
+        display: inline-flex;
+    }
+    .back-to-top-btn {
+        right: 20px;
+        bottom: 78px;
+    }
+    .sticky-table-header th {
+        top: 0;
+    }
+}
+
+/* ==========================================================================
+   15. Comprehensive Multi-Device Breakpoint Matrix & Touch UX System
+   ========================================================================== */
+
+/* Ultra-wide Monitors (1920px & 2560px) Container Constraint */
+@media (min-width: 1441px) {
+    .page-body {
+        max-width: 1600px;
+        margin: 0 auto;
+        width: 100%;
+    }
+}
+
+/* Prevent unwanted horizontal overflow page-wide */
+html, body {
+    max-width: 100vw;
+    overflow-x: hidden;
+}
+
+body.drawer-open {
+    overflow: hidden !important;
+    touch-action: none;
+}
+
+/* Common Touch-friendly Min Targets for Form Inputs & Buttons */
+input[type="text"],
+input[type="tel"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="month"],
+input[type="search"],
+select,
+textarea {
+    min-height: 44px;
+    box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+    input[type="text"],
+    input[type="tel"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    input[type="date"],
+    input[type="month"],
+    input[type="search"],
+    select {
+        font-size: 16px !important; /* Prevents iOS auto-zoom on input focus */
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Breakpoint Specific Adjustments
+   -------------------------------------------------------------------------- */
+
+/* 1. Ultra Small Phones (320px - 360px: e.g. iPhone SE, Galaxy Fold cover, compact Androids) */
+@media (max-width: 360px) {
+    .top-navbar {
+        padding: 0 8px !important;
+        gap: 6px !important;
+        height: 54px !important;
+        min-height: 54px !important;
+    }
+    .top-navbar-left {
+        gap: 6px !important;
+    }
+    .top-navbar-right {
+        gap: 4px !important;
+    }
+    .header-search-container {
+        flex: 0 0 auto !important;
+        max-width: none !important;
+    }
+    .header-search-label {
+        display: none !important;
+    }
+    .header-search-btn {
+        width: 32px !important;
+        height: 32px !important;
+        padding: 0 !important;
+        justify-content: center !important;
+    }
+    .header-lang-select {
+        height: 28px !important;
+        padding: 1px 3px !important;
+        font-size: 10.5px !important;
+        max-width: 52px !important;
+    }
+    .navbar-icon-btn {
+        width: 30px !important;
+        height: 30px !important;
+    }
+    .user-avatar-pill {
+        padding: 0 !important;
+        border: none !important;
+        background: transparent !important;
+    }
+    .user-avatar-info {
+        display: none !important;
+    }
+    .user-avatar-circle {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 11px !important;
+    }
+    .top-navbar ~ .page-body {
+        padding-top: calc(54px + 12px) !important;
+    }
+    .page-body {
+        padding: 12px 10px calc(56px + env(safe-area-inset-bottom, 0px) + 18px) !important;
+    }
+    .card {
+        padding: 12px !important;
+        border-radius: var(--radius-sm) !important;
+    }
+    .page-heading h1 {
+        font-size: 20px !important;
+    }
+    .metrics-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+    .metric-card {
+        padding: 12px !important;
+    }
+    .metric-val {
+        font-size: 20px !important;
+    }
+    .quick-actions {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+    }
+    .summary-grid {
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+    }
+    .btn {
+        padding: 8px 12px !important;
+        font-size: 13px !important;
+        min-height: 44px;
+    }
+    .bill-filters {
+        grid-template-columns: 1fr !important;
+    }
+    .bill-filters input, .bill-filters select {
+        grid-column: span 1 !important;
+    }
+}
+
+/* 2. Standard Mobile Phones (361px - 480px: e.g. iPhone 12/13/14/15, Pixel 7/8, Galaxy S23/S24) */
+@media (min-width: 361px) and (max-width: 480px) {
+    .top-navbar ~ .page-body {
+        padding-top: calc(60px + 14px) !important;
+    }
+    .page-body {
+        padding: 14px 12px calc(60px + env(safe-area-inset-bottom, 0px) + 20px) !important;
+    }
+    .top-navbar {
+        padding: 0 12px !important;
+        height: 60px !important;
+        min-height: 60px !important;
+        gap: 8px !important;
+    }
+    .top-navbar-left {
+        gap: 8px !important;
+    }
+    .top-navbar-right {
+        gap: 6px !important;
+    }
+    .header-search-container {
+        flex: 0 0 auto !important;
+        max-width: none !important;
+    }
+    .header-search-label {
+        display: none !important;
+    }
+    .header-search-btn {
+        width: 36px !important;
+        height: 36px !important;
+        padding: 0 !important;
+        justify-content: center !important;
+    }
+    .header-lang-select {
+        height: 32px !important;
+        padding: 2px 4px !important;
+        font-size: 11.5px !important;
+        max-width: 65px !important;
+    }
+    .navbar-icon-btn {
+        width: 34px !important;
+        height: 34px !important;
+    }
+    .user-avatar-pill {
+        padding: 0 !important;
+        border: none !important;
+        background: transparent !important;
+    }
+    .user-avatar-info {
+        display: none !important;
+    }
+    .user-avatar-circle {
+        width: 32px !important;
+        height: 32px !important;
+    }
+    .metrics-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .quick-actions {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+    .summary-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+/* 3. Phablets & Small Tablets (481px - 768px: e.g. Foldables unrolled, small tablets) */
+@media (min-width: 481px) and (max-width: 768px) {
+    .top-navbar ~ .page-body {
+        padding-top: calc(64px + 20px) !important;
+    }
+    .page-body {
+        padding: 20px 16px calc(60px + env(safe-area-inset-bottom, 0px) + 24px) !important;
+    }
+    .metrics-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    .quick-actions {
+        grid-template-columns: repeat(4, 1fr) !important;
+    }
+    .summary-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+/* 4. Medium Tablets & Hybrid Laptops (769px - 1024px: e.g. iPad, iPad Pro 11", Surface Pro) */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .sidebar {
+        width: 220px;
+    }
+    .main-content {
+        margin-left: 220px;
+    }
+    .sidebar.sidebar-collapsed {
+        width: 72px;
+    }
+    .main-content.sidebar-collapsed-active {
+        margin-left: 72px;
+    }
+    .metrics-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    .quick-actions {
+        grid-template-columns: repeat(5, 1fr);
+    }
+    .summary-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    .top-navbar ~ .page-body {
+        padding-top: calc(70px + 24px) !important;
+    }
+    .page-body {
+        padding: 24px;
+    }
+}
+
+/* 5. Desktops & Laptops (1025px - 1440px) */
+@media (min-width: 1025px) and (max-width: 1440px) {
+    .metrics-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Mobile Navigation & Drawer Enhancements
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed !important;
+        top: var(--header-height, 64px) !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        height: calc(100vh - var(--header-height, 64px)) !important;
+        width: min(280px, 85vw) !important;
+        z-index: 1000 !important;
+        transform: translateX(-100%) !important;
+        transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        background: var(--bg-surface) !important;
+        box-shadow: none !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+    }
+
+    .sidebar-nav {
+        flex: 1 !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    .sidebar.mobile-open {
+        transform: translateX(0) !important;
+        box-shadow: var(--shadow-lg) !important;
+    }
+
+    .sidebar-header {
+        display: none !important;
+    }
+
+    .sidebar-toggle-btn {
+        display: none !important;
+    }
+
+    .sidebar-mobile-overlay {
+        position: fixed !important;
+        top: var(--header-height, 64px) !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        z-index: 998 !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .header-search-container {
+        flex: 0 0 auto;
+        max-width: none;
+    }
+    .header-search-label {
+        display: none !important;
+    }
+    .header-search-btn {
+        width: 38px;
+        height: 38px;
+        padding: 0 !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--radius-md);
+    }
+    .header-lang-select {
+        height: 34px;
+        padding: 2px 6px;
+        font-size: 12px;
+        max-width: 72px;
+        border-radius: var(--radius-sm);
+    }
+    .user-avatar-pill {
+        padding: 0 !important;
+        border: none !important;
+        background: transparent !important;
+    }
+    .user-avatar-info {
+        display: none !important;
+    }
+}
+
+/* Mobile Bottom Bar for Residents - Hidden on Desktop */
+.mobile-nav {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .mobile-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: var(--bottom-nav-height, 60px);
+        background: var(--bg-surface);
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        z-index: 900;
+        box-shadow: 0 -4px 18px rgba(15, 23, 42, 0.08);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        box-sizing: content-box;
+    }
+
+    .mobile-nav a,
+    .mobile-nav .mobile-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        text-decoration: none;
+        color: var(--text-secondary);
+        font-size: 11px;
+        font-weight: 500;
+        flex: 1;
+        min-height: 48px;
+        height: 100%;
+        padding: 4px 2px;
+        opacity: 0.75;
+        transition: color 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+    }
+
+    .mobile-nav a i,
+    .mobile-nav .mobile-nav-item i {
+        font-size: 18px;
+        color: var(--text-secondary);
+        transition: color 0.15s ease, transform 0.15s ease;
+    }
+
+    .mobile-nav a.active,
+    .mobile-nav .mobile-nav-item.active {
+        color: var(--primary);
+        font-weight: 700;
+        opacity: 1;
+    }
+
+    .mobile-nav a.active i,
+    .mobile-nav .mobile-nav-item.active i {
+        color: var(--primary);
+        transform: scale(1.1);
+    }
+
+    .mobile-nav a:not(.active):hover,
+    .mobile-nav a:not(.active):focus-visible,
+    .mobile-nav .mobile-nav-item:not(.active):hover,
+    .mobile-nav .mobile-nav-item:not(.active):focus-visible {
+        color: var(--text-primary);
+        opacity: 1;
+    }
+
+    .mobile-nav a:not(.active):hover i,
+    .mobile-nav a:not(.active):focus-visible i,
+    .mobile-nav .mobile-nav-item:not(.active):hover i,
+    .mobile-nav .mobile-nav-item:not(.active):focus-visible i {
+        color: var(--text-primary);
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Payment Flow & Receipt Mobile Responsive Tweaks
+   -------------------------------------------------------------------------- */
+.pay-wrap {
+    width: 100%;
+    max-width: 580px;
+    margin: 0 auto;
+}
+
+.method-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+}
+
+.method-tile {
+    min-height: 48px;
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
+}
+
+.receipt-preview-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    max-width: 680px;
+    margin: 0 auto;
+}
+
+@media (max-width: 480px) {
+    .receipt-preview-card {
+        padding: 16px;
+    }
+    .method-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Modal Window Mobile Adaptability
+   -------------------------------------------------------------------------- */
+.modal-box {
+    width: min(480px, calc(100vw - 24px));
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+@media (max-width: 480px) {
+    .modal-backdrop {
+        padding: 12px;
+        align-items: flex-end;
+    }
+    .modal-box {
+        width: 100%;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+        border-top-left-radius: var(--radius-lg);
+        border-top-right-radius: var(--radius-lg);
+        padding: 20px;
+        animation: slideUpModal 0.25s ease forwards;
+    }
+}
+
+@keyframes slideUpModal {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+
+/* ==========================================================================
+   16. Command Palette, Universal Confirm Modal & Modern UX Additions
+   ========================================================================== */
+
+/* Global Search Input Trigger in Navbar */
+.global-search-trigger {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 8px 14px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 13.5px;
+    width: 100%;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.global-search-trigger:hover, .global-search-trigger:focus {
+    border-color: var(--primary);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.global-search-trigger i {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.global-search-placeholder {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0.85;
+}
+
+/* Command Palette Responsive Updates */
+.cmd-palette-modal {
+    width: min(720px, calc(100vw - 32px)) !important;
+    max-height: min(620px, 85vh) !important;
+}
+
+.cmd-palette-mobile-back {
+    display: none;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 18px;
+    padding: 4px 8px;
+    cursor: pointer;
+}
+
+.cmd-palette-clear-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 16px;
+    padding: 4px;
+    cursor: pointer;
+    border-radius: 50%;
+}
+
+.cmd-palette-clear-btn:hover {
+    color: var(--text-primary);
+}
+
+.cmd-palette-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 18px;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-primary);
+    font-size: 11.5px;
+    color: var(--text-secondary);
+}
+
+.cmd-footer-hints {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.cmd-footer-hints kbd {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.cmd-type-badge {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.cmd-type-badge.badge-action { background: rgba(79, 70, 229, 0.1); color: var(--primary); border-color: rgba(79, 70, 229, 0.2); }
+.cmd-type-badge.badge-page { background: rgba(14, 165, 233, 0.1); color: var(--info); border-color: rgba(14, 165, 233, 0.2); }
+.cmd-type-badge.badge-resident { background: rgba(16, 185, 129, 0.1); color: var(--success); border-color: rgba(16, 185, 129, 0.2); }
+.cmd-type-badge.badge-bill { background: rgba(245, 158, 11, 0.1); color: var(--warning); border-color: rgba(245, 158, 11, 0.2); }
+.cmd-type-badge.badge-payment { background: rgba(168, 85, 247, 0.1); color: #a855f7; border-color: rgba(168, 85, 247, 0.2); }
+
+.cmd-item-highlight {
+    background: rgba(253, 224, 71, 0.4);
+    color: inherit;
+    border-radius: 2px;
+    padding: 0 2px;
+}
+
+/* Mobile Command Center Fullscreen */
+@media (max-width: 640px) {
+    .cmd-palette-backdrop {
+        padding-top: 0 !important;
+    }
+    .cmd-palette-modal {
+        width: 100vw !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        border-radius: 0 !important;
+        border: none !important;
+    }
+    .cmd-palette-mobile-back {
+        display: block !important;
+    }
+    .desktop-only {
+        display: none !important;
+    }
+    .cmd-palette-search-box {
+        padding: 12px 14px !important;
+    }
+    .cmd-item {
+        padding: 12px 14px !important;
+    }
+}
+
+/* Universal Confirm Modal */
+.confirm-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(4px);
+    z-index: 10000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.confirm-modal-backdrop.open {
+    display: flex;
+    animation: fadeInModal 0.2s ease forwards;
+}
+
+.confirm-modal-box {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    width: min(480px, 100%);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.confirm-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.confirm-modal-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.confirm-icon-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+.confirm-icon-warning { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+.confirm-icon-info { background: rgba(79, 70, 229, 0.1); color: var(--primary); }
+
+.confirm-modal-title {
+    font-weight: 700;
+    font-size: 17px;
+    color: var(--text-primary);
+}
+
+.confirm-modal-body {
+    font-size: 13.5px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.confirm-details-preview {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    font-size: 12.5px;
+    color: var(--text-primary);
+}
+
+.confirm-modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+/* Empty State Styling */
+.empty-state-card {
+    text-align: center;
+    padding: 40px 24px;
+    background: var(--bg-surface);
+    border: 1px dashed var(--border-color);
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.empty-state-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+}
+
+.empty-state-title {
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text-primary);
+}
+
+.empty-state-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    max-width: 380px;
+    line-height: 1.4;
+}
+
+/* Pagination Bar */
+.pagination-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    margin-top: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pagination-btn {
+    padding: 6px 12px;
+    font-size: 12.5px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: var(--primary-light);
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+.pagination-btn.active {
+    background: var(--primary);
+    color: #ffffff;
+    border-color: var(--primary);
+    font-weight: 700;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.page-size-select {
+    padding: 4px 8px;
+    font-size: 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+}
+
+/* Table Sort Indicators */
+th.sortable {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    padding-right: 20px !important;
+}
+
+th.sortable:hover {
+    color: var(--primary);
+}
+
+th.sortable::after {
+    content: '↕';
+    position: absolute;
+    right: 6px;
+    opacity: 0.3;
+    font-size: 11px;
+}
+
+th.sorted-asc::after { content: '▲'; opacity: 1; color: var(--primary); }
+th.sorted-desc::after { content: '▼'; opacity: 1; color: var(--primary); }
+
+/* Badges & Indicators */
+.online-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+    margin-right: 6px;
+    box-shadow: 0 0 0 2px var(--bg-surface);
+}
+
+.role-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    background: var(--primary-light);
+    color: var(--primary);
+}
+/* --------------------------------------------------------------------------
+   17. Accessible Tooltip System
+   -------------------------------------------------------------------------- */
+[data-tooltip] {
+    position: relative;
+}
+
+[data-tooltip]:hover::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #0f172a;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 1000;
+    box-shadow: var(--shadow-md);
+    opacity: 0.95;
+    animation: fadeIn 0.15s ease forwards;
+}
+
+[data-theme="dark"] [data-tooltip]:hover::before {
+    background: #1e293b;
+    color: #f8fafc;
+    border: 1px solid var(--border-color);
+}
+
+/* --------------------------------------------------------------------------
+   18. Dashboard Widget Customization & Drag-and-Drop
+   -------------------------------------------------------------------------- */
+.widget-dragging {
+    opacity: 0.45;
+    border: 2px dashed var(--primary) !important;
+    transform: scale(0.98);
+}
+
+.dashboard-widget {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    cursor: grab;
+}
+
+.dashboard-widget:active {
+    cursor: grabbing;
+}
+
+/* --------------------------------------------------------------------------
+   19. Smart Error Pages & Status Displays
+   -------------------------------------------------------------------------- */
+.error-page-container {
+    max-width: 540px;
+    margin: 40px auto;
+    text-align: center;
+    padding: 32px 20px;
+}
+
+.error-code-badge {
+    font-size: 48px;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--primary);
+    margin-bottom: 12px;
+}
+
+.error-illustration {
+    font-size: 64px;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+    opacity: 0.8;
+}
+
+.retry-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+/* --------------------------------------------------------------------------
+   20. Reduced Motion Mode & Focus States
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+[data-reduced-motion="true"] *,
+[data-reduced-motion="true"] *::before,
+[data-reduced-motion="true"] *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+}
+
+:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.btn:disabled, button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed !important;
+    pointer-events: none;
+}

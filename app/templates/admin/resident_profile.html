@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+{% block title %}Resident Profile — {{ resident.full_name }}{% endblock %}
+
+{% block content %}
+<div style="max-width:1200px; margin:32px auto; padding:0 16px;">
+
+  <!-- Breadcrumb & Top Bar -->
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
+    <div>
+      <div style="font-size:13px; color:var(--text-secondary); margin-bottom:4px;">
+        <a href="{{ url_for('admin.residents') }}" style="color:var(--text-secondary); text-decoration:none;">Residents</a> / Profile
+      </div>
+      <h1 style="font-size:24px; font-weight:800; margin:0; display:flex; align-items:center; gap:10px;">
+        {{ resident.full_name }}
+        <span style="font-size:12px; padding:4px 10px; border-radius:20px; font-weight:700;
+          {% if resident.occupancy_status == 'Active' %}background:rgba(16,185,129,0.15); color:#059669;
+          {% else %}background:rgba(107,114,128,0.15); color:#4b5563;{% endif %}">
+          {{ resident.occupancy_status }}
+        </span>
+        <span style="font-size:12px; padding:4px 10px; border-radius:20px; font-weight:700; background:rgba(79,70,229,0.12); color:#4338ca;">
+          {{ resident.resident_type }}
+        </span>
+      </h1>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <a href="{{ url_for('admin.residents') }}" class="btn btn-secondary" style="font-size:13px;">
+        <i class="fa-solid fa-arrow-left"></i> Back to Residents
+      </a>
+    </div>
+  </div>
+
+  <!-- Overview Cards -->
+  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:24px;">
+    
+    <div class="card" style="padding:18px; border-left:4px solid var(--primary);">
+      <div style="font-size:12px; color:var(--text-secondary); text-transform:uppercase; font-weight:600;">Property</div>
+      <div style="font-size:22px; font-weight:800; color:var(--text-primary); margin-top:4px;">
+        {{ resident.flat.property_key if resident.flat else 'N/A' }}
+      </div>
+      <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">
+        {{ resident.flat.building.name if resident.flat and resident.flat.building else '' }}
+      </div>
+    </div>
+
+    <div class="card" style="padding:18px; border-left:4px solid #3b82f6;">
+      <div style="font-size:12px; color:var(--text-secondary); text-transform:uppercase; font-weight:600;">Total Billed</div>
+      <div style="font-size:22px; font-weight:800; color:#2563eb; margin-top:4px;">
+        ₹{{ "{:,.2f}".format(total_billed) }}
+      </div>
+      <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">
+        {{ bills|length }} Bill(s) Generated
+      </div>
+    </div>
+
+    <div class="card" style="padding:18px; border-left:4px solid #10b981;">
+      <div style="font-size:12px; color:var(--text-secondary); text-transform:uppercase; font-weight:600;">Total Paid</div>
+      <div style="font-size:22px; font-weight:800; color:#059669; margin-top:4px;">
+        ₹{{ "{:,.2f}".format(total_paid) }}
+      </div>
+      <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">
+        {{ payments|length }} Payment(s)
+      </div>
+    </div>
+
+    <div class="card" style="padding:18px; border-left:4px solid {% if total_outstanding > 0 %}#ef4444{% else %}#10b981{% endif %};">
+      <div style="font-size:12px; color:var(--text-secondary); text-transform:uppercase; font-weight:600;">Outstanding Balance</div>
+      <div style="font-size:22px; font-weight:800; color:{% if total_outstanding > 0 %}#dc2626{% else %}#059669{% endif %}; margin-top:4px;">
+        ₹{{ "{:,.2f}".format(total_outstanding) }}
+      </div>
+      <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">
+        {% if total_outstanding == 0 %}All dues cleared{% else %}Pending payment{% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Resident Info Grid -->
+  <div style="display:grid; grid-template-columns:1fr 2fr; gap:24px; margin-bottom:24px;">
+    
+    <!-- Profile Card -->
+    <div class="card" style="padding:24px;">
+      <h3 style="font-size:16px; font-weight:700; margin:0 0 16px; border-bottom:1px solid var(--border-color); padding-bottom:10px;">
+        <i class="fa-solid fa-id-card" style="color:var(--primary); margin-right:8px;"></i>Personal Details
+      </h3>
+      <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+        <div>
+          <span style="color:var(--text-secondary); display:block; font-size:11px; text-transform:uppercase;">Full Name</span>
+          <strong>{{ resident.full_name }}</strong>
+        </div>
+        <div>
+          <span style="color:var(--text-secondary); display:block; font-size:11px; text-transform:uppercase;">Mobile</span>
+          <strong>{{ resident.mobile }}</strong>
+        </div>
+        <div>
+          <span style="color:var(--text-secondary); display:block; font-size:11px; text-transform:uppercase;">Email</span>
+          <strong>{{ resident.email or '—' }}</strong>
+        </div>
+        <div>
+          <span style="color:var(--text-secondary); display:block; font-size:11px; text-transform:uppercase;">Move-in Date</span>
+          <strong>{{ resident.move_in_date.strftime('%d %b %Y') if resident.move_in_date else '—' }}</strong>
+        </div>
+        {% if resident.advance_balance and resident.advance_balance > 0 %}
+        <div>
+          <span style="color:var(--text-secondary); display:block; font-size:11px; text-transform:uppercase;">Advance Balance</span>
+          <strong style="color:#059669;">₹{{ "{:,.2f}".format(resident.advance_balance) }}</strong>
+        </div>
+        {% endif %}
+        {% if approval_req %}
+        <div style="margin-top:8px; padding-top:12px; border-top:1px solid var(--border-color);">
+          <span style="color:var(--text-secondary); display:block; font-size:11px; text-transform:uppercase;">Approved On</span>
+          <strong>{{ approval_req.approved_at.strftime('%d %b %Y %H:%M') if approval_req.approved_at else '—' }}</strong>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Bills History -->
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div style="padding:16px 20px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="font-size:16px; font-weight:700; margin:0;">
+          <i class="fa-solid fa-file-invoice-dollar" style="color:var(--primary); margin-right:8px;"></i>Maintenance Bills
+        </h3>
+      </div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:13px;">
+          <thead>
+            <tr style="background:var(--bg-primary);">
+              <th style="padding:10px 14px; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-secondary);">Month</th>
+              <th style="padding:10px 14px; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-secondary);">Bill No</th>
+              <th style="padding:10px 14px; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-secondary);">Total Amount</th>
+              <th style="padding:10px 14px; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-secondary);">Paid</th>
+              <th style="padding:10px 14px; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-secondary);">Remaining</th>
+              <th style="padding:10px 14px; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-secondary);">Due Date</th>
+              <th style="padding:10px 14px; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-secondary);">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for bill in bills %}
+            <tr style="border-bottom:1px solid var(--border-color);">
+              <td style="padding:10px 14px; font-weight:700;">{{ bill.billing_month }}</td>
+              <td style="padding:10px 14px; font-size:11px; color:var(--text-secondary);">{{ bill.bill_number }}</td>
+              <td style="padding:10px 14px;">₹{{ "{:,.2f}".format(bill.total_amount) }}</td>
+              <td style="padding:10px 14px; color:#059669; font-weight:600;">₹{{ "{:,.2f}".format(bill.amount_paid) }}</td>
+              <td style="padding:10px 14px; color:{% if bill.remaining_amount > 0 %}#dc2626{% else %}#059669{% endif %}; font-weight:700;">
+                ₹{{ "{:,.2f}".format(bill.remaining_amount) }}
+              </td>
+              <td style="padding:10px 14px; font-size:12px; color:var(--text-secondary);">
+                {{ bill.due_date.strftime('%d %b %Y') if bill.due_date else '—' }}
+              </td>
+              <td style="padding:10px 14px;">
+                <span style="padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700;
+                  {% if bill.status == 'Paid' %}background:rgba(16,185,129,0.15); color:#059669;
+                  {% elif bill.status == 'Partially Paid' %}background:rgba(59,130,246,0.15); color:#2563eb;
+                  {% elif bill.status == 'Overdue' %}background:rgba(239,68,68,0.15); color:#dc2626;
+                  {% else %}background:rgba(245,158,11,0.15); color:#d97706;{% endif %}">
+                  {{ bill.status }}
+                </span>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" style="padding:20px; text-align:center; color:var(--text-secondary);">No bills generated yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Payments & Receipts Grid -->
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:24px;">
+
+    <!-- Payment History -->
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div style="padding:16px 20px; border-bottom:1px solid var(--border-color);">
+        <h3 style="font-size:16px; font-weight:700; margin:0;">
+          <i class="fa-solid fa-credit-card" style="color:#059669; margin-right:8px;"></i>Payment History
+        </h3>
+      </div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:13px;">
+          <thead>
+            <tr style="background:var(--bg-primary);">
+              <th style="padding:10px 14px; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-secondary);">Date</th>
+              <th style="padding:10px 14px; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-secondary);">Amount</th>
+              <th style="padding:10px 14px; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-secondary);">Method</th>
+              <th style="padding:10px 14px; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-secondary);">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in payments %}
+            <tr style="border-bottom:1px solid var(--border-color);">
+              <td style="padding:10px 14px; font-size:12px;">
+                {{ p.payment_date.strftime('%d %b %Y %H:%M') if p.payment_date else '—' }}
+              </td>
+              <td style="padding:10px 14px; font-weight:700; color:#059669;">₹{{ "{:,.2f}".format(p.amount_paid) }}</td>
+              <td style="padding:10px 14px;">{{ p.payment_method }}</td>
+              <td style="padding:10px 14px;">
+                <span style="padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700;
+                  {% if p.status in ('captured', 'Success') %}background:rgba(16,185,129,0.15); color:#059669;
+                  {% else %}background:rgba(245,158,11,0.15); color:#d97706;{% endif %}">
+                  {{ p.status }}
+                </span>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" style="padding:20px; text-align:center; color:var(--text-secondary);">No payments recorded.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Receipts -->
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div style="padding:16px 20px; border-bottom:1px solid var(--border-color);">
+        <h3 style="font-size:16px; font-weight:700; margin:0;">
+          <i class="fa-solid fa-receipt" style="color:#2563eb; margin-right:8px;"></i>Payment Receipts
+        </h3>
+      </div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:13px;">
+          <thead>
+            <tr style="background:var(--bg-primary);">
+              <th style="padding:10px 14px; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-secondary);">Receipt No</th>
+              <th style="padding:10px 14px; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-secondary);">Date</th>
+              <th style="padding:10px 14px; text-align:right; font-size:11px; text-transform:uppercase; color:var(--text-secondary);">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in receipts %}
+            <tr style="border-bottom:1px solid var(--border-color);">
+              <td style="padding:10px 14px; font-weight:700; font-family:monospace;">{{ r.receipt_number }}</td>
+              <td style="padding:10px 14px; font-size:12px; color:var(--text-secondary);">
+                {{ r.generated_at.strftime('%d %b %Y') if r.generated_at else '—' }}
+              </td>
+              <td style="padding:10px 14px; text-align:right;">
+                <a href="{{ url_for('payments.download_receipt', payment_id=r.payment_id) }}" target="_blank" class="btn btn-sm btn-primary" style="font-size:11px; padding:4px 8px;">
+                  <i class="fa-solid fa-download"></i> Download
+                </a>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3" style="padding:20px; text-align:center; color:var(--text-secondary);">No receipts issued yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Audit Activity Timeline -->
+  {% if audit_logs %}
+  <div class="card" style="padding:20px;">
+    <h3 style="font-size:16px; font-weight:700; margin:0 0 16px;">
+      <i class="fa-solid fa-clock-rotate-left" style="color:var(--text-secondary); margin-right:8px;"></i>Activity & Audit Timeline
+    </h3>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      {% for log in audit_logs %}
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; padding:8px 0; border-bottom:1px solid var(--border-color); font-size:12px;">
+        <div>
+          <strong style="color:var(--text-primary);">{{ log.action }}</strong>
+          <div style="color:var(--text-secondary); margin-top:2px;">{{ log.details or '—' }}</div>
+        </div>
+        <div style="color:var(--text-secondary); white-space:nowrap; font-size:11px; margin-left:16px;">
+          {{ log.created_at.strftime('%d %b %Y %H:%M') if log.created_at else '—' }}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

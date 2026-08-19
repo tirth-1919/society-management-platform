@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Facility Booking · Society SaaS{% endblock %}
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow" data-i18n="facilities">Facilities</p>
+        <h2>Facility Booking</h2>
+        <p style="color: var(--text-secondary);">Reserve society amenities, clubhouse, gym, and event halls.</p>
+    </div>
+</div>
+
+<div class="facility-booking-layout" style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
+    <div class="card">
+        <h3><i class="fa-solid fa-calendar-plus" style="color: var(--primary);"></i> Book Facility</h3>
+        <form action="{{ url_for('facilities.book') }}" method="POST" style="margin-top: 16px;">
+            <div style="margin-bottom: 16px;">
+                <label for="facility_id" style="font-weight: 600; display: block; margin-bottom: 6px;">Select Facility</label>
+                <select name="facility_id" id="facility_id" required class="facility-dropdown" style="width: 100%; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); font-size: 14px; min-height: 44px; cursor: pointer;">
+                    <option value="" disabled selected>Select a facility</option>
+                    {% for f in facilities %}
+                    <option value="{{ f.id }}">{{ f.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label for="booking_date" style="font-weight: 600; display: block; margin-bottom: 6px;">Booking Date</label>
+                <input type="date" name="booking_date" id="booking_date" required min="{{ today_date }}" style="width: 100%; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); font-size: 14px; min-height: 44px;">
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                <div>
+                    <label for="start_time" style="font-weight: 600; display: block; margin-bottom: 6px;">Start Time</label>
+                    <input type="time" name="start_time" id="start_time" required value="10:00" style="width: 100%; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); font-size: 14px; min-height: 44px;">
+                </div>
+                <div>
+                    <label for="end_time" style="font-weight: 600; display: block; margin-bottom: 6px;">End Time</label>
+                    <input type="time" name="end_time" id="end_time" required value="12:00" style="width: 100%; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); font-size: 14px; min-height: 44px;">
+                </div>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label for="purpose" style="font-weight: 600; display: block; margin-bottom: 6px;">Purpose / Reason</label>
+                <input type="text" name="purpose" id="purpose" placeholder="e.g. Birthday Party, Sports Practice" style="width: 100%; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); font-size: 14px; min-height: 44px;">
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label for="notes" style="font-weight: 600; display: block; margin-bottom: 6px;">Optional Notes</label>
+                <textarea name="notes" id="notes" rows="2" placeholder="Any special requests or notes..." style="width: 100%; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); font-size: 14px; font-family: inherit; resize: vertical;"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; min-height: 44px; margin-top: 8px;">
+                <i class="fa-solid fa-calendar-check"></i> Book Facility
+            </button>
+        </form>
+    </div>
+
+    <div class="card">
+        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <span><i class="fa-solid fa-list-check" style="color: var(--secondary);"></i> Confirmed Bookings</span>
+            <span class="badge badge-info">{{ bookings|length }} active</span>
+        </div>
+        <div class="table-responsive" style="margin-top: 16px;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Facility</th>
+                        <th>Date</th>
+                        <th>Time Slot</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in bookings %}
+                    <tr>
+                        <td>
+                            <strong>{{ b.facility.name if b.facility else 'N/A' }}</strong>
+                            {% if b.purpose %}
+                            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">{{ b.purpose }}</div>
+                            {% endif %}
+                        </td>
+                        <td>{{ b.booking_date.strftime('%d %b %Y') if b.booking_date and b.booking_date.strftime else b.booking_date }}</td>
+                        <td>{{ b.start_time }} – {{ b.end_time }}</td>
+                        <td>
+                            {% if b.status == 'Confirmed' %}
+                            <span class="badge badge-success">Status: Confirmed</span>
+                            {% elif b.status == 'Pending' %}
+                            <span class="badge badge-warning">Status: Pending</span>
+                            {% elif b.status == 'Cancelled' %}
+                            <span class="badge badge-danger">Status: Cancelled</span>
+                            {% else %}
+                            <span class="badge badge-info">Status: {{ b.status }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">No active facility bookings.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+.facility-dropdown:hover, .facility-dropdown:focus {
+    border-color: var(--primary, #3b82f6) !important;
+    outline: none;
+}
+@media (max-width: 900px) {
+    .facility-booking-layout {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
+}
+</style>
+{% endblock %}

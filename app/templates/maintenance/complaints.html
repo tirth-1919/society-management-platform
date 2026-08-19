@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Complaints Desk · Society SaaS{% endblock %}
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow" data-i18n="complaints">Complaints Desk</p>
+        <h2>Complaints &amp; Helpdesk</h2>
+        <p style="color: var(--text-secondary);">Manage and track society complaint tickets, assign staff, and monitor SLAs.</p>
+    </div>
+    <a href="{{ url_for('complaints.create_complaint') }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> New Complaint Ticket</a>
+</div>
+
+<div class="card">
+    <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <span><i class="fa-solid fa-headset" style="color: var(--primary);"></i> All Complaints</span>
+        <span class="badge badge-info">{{ complaints|length }} tickets</span>
+    </div>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Ticket No</th>
+                    <th>Category</th>
+                    <th>Title</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in complaints %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('complaints.complaint_detail', complaint_id=c.id) }}" style="font-family: monospace; font-weight: 700; color: var(--primary);">
+                            {{ c.ticket_number }}
+                        </a>
+                    </td>
+                    <td>{{ c.category }}</td>
+                    <td style="font-weight: 600; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <a href="{{ url_for('complaints.complaint_detail', complaint_id=c.id) }}" style="color: inherit; text-decoration: none;">
+                            {{ c.title }}
+                        </a>
+                    </td>
+                    <td>
+                        <span class="badge badge-{{ 'danger' if c.priority in ['High', 'Emergency'] else ('warning' if c.priority == 'Medium' else 'info') }}">
+                            {{ c.priority }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge badge-{{ 'warning' if c.status == 'Submitted' else ('info' if c.status in ['In Progress', 'Assigned'] else ('success' if c.status == 'Resolved' else 'secondary')) }}">
+                            {{ c.status }}
+                        </span>
+                    </td>
+                    <td style="font-size: 12px; color: var(--text-secondary);">{{ c.created_at.strftime('%d %b %Y') if c.created_at else '—' }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" style="text-align: center; color: var(--text-secondary);">No complaint tickets registered.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

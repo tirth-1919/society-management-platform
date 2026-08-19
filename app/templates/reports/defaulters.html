@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}Defaulter Management · Society SaaS{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumb-nav" aria-label="Breadcrumb">
+    <a href="{{ url_for('main.dashboard') }}"><i class="fa-solid fa-house"></i> Admin</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Defaulter Dashboard</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">Financial Compliance</p>
+        <h1>Defaulter Management</h1>
+        <p style="color: var(--text-secondary);">Track overdue maintenance, delinquent accounts, pending months, and
+            accumulated late fees.</p>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <form action="{{ url_for('admin.run_automation_action', action_name='SEND_DUE_REMINDERS') }}" method="POST" style="margin: 0; display: inline;">
+            <button type="submit" class="btn btn-primary">
+                <i class="fa-solid fa-paper-plane"></i> Send Automated Reminders
+            </button>
+        </form>
+        <a href="{{ url_for('reports.export_defaulters', building_id=selected_building_id, block_id=selected_block_id, min_amount=selected_min_amount, min_months=selected_min_months) }}"
+            class="btn btn-secondary">
+            <i class="fa-solid fa-file-csv"></i> Export Defaulters CSV
+        </a>
+    </div>
+</div>
+
+{# Metrics & Aging Breakdown #}
+<div class="metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 24px;">
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(239,68,68,0.12); color: var(--danger);"><i
+                class="fa-solid fa-triangle-exclamation"></i></div>
+        <div>
+            <div class="metric-val" style="color: var(--danger);">{{ total_defaulters_count }}</div>
+            <div class="metric-lbl">Total Defaulters</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(239,68,68,0.12); color: var(--danger);"><i
+                class="fa-solid fa-indian-rupee-sign"></i></div>
+        <div>
+            <div class="metric-val" style="color: var(--danger);">₹{{ "{:,.0f}".format(total_defaulters_amount) }}</div>
+            <div class="metric-lbl">Total Outstanding</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(245,158,11,0.12); color: var(--warning);"><i
+                class="fa-solid fa-clock"></i></div>
+        <div>
+            <div class="metric-val" style="color: var(--warning);">{{ aging_30_count or 0 }}</div>
+            <div class="metric-lbl">1–30 Days Overdue</div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">₹{{ "{:,.0f}".format(aging_30_amount or 0) }}</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(249,115,22,0.12); color: #f97316;"><i
+                class="fa-solid fa-hourglass-half"></i></div>
+        <div>
+            <div class="metric-val" style="color: #f97316;">{{ aging_60_count or 0 }}</div>
+            <div class="metric-lbl">31–60 Days Overdue</div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">₹{{ "{:,.0f}".format(aging_60_amount or 0) }}</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(220,38,38,0.15); color: #dc2626;"><i
+                class="fa-solid fa-ban"></i></div>
+        <div>
+            <div class="metric-val" style="color: #dc2626;">{{ aging_90_count or 0 }}</div>
+            <div class="metric-lbl">60+ Days Severe</div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">₹{{ "{:,.0f}".format(aging_90_amount or 0) }}</div>
+        </div>
+    </div>
+</div>
+
+{# Filter Bar #}
+<div class="card" style="margin-bottom: 24px;">
+    <form method="GET" action="{{ url_for('reports.defaulters_report') }}"
+        style="display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end;">
+        <div class="form-group" style="margin-bottom: 0; min-width: 150px;">
+            <label for="building_id" class="form-label" style="font-size: 13px;">Building / Wing</label>
+            <select name="building_id" id="building_id" class="form-control">
+                <option value="">All Buildings</option>
+                {% for b in buildings %}
+                <option value="{{ b.id }}" {% if selected_building_id==b.id %}selected{% endif %}>{{ b.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0; min-width: 150px;">
+            <label for="block_id" class="form-label" style="font-size: 13px;">Block</label>
+            <select name="block_id" id="block_id" class="form-control">
+                <option value="">All Blocks</option>
+                {% for blk in blocks %}
+                <option value="{{ blk.id }}" {% if selected_block_id==blk.id %}selected{% endif %}>{{ blk.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0; min-width: 140px;">
+            <label for="min_amount" class="form-label" style="font-size: 13px;">Min Due (₹)</label>
+            <input type="number" step="0.01" name="min_amount" id="min_amount" class="form-control"
+                value="{{ selected_min_amount or '' }}" placeholder="e.g. 1500">
+        </div>
+        <div class="form-group" style="margin-bottom: 0; min-width: 140px;">
+            <label for="min_months" class="form-label" style="font-size: 13px;">Min Months Due</label>
+            <input type="number" name="min_months" id="min_months" class="form-control"
+                value="{{ selected_min_months or '' }}" placeholder="e.g. 1">
+        </div>
+        <div>
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Apply Filters</button>
+            <a href="{{ url_for('reports.defaulters_report') }}" class="btn btn-secondary"
+                style="margin-left: 6px;">Reset</a>
+        </div>
+    </form>
+</div>
+
+{# Defaulters Table #}
+<div class="card">
+    <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+        <span><i class="fa-solid fa-list-ol" style="color: var(--danger);"></i> Overdue Accounts</span>
+    </div>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Resident / Flat</th>
+                    <th>Pending Months</th>
+                    <th style="text-align: right;">Maint. Due (₹)</th>
+                    <th style="text-align: right;">Late Fee (₹)</th>
+                    <th style="text-align: right;">Total Due (₹)</th>
+                    <th>Overdue Duration</th>
+                    <th>Last Payment</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in defaulters %}
+                <tr>
+                    <td>
+                        <div style="font-weight: 700;">{{ d.resident_name }}</div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">Flat {{ d.flat_number }} ({{
+                            d.building_name }} / {{ d.block_name }}) · {{ d.mobile }}</div>
+                    </td>
+                    <td>
+                        <span class="badge badge-warning">{{ d.pending_months_count }} mo</span>
+                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">{{ d.pending_months |
+                            join(", ") }}</div>
+                    </td>
+                    <td style="text-align: right;">₹{{ "{:,.2f}".format(d.maintenance_due) }}</td>
+                    <td style="text-align: right; color: var(--warning);">₹{{ "{:,.2f}".format(d.late_fees_due) }}</td>
+                    <td style="text-align: right; font-weight: 700; color: var(--danger);">₹{{
+                        "{:,.2f}".format(d.total_outstanding) }}</td>
+                    <td>
+                        <span class="badge badge-danger">{{ d.days_overdue }} days</span>
+                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Due: {{
+                            d.earliest_due_date }}</div>
+                    </td>
+                    <td>
+                        <div style="font-size: 13px;">{{ d.last_payment_date }}</div>
+                        {% if d.last_payment_amount > 0 %}
+                        <div style="font-size: 11px; color: var(--text-muted);">₹{{
+                            "{:,.2f}".format(d.last_payment_amount) }}</div>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="empty-cell">
+                        <i class="fa-solid fa-circle-check" style="color: var(--success); font-size: 2rem;"></i>
+                        <strong style="margin-top: 8px;">No overdue defaulters found. All accounts are
+                            compliant!</strong>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

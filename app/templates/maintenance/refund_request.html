@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Request Refund · Society SaaS{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div>
+    <p class="eyebrow" data-i18n="refund_request">Refund</p>
+    <h1 data-i18n="refund_request">Request a Refund</h1>
+    <p>Transaction: {{ payment.transaction_id }}</p>
+  </div>
+</div>
+
+<section class="card" style="max-width:580px; margin:0 auto;">
+  <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:var(--radius-md); padding:14px 18px; margin-bottom:24px; font-size:13px;">
+    <i class="fa-solid fa-circle-info" style="color:#d97706;"></i>
+    Refund requests are reviewed by the society admin. You will be notified when your request is processed. Refunds are credited to the original payment source.
+  </div>
+
+  <dl class="payment-summary" style="margin-bottom:20px;">
+    <dt data-i18n="transaction_id">Transaction ID</dt>
+    <dd><code style="font-size:12px;">{{ payment.transaction_id }}</code></dd>
+    <dt data-i18n="amount_paid">Amount Paid</dt>
+    <dd style="font-weight:700; font-size:18px;">₹{{ '{:,.2f}'.format(payment.amount_paid) }}</dd>
+    <dt>Already Refunded</dt>
+    <dd>₹{{ '{:,.2f}'.format(payment.refund_amount or 0) }}</dd>
+    <dt>Max Refundable</dt>
+    <dd style="font-weight:600; color:var(--primary);">₹{{ '{:,.2f}'.format(payment.amount_paid - (payment.refund_amount or 0)) }}</dd>
+    <dt data-i18n="payment_date">Payment Date</dt>
+    <dd>{{ payment.payment_date.strftime('%d %b %Y') }}</dd>
+  </dl>
+
+  <form method="post">
+    <div style="margin-bottom:16px;">
+      <label style="font-weight:600; font-size:13px; display:block; margin-bottom:6px;">
+        Refund Amount (₹) <span style="color:var(--danger);">*</span>
+      </label>
+      <input type="number" name="amount" step="0.01" min="0.01"
+             max="{{ payment.amount_paid - (payment.refund_amount or 0) }}"
+             value="{{ payment.amount_paid - (payment.refund_amount or 0) }}"
+             required
+             style="width:100%; padding:12px; border-radius:var(--radius-md); border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:16px; font-weight:700;">
+      <small style="color:var(--text-secondary); display:block; margin-top:4px;">
+        Maximum: ₹{{ '{:,.2f}'.format(payment.amount_paid - (payment.refund_amount or 0)) }}
+      </small>
+    </div>
+
+    <div style="margin-bottom:20px;">
+      <label style="font-weight:600; font-size:13px; display:block; margin-bottom:6px;">
+        Reason for Refund <span style="color:var(--danger);">*</span>
+      </label>
+      <textarea name="reason" rows="4" required
+                style="width:100%; padding:12px; border-radius:var(--radius-md); border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:14px; resize:vertical;"
+                placeholder="Please describe why you are requesting a refund…"></textarea>
+    </div>
+
+    <div style="display:flex; gap:12px;">
+      <button type="submit" class="btn btn-primary" style="flex:1; justify-content:center;">
+        <i class="fa-solid fa-paper-plane"></i> Submit Refund Request
+      </button>
+      <a href="{{ url_for('payments.transaction_detail', txn_id=payment.transaction_id) }}" class="btn btn-secondary">
+        Cancel
+      </a>
+    </div>
+  </form>
+</section>
+{% endblock %}

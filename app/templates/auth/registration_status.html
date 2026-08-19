@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Registration Status - Society SaaS{% endblock %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 40px auto; text-align: center;">
+    <div class="card" style="padding: 32px;">
+        {% if status == 'PENDING_APPROVAL' %}
+        <div style="font-size: 48px; color: #f59e0b; margin-bottom: 16px;">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+        </div>
+        <h2>Registration Pending Approval</h2>
+        <p style="color: var(--text-secondary); margin-top: 12px; font-size: 15px;">
+            Your registration request for <strong>{{ reg.society.name }}</strong> (Flat: {{ reg.flat.flat_number }}) is currently under review by society administrators.
+        </p>
+        <div style="background: var(--bg-primary); padding: 16px; border-radius: 8px; margin-top: 20px; text-align: left; font-size: 14px;">
+            <div><strong>Request ID:</strong> #{{ reg.id }}</div>
+            <div><strong>Occupancy Type:</strong> {{ reg.occupancy_type }}</div>
+            <div><strong>Status:</strong> <span style="color: #f59e0b; font-weight: 600;">PENDING_APPROVAL</span></div>
+            <div><strong>Submitted At:</strong> {{ reg.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+        </div>
+        <p style="margin-top: 20px; font-size: 13px; color: var(--text-secondary);">
+            Once approved by the society administrator, you will be able to log in to access the Resident Portal.
+        </p>
+        {% elif status == 'REJECTED' %}
+        <div style="font-size: 48px; color: #ef4444; margin-bottom: 16px;">
+            <i class="fa-solid fa-circle-xmark"></i>
+        </div>
+        <h2>Registration Rejected</h2>
+        <p style="color: var(--text-secondary); margin-top: 12px;">
+            Your registration request was rejected by the society administrator.
+        </p>
+        {% if reg and reg.rejection_reason %}
+        <div style="background: #fee2e2; color: #991b1b; padding: 12px; border-radius: 8px; margin-top: 16px;">
+            <strong>Reason:</strong> {{ reg.rejection_reason }}
+        </div>
+        {% endif %}
+        {% else %}
+        <div style="font-size: 48px; color: #10b981; margin-bottom: 16px;">
+            <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <h2>Account Active</h2>
+        <p style="color: var(--text-secondary); margin-top: 12px;">
+            Your account is active. Please proceed to login.
+        </p>
+        <a href="{{ url_for('auth.login') }}" class="btn btn-primary" style="margin-top: 20px;">Go to Login</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

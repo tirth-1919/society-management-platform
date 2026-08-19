@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}Pay Multiple Months · Society SaaS{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div>
+    <p class="eyebrow" data-i18n="maintenance">Maintenance Payment</p>
+    <h1 data-i18n="multi_month_payment">Pay Multiple Months</h1>
+    <p>Select the months you want to pay together.</p>
+  </div>
+</div>
+
+<div class="pay-wrap">
+  <section class="card">
+    <h2 class="card-title" data-i18n="select_months">Select Months to Pay</h2>
+
+    {% if unpaid_bills %}
+    <div style="margin-bottom:16px;">
+      <label style="display:flex; align-items:center; gap:8px; font-weight:600; cursor:pointer; margin-bottom:12px;">
+        <input type="checkbox" id="select-all-months" style="width:18px; height:18px;"> Select All Months
+      </label>
+    </div>
+
+    <div id="months-list">
+      {% for bill in unpaid_bills %}
+      <label class="month-select-tile" data-amount="{{ bill.remaining_amount }}" data-bill="{{ bill.id }}"
+             style="display:flex; align-items:center; gap:14px; padding:14px; border:1px solid var(--border-color); border-radius:var(--radius-md); margin-bottom:10px; cursor:pointer; transition:border-color 0.2s;">
+        <input type="checkbox" class="month-checkbox" name="bill_ids" value="{{ bill.id }}"
+               style="width:18px; height:18px;">
+        <div style="flex:1;">
+          <div style="font-weight:600;">{{ bill.billing_month }}</div>
+          <div style="font-size:12px; color:var(--text-secondary);">Bill: {{ bill.bill_number }}</div>
+          {% if bill.status == 'Overdue' %}
+          <div style="font-size:11px; color:var(--danger); margin-top:2px;"><i class="fa-solid fa-triangle-exclamation"></i> Overdue</div>
+          {% endif %}
+        </div>
+        <div style="text-align:right;">
+          <div style="font-weight:700; font-size:16px;">₹{{ '{:,.2f}'.format(bill.remaining_amount) }}</div>
+          {% if bill.late_fee > 0 %}
+          <div style="font-size:11px; color:var(--danger);">incl. late fee ₹{{ '{:,.2f}'.format(bill.late_fee) }}</div>
+          {% endif %}
+        </div>
+      </label>
+      {% endfor %}
+    </div>
+
+    <div style="border-top:2px solid var(--border-color); padding-top:16px; margin-top:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <span style="font-weight:600;" data-i18n="payment_summary">Selected Months</span>
+        <span id="selected-count" style="color:var(--text-secondary); font-size:13px;">0 selected</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:20px; font-weight:800;" data-i18n="total_amount">Total Payable</span>
+        <span id="total-amount" style="font-size:24px; font-weight:800; color:var(--primary);">₹0.00</span>
+      </div>
+    </div>
+
+    {% if razorpay_configured %}
+    <button type="button" id="rzp-multi-pay-btn" class="btn btn-primary" style="width:100%; justify-content:center; padding:16px; font-size:16px; margin-top:20px;" disabled>
+      <i class="fa-solid fa-credit-card"></i>
+      <span data-i18n="pay_now">Pay Selected Months</span>
+    </button>
+    <div id="rzp-processing" style="display:none; text-align:center; padding:20px;">
+      <i class="fa-solid fa-spinner fa-spin fa-2x" style="color:var(--primary);"></i>
+      <p style="margin-top:12px;" data-i18n="payment_processing">Verifying payment…</p>
+    </div>
+    <div id="rzp-error" style="display:none; background:#fff0f0; border-left:4px solid var(--danger); padding:14px 20px; margin-top:16px; border-radius:var(--radius-md);">
+      <i class="fa-solid fa-circle-exclamation"></i> <span id="rzp-error-msg"></span>
+    </div>
+    {% else %}
+    <div class="dev-mode-notice" style="margin-top:16px;">
+      <i class="fa-solid fa-flask"></i>
+      <div>Multi-month payment requires Razorpay credentials. Configure them in your .env file.</div>
+    </div>
+    {% endif %}
+    {% else %}
+    <div style="text-align:center; padding:40px 20px; color:var(--text-secondary);">
+      <i class="fa-solid fa-circle-check fa-3x" style="color:var(--success,#22c55e); margin-bottom:12px;"></i>
+      <p>All bills are paid. No pending dues.</p>
+      <a class="btn btn-primary" href="{{ url_for('main.dashboard') }}" style="margin-top:12px;">Back to Dashboard</a>
+    </div>
+    {% endif %}
+  </section>
+</div>
+
+{% if razorpay_configured and unpaid_bills %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="{{ url_for('static', filename='js/razorpay_checkout.js') }}"></script>
+<script>
+(function() {
+  const checkboxes = document.querySelectorAll('.month-checkbox');
+  const selectAll = document.getElementById('select-all-months');
+  const totalEl = document.getElementById('total-amount');
+  const countEl = document.getElementById('selected-count');
+  const payBtn = document.getElementById('rzp-multi-pay-btn');
+  const tiles = document.querySelectorAll('.month-select-tile');
+
+  function formatINR(n) {
+    return '₹' + n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function updateTotal() {
+    let total = 0;
+    let count = 0;
+    checkboxes.forEach(function(cb) {
+      if (cb.checked) {
+        total += parseFloat(cb.closest('.month-select-tile').dataset.amount);
+        count++;
+      }
+    });
+    totalEl.textContent = formatINR(total);
+    countEl.textContent = count + ' selected';
+    payBtn.disabled = count === 0;
+    payBtn.innerHTML = count > 0
+      ? '<i class="fa-solid fa-credit-card"></i> Pay ' + formatINR(total) + ' (' + count + ' month' + (count > 1 ? 's' : '') + ')'
+      : '<i class="fa-solid fa-credit-card"></i> Pay Selected Months';
+  }
+
+  checkboxes.forEach(function(cb) {
+    cb.addEventListener('change', function() {
+      const tile = cb.closest('.month-select-tile');
+      tile.style.borderColor = cb.checked ? 'var(--primary)' : 'var(--border-color)';
+      tile.style.background = cb.checked ? 'var(--bg-surface)' : '';
+      updateTotal();
+    });
+  });
+
+  tiles.forEach(function(tile) {
+    tile.addEventListener('click', function(e) {
+      if (e.target.type === 'checkbox') return;
+      const cb = tile.querySelector('.month-checkbox');
+      cb.checked = !cb.checked;
+      cb.dispatchEvent(new Event('change'));
+    });
+  });
+
+  selectAll.addEventListener('change', function() {
+    checkboxes.forEach(function(cb) {
+      cb.checked = selectAll.checked;
+      const tile = cb.closest('.month-select-tile');
+      tile.style.borderColor = selectAll.checked ? 'var(--primary)' : 'var(--border-color)';
+      tile.style.background = selectAll.checked ? 'var(--bg-surface)' : '';
+    });
+    updateTotal();
+  });
+
+  payBtn.addEventListener('click', function() {
+    const selected = Array.from(checkboxes).filter(cb => cb.checked).map(cb => parseInt(cb.value));
+    if (!selected.length) return;
+    initRazorpayCheckout({
+      billIds: selected,
+      createOrderUrl: "{{ url_for('payments.razorpay_create_multi_order') }}",
+      multiOrderUrl: "{{ url_for('payments.razorpay_create_multi_order') }}",
+      verifyUrl: "{{ url_for('payments.razorpay_verify') }}",
+      failedUrl: "{{ url_for('main.dashboard') }}",
+      cancelledUrl: "{{ url_for('payments.multi_month_payment', resident_id=resident.id) }}",
+      payBtn: payBtn,
+      processingEl: document.getElementById('rzp-processing'),
+      errorEl: document.getElementById('rzp-error'),
+      errorMsgEl: document.getElementById('rzp-error-msg'),
+    });
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

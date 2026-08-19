@@ -1,0 +1,66 @@
+﻿{% extends "base.html" %}
+{% block title %}General Ledger - Accounting{% endblock %}
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <h2>Double-Entry General Ledger</h2>
+    <a href="{{ url_for('accounting.vouchers') }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Expense Vouchers</a>
+</div>
+
+<div class="metrics-grid">
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--success);"><i class="fa-solid fa-arrow-down-left"></i></div>
+        <div>
+            <div class="metric-val">₹{{ "{:,.2f}".format(summary.total_income) }}</div>
+            <div class="metric-lbl">Total Credit (Income)</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(239, 68, 68, 0.15); color: var(--danger);"><i class="fa-solid fa-arrow-up-right"></i></div>
+        <div>
+            <div class="metric-val">₹{{ "{:,.2f}".format(summary.total_expense) }}</div>
+            <div class="metric-lbl">Total Debit (Expense)</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(79, 70, 229, 0.15); color: var(--primary);"><i class="fa-solid fa-scale-balanced"></i></div>
+        <div>
+            <div class="metric-val">₹{{ "{:,.2f}".format(summary.net_surplus) }}</div>
+            <div class="metric-lbl">Net Surplus</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Account Head</th>
+                    <th>Entry Type</th>
+                    <th>Amount</th>
+                    <th>Narration</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in entries %}
+                <tr>
+                    <td>{{ e.entry_date }}</td>
+                    <td><strong>{{ e.account_head }}</strong></td>
+                    <td>
+                        <span class="badge badge-{{ 'success' if e.entry_type == 'CREDIT' else 'danger' }}">
+                            {{ e.entry_type }}
+                        </span>
+                    </td>
+                    <td><strong>₹{{ "{:,.2f}".format(e.amount) }}</strong></td>
+                    <td>{{ e.narration }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" style="text-align: center;">No ledger entries found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Collections Report · Society SaaS{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumb-nav" aria-label="Breadcrumb">
+    <a href="{{ url_for('main.dashboard') }}"><i class="fa-solid fa-house"></i> Admin</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Collections Report</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">Financial Reports</p>
+        <h1>Maintenance Collections</h1>
+        <p style="color: var(--text-secondary);">Real-time ledger of verified maintenance and utility collections.</p>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <a href="{{ url_for('reports.export_payments') }}" class="btn btn-secondary">
+            <i class="fa-solid fa-file-csv"></i> Export Collections CSV
+        </a>
+    </div>
+</div>
+
+<div class="metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 24px;">
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(16,185,129,0.12); color: var(--success);"><i
+                class="fa-solid fa-indian-rupee-sign"></i></div>
+        <div>
+            <div class="metric-val" style="color: var(--success);">₹{{ "{:,.2f}".format(total_collected) }}</div>
+            <div class="metric-lbl">Total Realized Collection</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(79,70,229,0.12); color: var(--primary);"><i
+                class="fa-solid fa-receipt"></i></div>
+        <div>
+            <div class="metric-val">{{ payments | length }}</div>
+            <div class="metric-lbl">Total Successful Transactions</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-title">
+        <i class="fa-solid fa-clock-rotate-left" style="color: var(--primary);"></i>
+        <span>Payment Transaction History</span>
+    </div>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Transaction ID</th>
+                    <th>Date</th>
+                    <th>Resident / Flat</th>
+                    <th>Month</th>
+                    <th>Method</th>
+                    <th style="text-align: right;">Amount (₹)</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in payments %}
+                <tr>
+                    <td><code>{{ p.transaction_id }}</code></td>
+                    <td>{{ p.payment_date.strftime("%Y-%m-%d %H:%M") if p.payment_date else "-" }}</td>
+                    <td>
+                        <div style="font-weight: 600;">{{ p.resident.full_name if p.resident else "Resident" }}</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">Flat {{ p.resident.flat.flat_number if
+                            p.resident and p.resident.flat else "N/A" }}</div>
+                    </td>
+                    <td>{{ p.bill.billing_month if p.bill else "General" }}</td>
+                    <td><span class="badge badge-info">{{ p.payment_method }}</span></td>
+                    <td style="text-align: right; font-weight: 700; color: var(--success);">₹{{
+                        "{:,.2f}".format(p.amount_paid) }}</td>
+                    <td><span class="badge badge-success">{{ p.status }}</span></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="empty-cell">
+                        <i class="fa-solid fa-receipt" style="font-size: 2rem;"></i>
+                        <strong style="margin-top: 8px;">No collections recorded yet.</strong>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Retry Payment · Society SaaS{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div>
+    <p class="eyebrow" data-i18n="retry_payment">Retry Payment</p>
+    <h1>Retry Your Payment</h1>
+    <p>{{ bill.bill_number }} · {{ bill.billing_month }}</p>
+  </div>
+</div>
+
+<section class="card" style="max-width:580px; margin:0 auto;">
+  <div style="background:#fff9f9; border-left:4px solid var(--warning,#f59e0b); padding:14px 18px; border-radius:var(--radius-md); margin-bottom:24px;">
+    <i class="fa-solid fa-clock-rotate-left" style="color:var(--warning,#f59e0b);"></i>
+    A previous payment attempt was not completed. You can retry below. A new secure session will be created.
+  </div>
+
+  <dl class="payment-summary">
+    <dt data-i18n="bill_number">Bill Number</dt><dd>{{ bill.bill_number }}</dd>
+    <dt data-i18n="billing_month">Billing Month</dt><dd>{{ bill.billing_month }}</dd>
+    <dt>Maintenance</dt><dd>₹{{ '{:,.2f}'.format(bill.base_amount) }}</dd>
+    {% if bill.late_fee > 0 %}
+    <dt>Late Fee</dt><dd style="color:var(--danger);">₹{{ '{:,.2f}'.format(bill.late_fee) }}</dd>
+    {% endif %}
+    <div class="total-line">
+      <span data-i18n="remaining_amount">Amount Payable</span>
+      <span>₹{{ '{:,.2f}'.format(bill.remaining_amount) }}</span>
+    </div>
+  </dl>
+
+  <div class="bill-detail-actions" style="display:flex; gap:12px; flex-wrap:wrap; margin-top:20px;">
+    <a class="btn btn-primary" href="{{ url_for('payments.pay_bill', bill_id=bill.id) }}" style="flex:1; justify-content:center;">
+      <i class="fa-solid fa-rotate-right"></i> <span data-i18n="retry_payment">Retry Payment</span>
+    </a>
+    <a class="btn btn-secondary" href="{{ url_for('main.dashboard') }}">
+      <i class="fa-solid fa-house"></i> Dashboard
+    </a>
+  </div>
+</section>
+{% endblock %}

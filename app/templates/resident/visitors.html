@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% block title %}Visitor Security Desk · Society SaaS{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumb-nav" aria-label="Breadcrumb">
+    <a href="{{ url_for('main.dashboard') }}"><i class="fa-solid fa-house"></i> Home</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current" data-i18n="visitors">Visitor Security Desk</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow" data-i18n="visitors">Visitor Security Desk</p>
+        <h1 data-i18n="visitors">Visitor Security Desk</h1>
+        <p style="color: var(--text-secondary);">Manage visitor invitations and view visitor history.</p>
+    </div>
+    <a href="{{ url_for('resident.invite_visitor') }}" class="btn btn-primary">
+        <i class="fa-solid fa-plus"></i> <span data-i18n="invite_visitor">Invite a Visitor</span>
+    </a>
+</div>
+
+{# ---- Feature 41/42: Pre-Approved Passes ---- #}
+<div class="card" style="margin-bottom: 24px;">
+    <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+        <span><i class="fa-solid fa-ticket" style="color: var(--primary);"></i> <span data-i18n="visitor_passes">Visitor Passes / Invitations</span></span>
+        <a href="{{ url_for('resident.invite_visitor') }}" class="btn btn-primary btn-small">
+            <i class="fa-solid fa-plus"></i> New Invitation
+        </a>
+    </div>
+    {% if passes %}
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Pass Code</th>
+                    <th>Visitor</th>
+                    <th>Mobile</th>
+                    <th>Expected Date</th>
+                    <th>Purpose</th>
+                    <th data-i18n="status">Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for p in passes %}
+            <tr>
+                <td>
+                    <span style="font-family: monospace; font-weight: 700; font-size: 14px; letter-spacing: 1px; color: var(--primary);">{{ p.pass_code }}</span>
+                </td>
+                <td><strong>{{ p.visitor_name }}</strong></td>
+                <td>{{ p.mobile }}</td>
+                <td>
+                    {{ p.expected_date.strftime('%d %b %Y') }}
+                    {% if p.expected_time %}<br><small style="color: var(--text-secondary);">{{ p.expected_time }}</small>{% endif %}
+                </td>
+                <td><span class="badge badge-info">{{ p.purpose }}</span></td>
+                <td>
+                    {% if p.is_used %}
+                    <span class="badge badge-secondary">Used / Cancelled</span>
+                    {% else %}
+                    <span class="badge badge-success">Active</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {# Feature 42: QR for pass code #}
+                    {% if not p.is_used %}
+                    <div style="display: flex; gap: 6px;">
+                        <button type="button" onclick="showPassQR('{{ p.pass_code }}')" class="btn btn-secondary btn-small" title="Show QR">
+                            <i class="fa-solid fa-qrcode"></i>
+                        </button>
+                        <form method="post" action="{{ url_for('resident.cancel_visitor', pass_id=p.id) }}"
+                              onsubmit="return confirm('Cancel invitation for {{ p.visitor_name }}?')">
+                            <button type="submit" class="btn btn-danger btn-small" title="Cancel invitation">
+                                <i class="fa-solid fa-xmark"></i> Cancel
+                            </button>
+                        </form>
+                    </div>
+                    {% else %}
+                    <span style="font-size: 12px; color: var(--text-secondary);">—</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding: 24px;">
+        <i class="fa-solid fa-ticket"></i>
+        <h2 data-i18n="no_results_found">No visitor invitations yet.</h2>
+        <p>Create a pre-approved pass and share the code with your visitor.</p>
+        <a href="{{ url_for('resident.invite_visitor') }}" class="btn btn-primary" style="margin-top: 12px;">
+            <i class="fa-solid fa-plus"></i> Invite a Visitor
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+{# ---- Feature 43: Visitor History ---- #}
+<div class="card">
+    <div class="card-title">
+        <i class="fa-solid fa-clock-rotate-left" style="color: var(--secondary);"></i>
+        <span data-i18n="visitor_history">Visitor History</span>
+        <span style="font-size: 12px; color: var(--text-secondary); margin-left: 6px;">(last 50 entries)</span>
+    </div>
+    {% if visitor_logs %}
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th data-i18n="visitor_name">Visitor</th>
+                    <th>Mobile</th>
+                    <th>Purpose</th>
+                    <th>Entry Time</th>
+                    <th>Exit Time</th>
+                    <th data-i18n="status">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for v in visitor_logs %}
+            <tr>
+                <td><strong>{{ v.visitor_name }}</strong></td>
+                <td>{{ v.mobile }}</td>
+                <td><span class="badge badge-info">{{ v.purpose }}</span></td>
+                <td>{{ v.entry_time.strftime('%d %b %Y, %I:%M %p') }}</td>
+                <td>{{ v.exit_time.strftime('%I:%M %p') if v.exit_time else '—' }}</td>
+                <td>
+                    <span class="badge badge-{{ 'success' if v.approval_status == 'Approved' else ('danger' if v.approval_status == 'Rejected' else 'warning') }}">
+                        {{ v.approval_status }}
+                    </span>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding: 24px;">
+        <i class="fa-regular fa-id-badge"></i>
+        <h2>No visitor records yet.</h2>
+        <p>Visitor check-in records will appear here.</p>
+    </div>
+    {% endif %}
+</div>
+
+{# QR Modal #}
+<div id="qr-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-label="Visitor pass QR" hidden style="display: none;">
+    <div class="modal-box" style="text-align: center; max-width: 320px;">
+        <h3>Visitor Pass QR</h3>
+        <p style="font-size: 13px; color: var(--text-secondary);">Show this code to security or share the pass code.</p>
+        <div id="qr-code-display" style="margin: 16px auto; font-size: 32px; font-weight: 900; letter-spacing: 4px; font-family: monospace; background: var(--bg-primary); padding: 16px; border-radius: var(--radius-md); color: var(--primary);"></div>
+        <p style="font-size: 12px; color: var(--text-secondary);">Share this 6-digit code with your visitor for entry.</p>
+        <div style="display: flex; gap: 10px; justify-content: center; margin-top: 16px;">
+            <button type="button" onclick="copyPassCode()" class="btn btn-secondary">
+                <i class="fa-solid fa-copy"></i> Copy Code
+            </button>
+            <button type="button" onclick="closeQRModal()" class="btn btn-primary">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentPassCode = '';
+
+function showPassQR(code) {
+    currentPassCode = code;
+    document.getElementById('qr-code-display').textContent = code;
+    const modal = document.getElementById('qr-modal');
+    modal.hidden = false;
+    modal.style.display = 'flex';
+}
+
+function closeQRModal() {
+    const modal = document.getElementById('qr-modal');
+    modal.hidden = true;
+    modal.style.display = 'none';
+}
+
+function copyPassCode() {
+    navigator.clipboard.writeText(currentPassCode).then(() => {
+        if (window.showToast) window.showToast('Pass code copied: ' + currentPassCode, 'success');
+        else alert('Copied: ' + currentPassCode);
+    });
+}
+
+document.getElementById('qr-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeQRModal();
+});
+</script>
+{% endblock %}

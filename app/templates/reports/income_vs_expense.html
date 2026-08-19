@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Income vs Expense · Society SaaS{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumb-nav" aria-label="Breadcrumb">
+    <a href="{{ url_for('main.dashboard') }}"><i class="fa-solid fa-house"></i> Admin</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{{ url_for('reports.financial_reports') }}">Financials</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Income vs Expense</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">Financial Audit</p>
+        <h1>Income vs Expense Statement</h1>
+        <p style="color: var(--text-secondary);">Comprehensive society balance statement comparing resident collections
+            and vendor/operating expenses.</p>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <a href="{{ url_for('reports.export_expenses') }}" class="btn btn-secondary">
+            <i class="fa-solid fa-file-csv"></i> Export Expenses CSV
+        </a>
+    </div>
+</div>
+
+<div class="metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 24px;">
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(16,185,129,0.12); color: var(--success);"><i
+                class="fa-solid fa-arrow-down"></i></div>
+        <div>
+            <div class="metric-val" style="color: var(--success);">₹{{ "{:,.2f}".format(summary.total_income) }}</div>
+            <div class="metric-lbl">Total Society Income</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(239,68,68,0.12); color: var(--danger);"><i
+                class="fa-solid fa-arrow-up"></i></div>
+        <div>
+            <div class="metric-val" style="color: var(--danger);">₹{{ "{:,.2f}".format(summary.total_expense) }}</div>
+            <div class="metric-lbl">Total Society Expenses</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        {% if summary.net_surplus >= 0 %}
+        <div class="metric-icon" style="background: rgba(16,185,129,0.12); color: var(--success);">
+            <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div>
+            <div class="metric-val" style="color: var(--success);">
+                ₹{{ "{:,.2f}".format(summary.net_surplus) }}
+            </div>
+            <div class="metric-lbl">Net Operating Surplus</div>
+        </div>
+        {% else %}
+        <div class="metric-icon" style="background: rgba(239,68,68,0.12); color: var(--danger);">
+            <i class="fa-solid fa-circle-exclamation"></i>
+        </div>
+        <div>
+            <div class="metric-val" style="color: var(--danger);">
+                ₹{{ "{:,.2f}".format(summary.net_surplus) }}
+            </div>
+            <div class="metric-lbl">Net Operating Deficit</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px;">
+    {# Monthly Breakdown Table #}
+    <div class="card">
+        <div class="card-title">
+            <i class="fa-solid fa-calendar-days" style="color: var(--primary);"></i>
+            <span>Monthly Performance ({{ selected_year }})</span>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Month</th>
+                        <th style="text-align: right;">Income (₹)</th>
+                        <th style="text-align: right;">Expense (₹)</th>
+                        <th style="text-align: right;">Net Surplus (₹)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in monthly_data %}
+                    <tr>
+                        <td><strong>{{ row.month }}</strong></td>
+                        <td style="text-align: right; color: var(--success);">₹{{ "{:,.2f}".format(row.income) }}</td>
+                        <td style="text-align: right; color: var(--danger);">₹{{ "{:,.2f}".format(row.expense) }}</td>
+                        {% if row.surplus >= 0 %}
+                        <td style="text-align: right; font-weight: 700; color: var(--success);">
+                            ₹{{ "{:,.2f}".format(row.surplus) }}
+                        </td>
+                        {% else %}
+                        <td style="text-align: right; font-weight: 700; color: var(--danger);">
+                            ₹{{ "{:,.2f}".format(row.surplus) }}
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {# Expense by Category #}
+    <div class="card">
+        <div class="card-title">
+            <i class="fa-solid fa-chart-pie" style="color: var(--primary);"></i>
+            <span>Expense by Category</span>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th style="text-align: right;">Total Spent</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cat in category_expenses %}
+                    <tr>
+                        <td><strong>{{ cat.category }}</strong></td>
+                        <td style="text-align: right; font-weight: 600; color: var(--danger);">₹{{
+                            "{:,.2f}".format(cat.total) }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="2" class="empty-cell">No categorized expenses recorded.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

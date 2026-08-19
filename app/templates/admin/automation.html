@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Automation Engine - Society ERP{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800"><i class="bi bi-cpu text-primary me-2"></i>Automation Engine & Control Center</h1>
+            <p class="text-muted mb-0">Manage Automated Billing, Reconciliation, Notifications, and Scheduled Jobs</p>
+        </div>
+    </div>
+
+    <!-- Quick Run Actions Grid -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="fw-bold mb-0"><i class="bi bi-cash-stack text-success me-2"></i>Payment Reconciliation</h6>
+                            <span class="badge bg-{{ 'success' if status_summary.RECONCILE_PAYMENTS.last_status == 'COMPLETED' else 'secondary' }}">
+                                {{ status_summary.RECONCILE_PAYMENTS.last_status }}
+                            </span>
+                        </div>
+                        <p class="small text-muted mb-3">Audits payments vs bills vs gateway logs to detect discrepancies.</p>
+                    </div>
+                    <form action="{{ url_for('admin.run_automation_action', action_name='RECONCILE_PAYMENTS') }}" method="POST">
+                        <button type="submit" class="btn btn-outline-success btn-sm w-100">
+                            <i class="bi bi-play-circle me-1"></i> Trigger Reconciliation
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="fw-bold mb-0"><i class="bi bi-file-earmark-spreadsheet text-primary me-2"></i>Monthly Bill Generation</h6>
+                            <span class="badge bg-{{ 'success' if status_summary.GENERATE_MONTHLY_BILLS.last_status == 'COMPLETED' else 'secondary' }}">
+                                {{ status_summary.GENERATE_MONTHLY_BILLS.last_status }}
+                            </span>
+                        </div>
+                        <p class="small text-muted mb-3">Generates missing monthly maintenance bills for all active occupied flats.</p>
+                    </div>
+                    <form action="{{ url_for('admin.run_automation_action', action_name='GENERATE_MONTHLY_BILLS') }}" method="POST">
+                        <button type="submit" class="btn btn-outline-primary btn-sm w-100">
+                            <i class="bi bi-play-circle me-1"></i> Generate Monthly Bills
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="fw-bold mb-0"><i class="bi bi-heart-pulse text-danger me-2"></i>Society Health Audit</h6>
+                            <span class="badge bg-{{ 'success' if status_summary.RUN_DAILY_HEALTH_CHECK.last_status == 'COMPLETED' else 'secondary' }}">
+                                {{ status_summary.RUN_DAILY_HEALTH_CHECK.last_status }}
+                            </span>
+                        </div>
+                        <p class="small text-muted mb-3">Audits system health, data consistency, and calculates 0-100 score.</p>
+                    </div>
+                    <form action="{{ url_for('admin.run_automation_action', action_name='RUN_DAILY_HEALTH_CHECK') }}" method="POST">
+                        <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+                            <i class="bi bi-play-circle me-1"></i> Run Health Audit
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="fw-bold mb-0"><i class="bi bi-bell text-warning me-2"></i>Maintenance Reminders</h6>
+                            <span class="badge bg-{{ 'success' if status_summary.SEND_DUE_REMINDERS.last_status == 'COMPLETED' else 'secondary' }}">
+                                {{ status_summary.SEND_DUE_REMINDERS.last_status }}
+                            </span>
+                        </div>
+                        <p class="small text-muted mb-3">Dispatches upcoming due and overdue SMS/email reminders.</p>
+                    </div>
+                    <form action="{{ url_for('admin.run_automation_action', action_name='SEND_DUE_REMINDERS') }}" method="POST">
+                        <button type="submit" class="btn btn-outline-warning btn-sm w-100">
+                            <i class="bi bi-play-circle me-1"></i> Dispatch Reminders
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="fw-bold mb-0"><i class="bi bi-hourglass-split text-secondary me-2"></i>Late Fee Assessment</h6>
+                            <span class="badge bg-{{ 'success' if status_summary.APPLY_LATE_FEES.last_status == 'COMPLETED' else 'secondary' }}">
+                                {{ status_summary.APPLY_LATE_FEES.last_status }}
+                            </span>
+                        </div>
+                        <p class="small text-muted mb-3">Calculates and updates overdue late fees according to society rules.</p>
+                    </div>
+                    <form action="{{ url_for('admin.run_automation_action', action_name='APPLY_LATE_FEES') }}" method="POST">
+                        <button type="submit" class="btn btn-outline-secondary btn-sm w-100">
+                            <i class="bi bi-play-circle me-1"></i> Recalculate Late Fees
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="fw-bold mb-0"><i class="bi bi-person-badge text-info me-2"></i>Visitor Pass Expiry</h6>
+                            <span class="badge bg-{{ 'success' if status_summary.EXPIRE_VISITOR_PASSES.last_status == 'COMPLETED' else 'secondary' }}">
+                                {{ status_summary.EXPIRE_VISITOR_PASSES.last_status }}
+                            </span>
+                        </div>
+                        <p class="small text-muted mb-3">Deactivates expired visitor passes past their validity window.</p>
+                    </div>
+                    <form action="{{ url_for('admin.run_automation_action', action_name='EXPIRE_VISITOR_PASSES') }}" method="POST">
+                        <button type="submit" class="btn btn-outline-info btn-sm w-100">
+                            <i class="bi bi-play-circle me-1"></i> Expire Visitor Passes
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Execution History Table -->
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-bold"><i class="bi bi-clock-history me-2"></i>Recent Automation Execution Logs</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Execution ID</th>
+                            <th>Automation</th>
+                            <th>Status</th>
+                            <th>Trigger Source</th>
+                            <th>Start Time</th>
+                            <th>Duration</th>
+                            <th>Scanned</th>
+                            <th>Created / Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for exec in history %}
+                        <tr>
+                            <td class="small fw-mono">{{ exec.execution_id }}</td>
+                            <td class="fw-semibold">{{ exec.automation_name }}</td>
+                            <td>
+                                {% if exec.status == 'COMPLETED' %}
+                                <span class="badge bg-success">COMPLETED</span>
+                                {% elif exec.status == 'WARNING' %}
+                                <span class="badge bg-warning text-dark">WARNING</span>
+                                {% elif exec.status == 'FAILED' %}
+                                <span class="badge bg-danger">FAILED</span>
+                                {% elif exec.status == 'RUNNING' %}
+                                <span class="badge bg-primary">RUNNING</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ exec.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td><span class="badge bg-light text-dark border">{{ exec.trigger_source }}</span></td>
+                            <td class="small text-muted">{{ exec.start_time.strftime('%Y-%m-%d %H:%M:%S') if exec.start_time else 'N/A' }}</td>
+                            <td class="small">{{ exec.duration_ms }} ms</td>
+                            <td class="small">{{ exec.records_scanned }}</td>
+                            <td class="small">{{ exec.records_created }} / {{ exec.records_updated }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">No automation runs recorded yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

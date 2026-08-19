@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Vendor Management · Society SaaS{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumb-nav" aria-label="Breadcrumb">
+    <a href="{{ url_for('main.dashboard') }}"><i class="fa-solid fa-house"></i> Admin</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Vendor Directory</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">Contracts & Services</p>
+        <h1>Society Vendor Directory</h1>
+        <p style="color: var(--text-secondary);">Manage external service providers, AMC contracts, maintenance agencies,
+            and emergency contacts.</p>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: 24px;">
+    <div class="card-title"><i class="fa-solid fa-user-plus" style="color: var(--primary);"></i> Add Vendor / Service
+        Provider</div>
+    <form method="POST" action="{{ url_for('operations.create_vendor') }}"
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: flex-end;">
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="company_name" class="form-label">Company / Agency Name</label>
+            <input type="text" name="company_name" id="company_name" class="form-control"
+                placeholder="e.g. Apex Security Solutions" required>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="contact_person" class="form-label">Contact Person</label>
+            <input type="text" name="contact_person" id="contact_person" class="form-control"
+                placeholder="e.g. Rajesh Sharma">
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="phone" class="form-label">Phone Number</label>
+            <input type="text" name="phone" id="phone" class="form-control" placeholder="e.g. 9876543210" required>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" name="email" id="email" class="form-control" placeholder="e.g. contact@apex.com">
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="category" class="form-label">Category</label>
+            <select name="category" id="category" class="form-control">
+                <option value="Security">Security Services</option>
+                <option value="Housekeeping">Housekeeping / Cleaning</option>
+                <option value="Lift AMC">Lift Maintenance (AMC)</option>
+                <option value="Generator AMC">Generator Maintenance (AMC)</option>
+                <option value="Plumbing">Plumbing Services</option>
+                <option value="Electrical">Electrical Works</option>
+                <option value="Pest Control">Pest Control</option>
+                <option value="Waste Management">Waste Management</option>
+                <option value="Gardening">Gardening / Landscaping</option>
+                <option value="General">Other</option>
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="contract_amount" class="form-label">Annual Contract (₹)</label>
+            <input type="number" step="0.01" name="contract_amount" id="contract_amount" class="form-control"
+                placeholder="0.00">
+        </div>
+        <div>
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Vendor</button>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-title">
+        <i class="fa-solid fa-handshake" style="color: var(--primary);"></i>
+        <span>Registered Vendors ({{ vendors | length }})</span>
+    </div>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Company Name</th>
+                    <th>Category</th>
+                    <th>Contact Person</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th style="text-align: right;">Contract (₹)</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in vendors %}
+                <tr>
+                    <td><strong>{{ v.company_name }}</strong></td>
+                    <td><span class="badge badge-info">{{ v.category }}</span></td>
+                    <td>{{ v.contact_person or "—" }}</td>
+                    <td><a href="tel:{{ v.phone }}">{{ v.phone }}</a></td>
+                    <td>{{ v.email or "—" }}</td>
+                    <td style="text-align: right;">₹{{ "{:,.2f}".format(v.contract_amount) }}</td>
+                    <td><span class="badge badge-success">{{ v.status }}</span></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="empty-cell">No vendors added yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

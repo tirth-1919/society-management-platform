@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% block title %}Complaint {{ complaint.ticket_number }} · Society SaaS{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumb-nav" aria-label="Breadcrumb">
+    <a href="{{ url_for('main.dashboard') }}"><i class="fa-solid fa-house"></i> Home</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{{ url_for('resident.resident_complaints') }}" data-i18n="complaints">Complaints</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">{{ complaint.ticket_number }}</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow" data-i18n="complaints">Service Request</p>
+        <h1>{{ complaint.title }}</h1>
+        <p style="color: var(--text-secondary);">Ticket: <code style="font-size: 13px;">{{ complaint.ticket_number }}</code></p>
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center;">
+        <span class="badge badge-{{
+            'warning' if complaint.status == 'Submitted' else
+            ('info' if complaint.status in ('Assigned','In Progress') else
+            ('success' if complaint.status == 'Resolved' else 'secondary'))
+        }}" style="font-size: 14px; padding: 6px 14px;">{{ complaint.status }}</span>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; max-width: 1080px;">
+    {# LEFT: Details + Comments #}
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+
+        {# Complaint Details #}
+        <section class="card">
+            <h2 class="card-title"><i class="fa-solid fa-file-lines" style="color: var(--primary);"></i> Complaint Details</h2>
+            <dl class="details-list">
+                <dt>Category</dt><dd><span class="badge badge-info">{{ complaint.category }}</span></dd>
+                <dt data-i18n="priority">Priority</dt>
+                <dd><span class="badge badge-{{ 'danger' if complaint.priority in ('High','Emergency') else ('warning' if complaint.priority == 'Medium' else 'secondary') }}">{{ complaint.priority }}</span></dd>
+                <dt>Submitted</dt><dd>{{ complaint.created_at.strftime('%d %b %Y, %I:%M %p') }}</dd>
+                {% if complaint.resolved_at %}
+                <dt>Resolved</dt><dd>{{ complaint.resolved_at.strftime('%d %b %Y, %I:%M %p') }}</dd>
+                {% endif %}
+                <dt>Description</dt>
+                <dd style="white-space: pre-line; color: var(--text-secondary);">{{ complaint.description }}</dd>
+                {% if complaint.resolution_notes %}
+                <dt>Resolution Notes</dt>
+                <dd style="background: #f0fdf4; border-left: 3px solid var(--success); padding: 8px 12px; border-radius: var(--radius-sm); color: #166534;">{{ complaint.resolution_notes }}</dd>
+                {% endif %}
+            </dl>
+        </section>
+
+        {# Comments / Updates #}
+        {% if comments %}
+        <section class="card">
+            <h2 class="card-title"><i class="fa-solid fa-comments" style="color: var(--secondary);"></i> Updates &amp; Comments</h2>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                {% for comment in comments %}
+                {% if not comment.comment.startswith('RATING:') %}
+                <div style="display: flex; gap: 10px; align-items: flex-start;">
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">
+                        {{ comment.user.full_name[0]|upper if comment.user else '?' }}
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 13px; font-weight: 600;">{{ comment.user.full_name if comment.user else 'Staff' }}
+                            <span style="font-size: 11px; color: var(--text-secondary); font-weight: 400; margin-left: 6px;">{{ comment.created_at.strftime('%d %b %Y, %I:%M %p') }}</span>
+                        </div>
+                        <p style="font-size: 13px; color: var(--text-secondary); margin: 4px 0 0;">{{ comment.comment }}</p>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        {# Feature 40 — Rating section #}
+        {% if complaint.status in ('Resolved', 'Closed') %}
+        <section class="card" id="rating">
+            <h2 class="card-title"><i class="fa-solid fa-star" style="color: var(--warning);"></i> Rate this Resolution</h2>
+            {% set existing_rating = comments|selectattr('comment','startswith','RATING:')|list %}
+            {% if existing_rating %}
+            <div style="background: #f0fdf4; border-left: 3px solid var(--success); padding: 12px 16px; border-radius: var(--radius-sm);">
+                <i class="fa-solid fa-circle-check" style="color: var(--success);"></i>
+                <strong>You have already rated this complaint.</strong>
+                <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">{{ existing_rating[0].comment|replace('RATING:','Rating: ') }}</p>
+            </div>
+            {% else %}
+            <form method="post" action="{{ url_for('resident.rate_complaint', complaint_id=complaint.id) }}">
+                <div style="margin-bottom: 16px;">
+                    <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 8px;" data-i18n="rating">Your Rating</label>
+                    <div style="display: flex; gap: 10px;">
+                        {% for i in range(1, 6) %}
+                        <label style="cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                            <input type="radio" name="rating" value="{{ i }}" required style="position: absolute; opacity: 0; width: 0;">
+                            <div class="star-btn" data-val="{{ i }}" style="width: 44px; height: 44px; border-radius: var(--radius-md); border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; transition: all 0.15s;">
+                                <i class="fa-regular fa-star"></i>
+                            </div>
+                            <span style="font-size: 11px; color: var(--text-secondary);">{{ i }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Feedback (optional)</label>
+                    <textarea name="feedback" rows="3" style="width: 100%; padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); resize: vertical;" placeholder="Tell us how well the issue was handled…"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-star"></i> Submit Rating
+                </button>
+            </form>
+            <script>
+            (function() {
+                const stars = document.querySelectorAll('.star-btn');
+                let selected = 0;
+                stars.forEach((btn, idx) => {
+                    btn.addEventListener('click', () => {
+                        selected = idx + 1;
+                        const radio = btn.closest('label').querySelector('input[type=radio]');
+                        if (radio) radio.checked = true;
+                        stars.forEach((b, i) => {
+                            b.style.background = i < selected ? 'var(--warning)' : '';
+                            b.style.borderColor = i < selected ? 'var(--warning)' : 'var(--border-color)';
+                            b.querySelector('i').className = i < selected ? 'fa-solid fa-star' : 'fa-regular fa-star';
+                            b.querySelector('i').style.color = i < selected ? '#fff' : '';
+                        });
+                    });
+                });
+            })();
+            </script>
+            {% endif %}
+        </section>
+        {% endif %}
+    </div>
+
+    {# RIGHT: Feature 37 — Status Timeline #}
+    <div>
+        <section class="card">
+            <h2 class="card-title"><i class="fa-solid fa-timeline" style="color: var(--secondary);"></i> Status Timeline</h2>
+            <div class="timeline-container">
+                <div class="timeline-item">
+                    <div class="timeline-dot dot-success"><i class="fa-solid fa-plus"></i></div>
+                    <div class="timeline-title" data-i18n="complaint_submitted">Complaint Submitted</div>
+                    <div class="timeline-time">{{ complaint.created_at.strftime('%d %b %Y, %I:%M %p') }}</div>
+                    <div class="timeline-description">Ticket {{ complaint.ticket_number }} created.</div>
+                </div>
+
+                {% if complaint.status in ('Assigned', 'In Progress', 'Resolved', 'Closed') %}
+                <div class="timeline-item">
+                    <div class="timeline-dot dot-info"><i class="fa-solid fa-user-check"></i></div>
+                    <div class="timeline-title" data-i18n="assigned">Assigned to Staff</div>
+                    <div class="timeline-time">—</div>
+                    <div class="timeline-description">
+                        {% if complaint.assigned_staff_id %}Assigned for resolution.{% else %}Pending staff assignment.{% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if complaint.status in ('In Progress', 'Resolved', 'Closed') %}
+                <div class="timeline-item">
+                    <div class="timeline-dot" style="background: var(--warning); color: #fff;"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+                    <div class="timeline-title" data-i18n="in_progress">Work In Progress</div>
+                    <div class="timeline-time">—</div>
+                    <div class="timeline-description">Staff is working on the issue.</div>
+                </div>
+                {% endif %}
+
+                {% if complaint.status in ('Resolved', 'Closed') %}
+                <div class="timeline-item">
+                    <div class="timeline-dot dot-success"><i class="fa-solid fa-circle-check"></i></div>
+                    <div class="timeline-title" data-i18n="resolved">Resolution Submitted</div>
+                    <div class="timeline-time">{{ complaint.resolved_at.strftime('%d %b %Y, %I:%M %p') if complaint.resolved_at else '—' }}</div>
+                    <div class="timeline-description">{{ complaint.resolution_notes[:80] if complaint.resolution_notes else 'Issue resolved.' }}</div>
+                </div>
+                {% endif %}
+
+                {% if complaint.status == 'Closed' %}
+                <div class="timeline-item">
+                    <div class="timeline-dot" style="background: var(--text-secondary); color: #fff;"><i class="fa-solid fa-lock"></i></div>
+                    <div class="timeline-title" data-i18n="closed">Closed</div>
+                    <div class="timeline-time">—</div>
+                    <div class="timeline-description">Complaint ticket closed.</div>
+                </div>
+                {% endif %}
+
+                {# Current position indicator #}
+                {% if complaint.status not in ('Resolved', 'Closed') %}
+                <div class="timeline-item" style="opacity: 0.5;">
+                    <div class="timeline-dot" style="background: var(--border-color);"><i class="fa-solid fa-ellipsis"></i></div>
+                    <div class="timeline-title">Awaiting Next Update</div>
+                    <div class="timeline-time">—</div>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}

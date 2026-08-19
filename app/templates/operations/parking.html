@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Parking & Vehicle Management · Society SaaS{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumb-nav" aria-label="Breadcrumb">
+    <a href="{{ url_for('main.dashboard') }}"><i class="fa-solid fa-house"></i> Admin</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Parking Slots</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">Facility Logistics</p>
+        <h1>Parking Slot Management</h1>
+        <p style="color: var(--text-secondary);">Manage resident parking assignments, slot vacancies, and vehicle
+            allocations.</p>
+    </div>
+</div>
+
+<div class="metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 24px;">
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(79,70,229,0.12); color: var(--primary);"><i
+                class="fa-solid fa-square-parking"></i></div>
+        <div>
+            <div class="metric-val">{{ total_slots }}</div>
+            <div class="metric-lbl">Total Parking Slots</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(239,68,68,0.12); color: var(--danger);"><i
+                class="fa-solid fa-car-side"></i></div>
+        <div>
+            <div class="metric-val" style="color: var(--danger);">{{ allocated_slots }}</div>
+            <div class="metric-lbl">Allocated Slots</div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon" style="background: rgba(16,185,129,0.12); color: var(--success);"><i
+                class="fa-solid fa-circle-check"></i></div>
+        <div>
+            <div class="metric-val" style="color: var(--success);">{{ available_slots }}</div>
+            <div class="metric-lbl">Available Vacancies</div>
+        </div>
+    </div>
+</div>
+
+{# Slot Allocation Form #}
+<div class="card" style="margin-bottom: 24px;">
+    <div class="card-title"><i class="fa-solid fa-arrows-split-up-and-left" style="color: var(--primary);"></i> Assign
+        Parking Slot</div>
+    <form method="POST" action="{{ url_for('operations.allocate_parking') }}"
+        style="display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end;">
+        <div class="form-group" style="margin-bottom: 0; min-width: 200px;">
+            <label for="slot_id" class="form-label">Select Slot</label>
+            <select name="slot_id" id="slot_id" class="form-control" required>
+                {% for s in slots %}
+                <option value="{{ s.id }}">{{ s.slot_number }} ({{ s.slot_type }}) - {{ s.status }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0; min-width: 200px;">
+            <label for="flat_id" class="form-label">Assign To Flat</label>
+            <select name="flat_id" id="flat_id" class="form-control">
+                <option value="">-- Deallocate / Mark Available --</option>
+                {% for f in flats %}
+                <option value="{{ f.id }}">Flat {{ f.flat_number }} ({{ f.building.name if f.building else '' }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-link"></i> Update Assignment</button>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-title">
+        <i class="fa-solid fa-car" style="color: var(--primary);"></i>
+        <span>Parking Slots Status</span>
+    </div>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Slot Number</th>
+                    <th>Slot Type</th>
+                    <th>Status</th>
+                    <th>Allocated Flat</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in slots %}
+                <tr>
+                    <td><strong>{{ s.slot_number }}</strong></td>
+                    <td><span class="badge badge-info">{{ s.slot_type }}</span></td>
+                    <td>
+                        {% if s.status == 'Allocated' %}
+                        <span class="badge badge-danger">Allocated</span>
+                        {% else %}
+                        <span class="badge badge-success">Available</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if s.allocated_flat %}
+                        <strong>Flat {{ s.allocated_flat.flat_number }}</strong> ({{ s.allocated_flat.building.name if
+                        s.allocated_flat.building else '' }})
+                        {% else %}
+                        <span style="color: var(--text-muted);">Unallocated</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="empty-cell">No parking slots configured for this society.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

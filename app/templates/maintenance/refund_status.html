@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}Refund Status · Society SaaS{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumb-nav" aria-label="Breadcrumb">
+    <a href="{{ url_for('main.dashboard') }}"><i class="fa-solid fa-house"></i> Home</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{{ url_for('payments.payment_history') }}" data-i18n="payment_history">Payment History</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current" data-i18n="refund_status">Refund Status</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow" data-i18n="refund_status">Refund Request</p>
+        <h1 data-i18n="refund_status">Refund Request Status</h1>
+        <p style="color: var(--text-secondary);">Request #{{ refund_request.id }}</p>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; max-width: 1000px;">
+
+    <section class="card">
+        {# Status Banner #}
+        {% if refund_request.status == 'pending' %}
+        <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:var(--radius-md); padding:14px 18px; margin-bottom:20px; display:flex; align-items:center; gap:12px;">
+            <i class="fa-solid fa-clock" style="color:#2563eb; font-size:20px;"></i>
+            <div><strong style="color:#1e40af;">Pending Review</strong><br><span style="font-size:13px; color:#1e40af;">Your request is being reviewed by the admin team.</span></div>
+        </div>
+        {% elif refund_request.status == 'approved' %}
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:var(--radius-md); padding:14px 18px; margin-bottom:20px; display:flex; align-items:center; gap:12px;">
+            <i class="fa-solid fa-check" style="color:#16a34a; font-size:20px;"></i>
+            <div><strong style="color:#166534;">Approved</strong><br><span style="font-size:13px; color:#166534;">Refund has been approved and will be processed shortly.</span></div>
+        </div>
+        {% elif refund_request.status == 'processed' %}
+        <div style="background:#dcfce7; border:1px solid #86efac; border-radius:var(--radius-md); padding:14px 18px; margin-bottom:20px; display:flex; align-items:center; gap:12px;">
+            <i class="fa-solid fa-circle-check" style="color:#15803d; font-size:20px;"></i>
+            <div><strong style="color:#15803d;">Refund Processed!</strong><br><span style="font-size:13px; color:#15803d;">The refund has been issued to your original payment source. It may take 3-7 business days to reflect.</span></div>
+        </div>
+        {% elif refund_request.status == 'rejected' %}
+        <div style="background:#fff1f2; border:1px solid #fecdd3; border-radius:var(--radius-md); padding:14px 18px; margin-bottom:20px; display:flex; align-items:center; gap:12px;">
+            <i class="fa-solid fa-xmark" style="color:#dc2626; font-size:20px;"></i>
+            <div><strong style="color:#dc2626;">Request Rejected</strong><br><span style="font-size:13px; color:#dc2626;">Your refund request was not approved. See admin notes below.</span></div>
+        </div>
+        {% elif refund_request.status == 'failed' %}
+        <div style="background:#fff9f9; border:1px solid #fecaca; border-radius:var(--radius-md); padding:14px 18px; margin-bottom:20px; display:flex; align-items:center; gap:12px;">
+            <i class="fa-solid fa-triangle-exclamation" style="color:#dc2626; font-size:20px;"></i>
+            <div><strong style="color:#dc2626;">Processing Failed</strong><br><span style="font-size:13px; color:#dc2626;">The refund could not be processed. Please contact the society office.</span></div>
+        </div>
+        {% endif %}
+
+        <dl class="payment-summary">
+            <dt>Request ID</dt><dd>#{{ refund_request.id }}</dd>
+            <dt data-i18n="status">Status</dt>
+            <dd>
+                <span class="badge badge-{{ 'warning' if refund_request.status == 'pending' else ('success' if refund_request.status in ('approved','processed') else 'danger') }}" style="font-size: 13px; text-transform: capitalize;">
+                    {{ refund_request.status }}
+                </span>
+            </dd>
+            <dt>Requested Amount</dt>
+            <dd style="font-weight:700; font-size:16px;">₹{{ '{:,.2f}'.format(refund_request.requested_amount) }}</dd>
+            {% if refund_request.refunded_amount > 0 %}
+            <dt>Refunded Amount</dt>
+            <dd style="color:var(--success); font-weight:700;">₹{{ '{:,.2f}'.format(refund_request.refunded_amount) }}</dd>
+            {% endif %}
+            <dt>Reason</dt>
+            <dd style="color: var(--text-secondary);">{{ refund_request.reason }}</dd>
+            <dt>Submitted On</dt>
+            <dd>{{ refund_request.created_at.strftime('%d %b %Y, %I:%M %p') }}</dd>
+            {% if refund_request.admin_notes %}
+            <dt>Admin Notes</dt>
+            <dd style="color:var(--text-secondary); background: var(--bg-primary); padding: 8px 12px; border-radius: var(--radius-sm);">{{ refund_request.admin_notes }}</dd>
+            {% endif %}
+            {% if refund_request.processed_at %}
+            <dt>Processed On</dt>
+            <dd>{{ refund_request.processed_at.strftime('%d %b %Y, %I:%M %p') }}</dd>
+            {% endif %}
+            {% if refund_request.razorpay_refund_id %}
+            <dt>Razorpay Refund ID</dt>
+            <dd><code style="font-size:12px;">{{ refund_request.razorpay_refund_id }}</code></dd>
+            {% endif %}
+        </dl>
+
+        <div style="margin-top:20px; display: flex; gap: 10px; flex-wrap: wrap;">
+            <a href="{{ url_for('payments.payment_history') }}" class="btn btn-secondary">
+                <i class="fa-solid fa-arrow-left"></i> Payment History
+            </a>
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">
+                <i class="fa-solid fa-house"></i> Dashboard
+            </a>
+        </div>
+    </section>
+
+    {# Feature 30 — Refund Status Timeline #}
+    <section class="card">
+        <h3 class="card-title"><i class="fa-solid fa-timeline" style="color: var(--secondary);"></i> Refund Timeline</h3>
+        <div class="timeline-container">
+            <div class="timeline-item">
+                <div class="timeline-dot dot-success"><i class="fa-solid fa-paper-plane"></i></div>
+                <div class="timeline-title" data-i18n="refund_requested">Refund Requested</div>
+                <div class="timeline-time">{{ refund_request.created_at.strftime('%d %b %Y') }}</div>
+                <div class="timeline-description">₹{{ '{:,.2f}'.format(refund_request.requested_amount) }} refund request submitted.</div>
+            </div>
+
+            <div class="timeline-item {{ '' if refund_request.status in ('approved','processed') else 'timeline-pending' }}">
+                <div class="timeline-dot {{ 'dot-info' if refund_request.status in ('approved','processed') else '' }}" style="{{ '' if refund_request.status in ('approved','processed') else 'background:var(--border-color);color:var(--text-secondary);' }}">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </div>
+                <div class="timeline-title" data-i18n="under_review">Under Review</div>
+                <div class="timeline-time">—</div>
+                <div class="timeline-description">Admin reviewing the request.</div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-dot {{ 'dot-success' if refund_request.status in ('approved','processed') else ('dot-danger' if refund_request.status == 'rejected' else '') }}"
+                     style="{{ '' if refund_request.status in ('approved','processed','rejected') else 'background:var(--border-color);color:var(--text-secondary);' }}">
+                    <i class="fa-solid {{ 'fa-check' if refund_request.status in ('approved','processed') else ('fa-xmark' if refund_request.status == 'rejected' else 'fa-hourglass-half') }}"></i>
+                </div>
+                <div class="timeline-title">
+                    {% if refund_request.status == 'rejected' %}Rejected{% elif refund_request.status in ('approved','processed') %}Approved{% else %}Approval Pending{% endif %}
+                </div>
+                <div class="timeline-time">—</div>
+                <div class="timeline-description">
+                    {% if refund_request.status == 'rejected' %}Request was not approved.{% elif refund_request.status in ('approved','processed') %}Approved for processing.{% else %}Awaiting admin decision.{% endif %}
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-dot {{ 'dot-success' if refund_request.status == 'processed' else '' }}"
+                     style="{{ '' if refund_request.status == 'processed' else 'background:var(--border-color);color:var(--text-secondary);' }}">
+                    <i class="fa-solid {{ 'fa-circle-check' if refund_request.status == 'processed' else 'fa-rotate-left' }}"></i>
+                </div>
+                <div class="timeline-title" data-i18n="refund_processed">Refund Processed</div>
+                <div class="timeline-time">
+                    {% if refund_request.processed_at %}{{ refund_request.processed_at.strftime('%d %b %Y') }}{% else %}—{% endif %}
+                </div>
+                <div class="timeline-description">
+                    {% if refund_request.status == 'processed' %}
+                    ₹{{ '{:,.2f}'.format(refund_request.refunded_amount) }} credited to original payment source.
+                    {% else %}
+                    Refund will be credited after approval.
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
