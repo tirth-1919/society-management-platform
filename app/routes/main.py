@@ -451,15 +451,21 @@ def portal_qr():
 @main_bp.route("/api/buildings")
 def api_buildings():
     """Blocks (A to F) for a given society_id."""
-    society_id = request.args.get("society_id")
-    if not society_id:
+    society_id_raw = request.args.get("society_id", "").strip()
+    if not society_id_raw:
         return jsonify({"buildings": []})
     try:
-        TenantService.ensure_default_blocks_and_flats(int(society_id))
+        society_id = int(society_id_raw)
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid society_id", "buildings": []}), 400
+    if society_id <= 0 or not db.session.get(Society, society_id):
+        return jsonify({"error": "Invalid society_id", "buildings": []}), 400
+    try:
+        TenantService.ensure_default_blocks_and_flats(society_id)
     except Exception:
         pass
     buildings = (
-        Building.query.filter_by(society_id=int(society_id))
+        Building.query.filter_by(society_id=society_id)
         .order_by(Building.name.asc())
         .all()
     )
@@ -489,7 +495,14 @@ def api_blocks():
     else:
         q = Block.query
     if building_id:
-        q = q.filter_by(building_id=int(building_id))
+        try:
+            building_id_int = int(building_id)
+        except (TypeError, ValueError):
+            return jsonify({"error": "Invalid building_id", "blocks": []}), 400
+        building = Building.query.filter_by(id=building_id_int, society_id=int(society_id) if society_id else None).first() if society_id else db.session.get(Building, building_id_int)
+        if not building:
+            return jsonify({"error": "Building does not belong to the selected society", "blocks": []}), 403
+        q = q.filter_by(building_id=building_id_int)
     blocks = q.order_by(Block.name.asc()).all()
     return jsonify({"blocks": [{"id": b.id, "name": b.name, "building_id": b.building_id} for b in blocks]})
 
@@ -497,24 +510,46 @@ def api_blocks():
 @main_bp.route("/api/flats")
 def api_flats():
     """Flats for a given block_id (preferred) or building_id in floor-based order (101..1104)."""
-    block_id = request.args.get("block_id")
-    building_id = request.args.get("building_id")
+    society_id_raw = request.args.get("society_id", "").strip()
+    block_id_raw = request.args.get("block_id", "").strip()
+    building_id_raw = request.args.get("building_id", "").strip()
+    if not block_id_raw and not building_id_raw:
+        return jsonify({"flats": []})
+    try:
+        society_id = int(society_id_raw) if society_id_raw else None
+        block_id = int(block_id_raw) if block_id_raw else None
+        building_id = int(building_id_raw) if building_id_raw else None
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid society, block, or building ID", "flats": []}), 400
+    if society_id is not None and (society_id <= 0 or not db.session.get(Society, society_id)):
+        return jsonify({"error": "Invalid society_id", "flats": []}), 400
+    if building_id and society_id is None:
+        building = db.session.get(Building, building_id)
+        if not building:
+            return jsonify({"error": "Invalid building_id", "flats": []}), 400
+        society_id = building.society_id
     if block_id:
+        block = Block.query.filter_by(id=block_id, society_id=society_id).first()
+        if not block:
+            return jsonify({"error": "Block does not belong to the selected society", "flats": []}), 403
         flats = (
-            Flat.query.filter_by(block_id=int(block_id))
+            Flat.query.filter_by(society_id=society_id, block_id=block_id)
             .order_by(Flat.floor_number.asc(), Flat.flat_number.asc())
             .all()
         )
     elif building_id:
+        building = Building.query.filter_by(id=building_id, society_id=society_id).first()
+        if not building:
+            return jsonify({"error": "Building does not belong to the selected society", "flats": []}), 403
         flats = (
-            Flat.query.filter_by(building_id=int(building_id))
+            Flat.query.filter_by(society_id=society_id, building_id=building_id)
             .order_by(Flat.floor_number.asc(), Flat.flat_number.asc())
             .all()
         )
     else:
         return jsonify({"flats": []})
     return jsonify(
-        {"flats": [{"id": f.id, "flat_number": f.flat_number, "floor_number": f.floor_number} for f in flats]}
+        {"flats": [{"id": f.id, "flat_number": f.flat_number, "property_key": f.property_key, "floor_number": f.floor_number} for f in flats]}
     )
 
 

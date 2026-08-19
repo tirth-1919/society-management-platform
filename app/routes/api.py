@@ -1,5 +1,5 @@
 from flask import Blueprint, abort, jsonify, request, session
-from app.models import db, Resident, MaintenanceBill, User, Role, Building, Flat
+from app.models import db, Resident, MaintenanceBill, User, Role, Society, Building, Flat
 from app.services.ai_service import AIService
 from app.services.search_service import SearchService
 
@@ -11,16 +11,22 @@ api_bp = Blueprint("api", __name__, url_prefix="/api/v1")
 
 
 def _buildings_response():
-    society_id = request.args.get("society_id")
-    if not society_id:
+    society_id_raw = request.args.get("society_id", "").strip()
+    if not society_id_raw:
         return jsonify({"buildings": []}), 200
     try:
+        society_id = int(society_id_raw)
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid society_id", "buildings": []}), 400
+    if society_id <= 0 or not db.session.get(Society, society_id):
+        return jsonify({"error": "Invalid society_id", "buildings": []}), 400
+    try:
         from app.services.tenant_service import TenantService
-        TenantService.ensure_default_blocks_and_flats(int(society_id))
+        TenantService.ensure_default_blocks_and_flats(society_id)
     except Exception:
         pass
     buildings = (
-        Building.query.filter_by(society_id=int(society_id))
+        Building.query.filter_by(society_id=society_id)
         .order_by(Building.name.asc())
         .all()
     )
@@ -33,17 +39,26 @@ def _buildings_response():
 
 
 def _flats_response():
-    block_id = request.args.get("block_id")
-    building_id = request.args.get("building_id")
+    society_id_raw = request.args.get("society_id", "").strip()
+    block_id_raw = request.args.get("block_id", "").strip()
+    building_id_raw = request.args.get("building_id", "").strip()
+    if not society_id_raw or (not block_id_raw and not building_id_raw):
+        return jsonify({"flats": []}), 200
+    try:
+        society_id = int(society_id_raw)
+        block_id = int(block_id_raw) if block_id_raw else None
+        building_id = int(building_id_raw) if building_id_raw else None
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid society, block, or building ID", "flats": []}), 400
     if block_id:
         flats = (
-            Flat.query.filter_by(block_id=int(block_id))
+            Flat.query.filter_by(society_id=society_id, block_id=block_id)
             .order_by(Flat.floor_number.asc(), Flat.flat_number.asc())
             .all()
         )
     elif building_id:
         flats = (
-            Flat.query.filter_by(building_id=int(building_id))
+            Flat.query.filter_by(society_id=society_id, building_id=building_id)
             .order_by(Flat.floor_number.asc(), Flat.flat_number.asc())
             .all()
         )

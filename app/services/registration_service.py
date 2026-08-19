@@ -347,15 +347,34 @@ class RegistrationService:
             )
 
         if req.status == "APPROVED":
-            # Approval is intentionally idempotent.  The first approval creates
-            # the persistent Resident row and activates the already-created User;
-            # repeating the admin action must never create another row.
+            # Approval is intentionally idempotent. Repair legacy/incomplete data
+            # without creating a second User or Resident record.
+            user = db.session.get(User, req.user_id)
+            if user:
+                user.account_status = "ACTIVE"
+                user.is_active = True
+            resident = Resident.query.filter_by(user_id=req.user_id).first()
+            if not resident and user:
+                resident = Resident(
+                    society_id=req.society_id, flat_id=req.flat_id, user_id=user.id,
+                    full_name=req.full_name, mobile=req.mobile, email=req.email,
+                    resident_type="Owner" if req.occupancy_type in ["OWNER", "Owner"] else "Tenant",
+                    occupancy_status="Active", is_primary=True, move_in_date=utcnow().date(),
+                )
+                db.session.add(resident)
+                db.session.commit()
             return req
         if req.status != "PENDING_APPROVAL":
             raise ValueError(
                 f"Registration #{registration_id} is already {req.status}. "
                 "Only PENDING_APPROVAL requests can be approved."
             )
+
+        # Re-validate the complete stored hierarchy at approval time.
+        if req.block_id is not None:
+            RegistrationService.validate_hierarchy(req.society_id, req.building_id, req.block_id, req.flat_id)
+        else:
+            RegistrationService.validate_hierarchy_legacy(req.society_id, req.building_id, req.flat_id)
 
         # ── RE-CHECK FLAT AVAILABILITY INSIDE THE TRANSACTION ─────────────────
         # This prevents a race condition where two admins approve simultaneously
@@ -475,7 +494,7 @@ class RegistrationService:
 
     @staticmethod
     def reject_request(registration_id, admin_user, reason):
-        """Rejects a registration request."""
+        """Rejects a registration request; repeated rejection is harmless."""
         req = db.session.get(RegistrationRequest, registration_id)
         if not req:
             raise ValueError("Registration request not found")
@@ -488,6 +507,11 @@ class RegistrationService:
                 403,
                 description="Forbidden: Cannot reject registration for another society",
             )
+
+        if req.status == "REJECTED":
+            return req
+        if req.status == "APPROVED":
+            raise ValueError("Approved registrations cannot be rejected")
 
         req.status = "REJECTED"
         req.rejection_reason = reason

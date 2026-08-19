@@ -79,38 +79,36 @@
         <!-- Divider -->
         <div style="height:1px; background:var(--border-color); margin: 20px 0;"></div>
         <div style="margin-bottom: 10px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-secondary);">
-          <i class="fa-solid fa-building"></i> Location Selection (Block → Flat Number)
+          <i class="fa-solid fa-building"></i> Location Selection (Block → Flat Number) — Society → Block / Wing → Flat Number
         </div>
 
-        <!-- Society Dropdown -->
+        <!-- Society → Block/Wing → Flat cascading selection -->
         <div style="margin-bottom: 16px;">
-          <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Society *</label>
+          <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Select Your Society *</label>
           <select name="society_id" id="society-select" required onchange="loadBlocks(this.value)"
-            style="width:100%; padding:11px 14px; border-radius:9px; border:1.5px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:14px; box-sizing:border-box;">
-            <option value="">— Select Your Society —</option>
-            {% for soc in societies %}
-            <option value="{{ soc.id }}">{{ soc.name }} — {{ soc.city }}</option>
+            style="width:100%; padding:11px 14px; border-radius:9px; border:1.5px solid var(--border-color); background:#ffffff !important; color:#111827 !important; font-size:14px; box-sizing:border-box; color-scheme:light;">
+            <option value="" style="background:#ffffff; color:#111827;">Select Society</option>
+            {% for soc in societies if soc.name and soc.name|string|trim %}
+            <option value="{{ soc.id | int }}" style="background:#ffffff; color:#111827;">{{ soc.name|string|trim }}</option>
             {% endfor %}
           </select>
         </div>
 
-        <!-- Block -> Flat Number cascading selects -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-          <div>
-            <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Block *</label>
-            <select name="building_id" id="block-select" required onchange="onBlockChange(this.value)"
-              style="width:100%; padding:11px 10px; border-radius:9px; border:1.5px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:13px; box-sizing:border-box;">
-              <option value="">— Select Block —</option>
-            </select>
-            <input type="hidden" name="block_id" id="hidden-block-id" value="">
-          </div>
-          <div>
-            <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Flat Number *</label>
-            <select name="flat_id" id="flat-select" required
-              style="width:100%; padding:11px 10px; border-radius:9px; border:1.5px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:13px; box-sizing:border-box;">
-              <option value="">— Select Flat Number —</option>
-            </select>
-          </div>
+        <div style="margin-bottom: 16px;">
+          <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Block / Wing *</label>
+          <select name="building_id" id="block-select" required disabled onchange="onBlockChange(this.value)"
+            style="width:100%; padding:11px 10px; border-radius:9px; border:1.5px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:13px; box-sizing:border-box;">
+            <option value="">— Select Society First —</option>
+          </select>
+          <input type="hidden" name="block_id" id="hidden-block-id" value="">
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Flat Number *</label>
+          <select name="flat_id" id="flat-select" required disabled
+            style="width:100%; padding:11px 10px; border-radius:9px; border:1.5px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:13px; box-sizing:border-box;">
+            <option value="">— Select Block / Wing First —</option>
+          </select>
         </div>
 
         <!-- Occupancy Type -->
@@ -153,6 +151,12 @@
           <div style="font-size:12px; color:var(--text-secondary); margin-top:6px;">
             <i class="fa-solid fa-circle-info"></i> Your password is hashed securely and never stored in plain text.
           </div>
+        </div>
+
+        <div style="margin-bottom: 28px;">
+          <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Confirm Password *</label>
+          <input type="password" name="confirm_password" id="reg-confirm-password" required placeholder="Re-enter your password"
+            style="width:100%; padding:11px 14px; border-radius:9px; border:1.5px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:14px; box-sizing:border-box;">
         </div>
 
         <button type="submit" id="reg-submit-btn"
@@ -203,35 +207,46 @@ function selectOccupancy(radio) {
   }
 }
 
-let currentSocietyId = null;
-let currentBlockId = null;
+let currentSocietyId = '';
+let currentBlockId = '';
+let blocksRequestToken = 0;
+let flatsRequestToken = 0;
 
-async function loadBlocks(societyId) {
+async function loadBlocks(rawSocietyId) {
+  const societyId = String(rawSocietyId || '').trim();
   currentSocietyId = societyId;
+  const requestToken = ++blocksRequestToken;
   const bSel = document.getElementById('block-select');
   const fSel = document.getElementById('flat-select');
   const hiddenBlk = document.getElementById('hidden-block-id');
-
-  if (bSel) bSel.innerHTML = '<option value="">— Loading Blocks... —</option>';
-  if (fSel) fSel.innerHTML = '<option value="">— Select Flat Number —</option>';
+  if (bSel) { bSel.disabled = true; bSel.innerHTML = '<option value="">— Loading Blocks... —</option>'; }
+  if (fSel) { fSel.disabled = true; fSel.innerHTML = '<option value="">— Select Flat Number —</option>'; }
   if (hiddenBlk) hiddenBlk.value = '';
 
   if (!societyId) {
-    if (bSel) bSel.innerHTML = '<option value="">— Select Block —</option>';
+    if (bSel) { bSel.disabled = true; bSel.innerHTML = '<option value="">— Select Society First —</option>'; }
+    if (fSel) fSel.disabled = true;
     return;
   }
 
   try {
-    const r = await fetch(`/api/buildings?society_id=${societyId}`);
+    const r = await fetch(`/api/buildings?society_id=${encodeURIComponent(societyId)}`, { headers: { 'Accept': 'application/json' } });
     const data = await r.json();
+    if (requestToken !== blocksRequestToken || societyId !== currentSocietyId) return;
+    if (!r.ok) throw new Error(data.error || 'Unable to load blocks');
     if (bSel) {
-      bSel.innerHTML = '<option value="">— Select Block —</option>';
+      bSel.innerHTML = '<option value="">— Select Block / Wing —</option>';
       (data.buildings || []).forEach(b => {
-        bSel.innerHTML += `<option value="${b.id}">${b.name}</option>`;
+        const option = document.createElement('option');
+        option.value = String(b.id); option.textContent = b.name;
+        bSel.appendChild(option);
       });
+      bSel.disabled = !(data.buildings || []).length;
+      if (!(data.buildings || []).length) bSel.innerHTML = '<option value="">— No Blocks/Wings available —</option>';
     }
   } catch(e) {
-    if (bSel) bSel.innerHTML = '<option value="">— Error loading blocks —</option>';
+    if (requestToken !== blocksRequestToken) return;
+    if (bSel) { bSel.disabled = true; bSel.innerHTML = '<option value="">— Error loading blocks —</option>'; }
   }
 }
 
@@ -240,37 +255,48 @@ async function loadWings(societyId) {
   return loadBlocks(societyId);
 }
 
-async function onBlockChange(blockId) {
+async function onBlockChange(rawBlockId) {
+  const blockId = String(rawBlockId || '').trim();
   currentBlockId = blockId;
   const hiddenBlk = document.getElementById('hidden-block-id');
-  if (hiddenBlk) hiddenBlk.value = blockId || '';
+  // The selected value is the Wing/Building ID. Keep block_id empty for
+  // legacy-compatible registrations unless a separate Block selector exists.
+  if (hiddenBlk) hiddenBlk.value = '';
   await loadFlats(blockId);
 }
 
 async function loadFlats(blockId) {
   const fSel = document.getElementById('flat-select');
   if (!fSel) return;
+  const requestToken = ++flatsRequestToken;
+  fSel.disabled = true;
   fSel.innerHTML = '<option value="">— Loading Flats... —</option>';
 
-  if (!blockId) {
-    fSel.innerHTML = '<option value="">— Select Flat Number —</option>';
+  if (!blockId || !currentSocietyId) {
+    fSel.innerHTML = '<option value="">— Select Block / Wing —</option>';
     return;
   }
 
   try {
-    const r = await fetch(`/api/flats?building_id=${blockId}`);
+    const r = await fetch(`/api/flats?society_id=${encodeURIComponent(currentSocietyId)}&building_id=${encodeURIComponent(blockId)}`);
     const data = await r.json();
+    if (requestToken !== flatsRequestToken || blockId !== currentBlockId) return;
+    if (!r.ok) throw new Error(data.error || 'Unable to load flats');
     const flats = data.flats || [];
 
     if (flats.length > 0) {
       fSel.innerHTML = '<option value="">— Select Flat Number —</option>';
       flats.forEach(f => {
-        fSel.innerHTML += `<option value="${f.id}">${f.flat_number}</option>`;
+        const option = document.createElement('option');
+        option.value = String(f.id); option.textContent = f.flat_number;
+        fSel.appendChild(option);
       });
+      fSel.disabled = false;
     } else {
-      fSel.innerHTML = '<option value="">— No Flats Available —</option>';
+      fSel.innerHTML = '<option value="">— No Flat Numbers available —</option>';
     }
   } catch(e) {
+    if (requestToken !== flatsRequestToken) return;
     fSel.innerHTML = '<option value="">— Error loading flats —</option>';
   }
 }

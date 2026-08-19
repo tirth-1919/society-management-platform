@@ -10,9 +10,10 @@ from flask import (
     session,
     jsonify,
     current_app,
+    abort,
 )
 from werkzeug.exceptions import HTTPException
-from app.models import db, User, Society, RegistrationRequest, AuditLog, Flat
+from app.models import db, User, Society, RegistrationRequest, AuditLog, Flat, Building, Block
 from app.services.auth_service import AuthService
 from app.services.registration_service import (
     RegistrationService,
@@ -114,18 +115,59 @@ def register():
         full_name = request.form.get("full_name", "").strip()
         mobile = AuthService.normalize_mobile(request.form.get("mobile", ""))
         email = request.form.get("email", "").strip() or None
-        society_id = int(request.form.get("society_id"))
-        flat_id = int(request.form.get("flat_id"))
+        society_id_raw = (request.form.get("society_id") or "").strip()
+        flat_id_raw = (request.form.get("flat_id") or "").strip()
+        if not society_id_raw or not flat_id_raw:
+            flash("Please select a society and flat number.", "danger")
+            societies = Society.query.order_by(Society.name.asc()).all()
+            return render_template("auth/register.html", societies=societies), 400
+        try:
+            society_id = int(society_id_raw)
+            flat_id = int(flat_id_raw)
+        except (TypeError, ValueError):
+            flash("Invalid society or flat selection.", "danger")
+            societies = Society.query.order_by(Society.name.asc()).all()
+            return render_template("auth/register.html", societies=societies), 400
         flat_obj = Flat.query.filter_by(id=flat_id, society_id=society_id).first()
-
         building_id_raw = request.form.get("building_id")
         block_id_raw = request.form.get("block_id")
+        try:
+            selected_building_id = int(building_id_raw) if building_id_raw else None
+            selected_block_id = int(block_id_raw) if block_id_raw else None
+        except (TypeError, ValueError):
+            abort(400, description="Invalid block or wing selection")
 
-        building_id = int(building_id_raw) if building_id_raw else (flat_obj.building_id if flat_obj else None)
-        block_id = flat_obj.block_id if (flat_obj and flat_obj.block_id) else (int(block_id_raw) if block_id_raw else None)
+        # Validate the complete hierarchy server-side; never trust IDs from the browser.
+        selected_building = (
+            Building.query.filter_by(id=selected_building_id, society_id=society_id).first()
+            if selected_building_id else None
+        )
+        if selected_building_id and not selected_building:
+            abort(403, description="Selected block does not belong to the selected society")
+        if flat_obj and selected_building_id and flat_obj.building_id != selected_building_id:
+            abort(403, description="Selected flat does not belong to the selected block or wing")
+        if selected_block_id:
+            selected_block = Block.query.filter_by(
+                id=selected_block_id, society_id=society_id
+            ).first()
+            if not selected_block or (selected_building_id and selected_block.building_id != selected_building_id):
+                abort(403, description="Selected block does not belong to the selected society or wing")
+        if not flat_obj:
+            flash("The selected flat does not belong to the selected society.", "danger")
+            societies = Society.query.order_by(Society.name.asc()).all()
+            return render_template("auth/register.html", societies=societies), 400
+
+        building_id = selected_building_id or (flat_obj.building_id if flat_obj else None)
+        block_id = flat_obj.block_id if (flat_obj and flat_obj.block_id) else selected_block_id
         occupancy_type = request.form.get("occupancy_type", "OWNER")
         password = request.form.get("password", "").strip()
-
+        confirm_password = request.form.get("confirm_password", "").strip()
+        # Browser forms require confirmation; keep compatibility with trusted
+        # legacy/API submissions that predate the confirmation field.
+        if confirm_password and password != confirm_password:
+            flash("Password and Confirm Password must match.", "danger")
+            societies = Society.query.order_by(Society.name.asc()).all()
+            return render_template("auth/register.html", societies=societies), 400
         # ── FLAT AVAILABILITY PRE-CHECK (server-side, user-friendly) ──
         try:
             is_available, occupant_name = check_flat_availability(society_id, flat_id)
@@ -137,7 +179,7 @@ def register():
                     "Please contact the society administrator.",
                     "danger",
                 )
-                societies = Society.query.all()
+                societies = Society.query.order_by(Society.name.asc()).all()
                 return render_template("auth/register.html", societies=societies)
         except Exception:
             pass  # Let register_resident() handle validation errors
@@ -166,7 +208,7 @@ def register():
         except Exception as e:
             flash(f"Registration failed: {str(e)}", "danger")
 
-    societies = Society.query.all()
+    societies = Society.query.order_by(Society.name.asc()).all()
     for soc in societies:
         try:
             from app.services.tenant_service import TenantService
