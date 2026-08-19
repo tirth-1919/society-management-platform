@@ -1,21 +1,12 @@
-<<<<<<< HEAD
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.models.tenant import db
 from app.utils import utcnow
-=======
-﻿from datetime import datetime
-from werkzeug.security import generate_password_hash, check_password_hash
-from app.models.tenant import db
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class Role:
     SUPER_ADMIN = "Super Admin"
     SOCIETY_ADMIN = "Society Admin"
-<<<<<<< HEAD
     ADMIN = "Society Admin"
-=======
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     RESIDENT = "Resident"
     SECURITY = "Security Staff"
     MAINTENANCE = "Maintenance Staff"
@@ -50,15 +41,9 @@ class User(db.Model):
     )  # Format YYYY-MM e.g. 2026-08
 
     locked_until = db.Column(db.DateTime, nullable=True)
-<<<<<<< HEAD
     created_at = db.Column(db.DateTime, default=utcnow)
     updated_at = db.Column(
         db.DateTime, default=utcnow, onupdate=utcnow
-=======
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     )
 
     society = db.relationship("Society", backref="users", lazy=True)
@@ -73,13 +58,10 @@ class User(db.Model):
         lazy=True,
     )
 
-<<<<<<< HEAD
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-=======
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
@@ -97,11 +79,7 @@ class UserSession(db.Model):
     session_token = db.Column(db.String(128), unique=True, nullable=False, index=True)
     device_info = db.Column(db.String(255), nullable=True)
     ip_address = db.Column(db.String(45), nullable=True)
-<<<<<<< HEAD
     created_at = db.Column(db.DateTime, default=utcnow)
-=======
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     expires_at = db.Column(db.DateTime, nullable=False)
     is_active = db.Column(db.Boolean, default=True)
 
@@ -113,11 +91,7 @@ class OTPLog(db.Model):
     mobile = db.Column(db.String(20), nullable=False, index=True)
     otp_code = db.Column(db.String(10), nullable=False)
     purpose = db.Column(db.String(50), default="LOGIN")  # LOGIN, PASS_RESET, 2FA
-<<<<<<< HEAD
     created_at = db.Column(db.DateTime, default=utcnow)
-=======
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     expires_at = db.Column(db.DateTime, nullable=False)
     is_used = db.Column(db.Boolean, default=False)
     attempts = db.Column(db.Integer, default=0)
@@ -138,7 +112,6 @@ class AuditLog(db.Model):
     )  # LOGIN, BILL_CREATE, PAYMENT_RECORD, etc.
     details = db.Column(db.Text, nullable=True)
     ip_address = db.Column(db.String(45), nullable=True)
-<<<<<<< HEAD
     created_at = db.Column(db.DateTime, default=utcnow)
 
     user = db.relationship("User", backref="audit_logs", lazy=True)
@@ -146,11 +119,3 @@ class AuditLog(db.Model):
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
-=======
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    user = db.relationship("User", backref="audit_logs", lazy=True)
-
-
-
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32

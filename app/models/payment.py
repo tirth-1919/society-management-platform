@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 from app.models.tenant import db
 from app.utils import utcnow
-=======
-﻿from datetime import datetime
-from app.models.tenant import db
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class Payment(db.Model):
@@ -24,7 +19,6 @@ class Payment(db.Model):
     amount_paid = db.Column(db.Float, nullable=False)
     payment_method = db.Column(
         db.String(50), default="UPI"
-<<<<<<< HEAD
     )  # UPI, QR, Card, Online, Cash, Bank Transfer, Razorpay
     provider_name = db.Column(
         db.String(50), default="Mock"
@@ -49,26 +43,11 @@ class Payment(db.Model):
     refund_amount = db.Column(db.Float, default=0.0)
 
     payment_date = db.Column(db.DateTime, default=utcnow)
-=======
-    )  # UPI, QR, Card, Online, Cash, Bank Transfer
-    provider_name = db.Column(
-        db.String(50), default="Mock"
-    )  # Razorpay, Cashfree, PayU, Mock, Manual
-    provider_order_id = db.Column(db.String(100), nullable=True)
-    provider_payment_id = db.Column(db.String(100), nullable=True)
-    provider_signature = db.Column(db.Text, nullable=True)
-
-    status = db.Column(
-        db.String(30), default="Success", index=True
-    )  # Success, Failed, Pending, Refunded
-    payment_date = db.Column(db.DateTime, default=datetime.utcnow)
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     notes = db.Column(db.Text, nullable=True)
 
     receipt = db.relationship(
         "PaymentReceipt", backref="payment", uselist=False, lazy=True
     )
-<<<<<<< HEAD
     refund_requests = db.relationship(
         "RefundRequest", backref="payment", lazy=True
     )
@@ -76,8 +55,6 @@ class Payment(db.Model):
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
-=======
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class PaymentReceipt(db.Model):
@@ -92,7 +69,6 @@ class PaymentReceipt(db.Model):
         db.Integer, db.ForeignKey("societies.id"), nullable=False, index=True
     )
     file_path = db.Column(db.String(255), nullable=True)
-<<<<<<< HEAD
     generated_at = db.Column(db.DateTime, default=utcnow)
 
     def __init__(self, **kwargs):
@@ -138,9 +114,6 @@ class RefundRequest(db.Model):
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
-=======
-    generated_at = db.Column(db.DateTime, default=datetime.utcnow)
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class WebhookLog(db.Model):
@@ -153,14 +126,6 @@ class WebhookLog(db.Model):
         db.String(64), unique=True, nullable=False, index=True
     )  # Hash for deduplication
     payload_json = db.Column(db.Text, nullable=False)
-<<<<<<< HEAD
     signature_verified = db.Column(db.Boolean, default=False)
     processed_at = db.Column(db.DateTime, default=utcnow)
     status = db.Column(db.String(20), default="Processed")
-=======
-    processed_at = db.Column(db.DateTime, default=datetime.utcnow)
-    status = db.Column(db.String(20), default="Processed")
-
-
-
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32

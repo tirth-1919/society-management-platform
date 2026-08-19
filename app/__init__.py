@@ -72,7 +72,6 @@ def create_app(config_name=None):
         sent = NotificationService.send_maintenance_reminders(society_id=society_id)
         click.echo(f"Sent {len(sent)} maintenance notifications.")
 
-<<<<<<< HEAD
     @app.cli.command("generate-monthly-bills")
     @click.option("--society-id", type=int, required=True)
     @click.option("--month", type=str, default=None)
@@ -177,9 +176,6 @@ def create_app(config_name=None):
     def unauthorized(e):
         return render_template("errors/401.html", error=e), 401
 
-=======
-    # Custom error handlers
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     @app.errorhandler(403)
     def forbidden(e):
         return render_template("errors/403.html", error=e), 403
@@ -188,13 +184,10 @@ def create_app(config_name=None):
     def not_found(e):
         return render_template("errors/404.html", error=e), 404
 
-<<<<<<< HEAD
     @app.errorhandler(429)
     def too_many_requests(e):
         return render_template("errors/429.html", error=e), 429
 
-=======
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     @app.errorhandler(500)
     def internal_server_error(e):
         return render_template("errors/500.html", error=e), 500

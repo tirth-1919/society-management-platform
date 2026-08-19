@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 """
-=======
-﻿"""
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 Society Management SaaS Platform - Application Entry Point
 Run with: python run.py
 """

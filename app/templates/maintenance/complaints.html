@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-<<<<<<< HEAD
 {% block title %}Complaints Desk · Society SaaS{% endblock %}
 {% block content %}
 <div class="page-heading">
@@ -8,23 +7,14 @@
         <h2>Complaints &amp; Helpdesk</h2>
         <p style="color: var(--text-secondary);">Manage and track society complaint tickets, assign staff, and monitor SLAs.</p>
     </div>
-=======
-{% block title %}Complaints Desk - Society SaaS{% endblock %}
-{% block content %}
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-    <h2>Complaints & Helpdesk</h2>
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     <a href="{{ url_for('complaints.create_complaint') }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> New Complaint Ticket</a>
 </div>
 
 <div class="card">
-<<<<<<< HEAD
     <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
         <span><i class="fa-solid fa-headset" style="color: var(--primary);"></i> All Complaints</span>
         <span class="badge badge-info">{{ complaints|length }} tickets</span>
     </div>
-=======
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     <div class="table-responsive">
         <table class="data-table">
             <thead>
@@ -40,7 +30,6 @@
             <tbody>
                 {% for c in complaints %}
                 <tr>
-<<<<<<< HEAD
                     <td>
                         <a href="{{ url_for('complaints.complaint_detail', complaint_id=c.id) }}" style="font-family: monospace; font-weight: 700; color: var(--primary);">
                             {{ c.ticket_number }}
@@ -66,17 +55,6 @@
                 </tr>
                 {% else %}
                 <tr><td colspan="6" style="text-align: center; color: var(--text-secondary);">No complaint tickets registered.</td></tr>
-=======
-                    <td><strong>{{ c.ticket_number }}</strong></td>
-                    <td>{{ c.category }}</td>
-                    <td>{{ c.title }}</td>
-                    <td><span class="badge badge-warning">{{ c.priority }}</span></td>
-                    <td><span class="badge badge-info">{{ c.status }}</span></td>
-                    <td>{{ c.created_at.strftime('%Y-%m-%d') }}</td>
-                </tr>
-                {% else %}
-                <tr><td colspan="6" style="text-align: center;">No complaint tickets registered.</td></tr>
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
                 {% endfor %}
             </tbody>
         </table>

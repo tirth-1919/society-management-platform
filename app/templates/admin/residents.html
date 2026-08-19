@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-<<<<<<< HEAD
 {% block title %}Residents Directory — Admin Portal{% endblock %}
 
 {% block content %}
@@ -108,43 +107,5 @@
     </div>
   </div>
 
-=======
-{% block title %}Residents Directory - Society SaaS{% endblock %}
-{% block content %}
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-    <h2>Residents Directory</h2>
-    <a href="{{ url_for('reports.export_residents') }}" class="btn btn-secondary"><i class="fa-solid fa-file-csv"></i> Export CSV</a>
-</div>
-
-<div class="card">
-    <div class="table-responsive">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Resident Name</th>
-                    <th>Flat No</th>
-                    <th>Mobile</th>
-                    <th>Email</th>
-                    <th>Type</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for r in residents %}
-                <tr>
-                    <td><strong>{{ r.full_name }}</strong></td>
-                    <td>{{ r.flat.flat_number if r.flat else 'N/A' }}</td>
-                    <td>{{ r.mobile }}</td>
-                    <td>{{ r.email or 'N/A' }}</td>
-                    <td><span class="badge badge-info">{{ r.resident_type }}</span></td>
-                    <td><span class="badge badge-success">{{ r.occupancy_status }}</span></td>
-                </tr>
-                {% else %}
-                <tr><td colspan="6" style="text-align: center;">No residents found.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 </div>
 {% endblock %}

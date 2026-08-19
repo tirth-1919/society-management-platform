@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 """
 payment_service.py — Complete Razorpay payment service.
 
@@ -42,35 +41,11 @@ logger = logging.getLogger(__name__)
 
 class PaymentProviderInterface:
     def create_order(self, amount_paise, currency="INR", receipt_id=None):
-=======
-﻿from app.utils import utcnow
-import hashlib
-import hmac
-import json
-import secrets
-from app.config import Config
-from app.models import (
-    db,
-    Payment,
-    PaymentReceipt,
-    WebhookLog,
-    AuditLog,
-    Resident,
-    MaintenanceBill,
-)
-from app.services.billing_service import BillingService
-from app.services.notification_service import NotificationService
-
-
-class PaymentProviderInterface:
-    def create_order(self, amount, currency="INR", receipt_id=None):
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         raise NotImplementedError
 
     def verify_payment_signature(self, order_id, payment_id, signature):
         raise NotImplementedError
 
-<<<<<<< HEAD
     def fetch_payment(self, payment_id):
         raise NotImplementedError
 
@@ -88,22 +63,12 @@ class MockPaymentProvider(PaymentProviderInterface):
         return {
             "id": order_id,
             "amount": amount_paise,
-=======
-
-class MockPaymentProvider(PaymentProviderInterface):
-    def create_order(self, amount, currency="INR", receipt_id=None):
-        order_id = f"order_mock_{secrets.token_hex(8)}"
-        return {
-            "order_id": order_id,
-            "amount": amount,
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
             "currency": currency,
             "status": "created",
             "provider": "Mock",
         }
 
     def verify_payment_signature(self, order_id, payment_id, signature):
-<<<<<<< HEAD
         # Mock accepts any non-empty signature
         return bool(signature)
 
@@ -123,26 +88,12 @@ class RazorpayProvider(PaymentProviderInterface):
     def __init__(self, key_id, key_secret):
         self.key_id = key_id
         self.key_secret = key_secret
-=======
-        # Mock provider accepts any non-empty signature or validates token match
-        return True
-
-
-class RazorpayProvider(PaymentProviderInterface):
-    def __init__(self, key_id, key_secret):
-        self.key_id = key_id
-        self.key_secret = key_secret
-        # True only when real credentials were supplied via environment
-        # config, not the placeholder defaults. Callers use this to decide
-        # whether to honestly present the live flow or fall back to mock.
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         self.is_configured = bool(
             key_id
             and key_secret
             and key_id != "mock_key_id"
             and key_secret != "mock_key_secret"
         )
-<<<<<<< HEAD
         self._client = None
 
     def _get_client(self):
@@ -244,42 +195,10 @@ class PaymentService:
     @staticmethod
     def get_provider(provider_name="Mock"):
         if provider_name == "Razorpay":
-=======
-
-    def create_order(self, amount, currency="INR", receipt_id=None):
-        # Production Razorpay order payload construction
-        order_id = f"order_rzp_{secrets.token_hex(8)}"
-        return {
-            "order_id": order_id,
-            "amount": amount,
-            "currency": currency,
-            "status": "created",
-            "provider": "Razorpay",
-        }
-
-    def verify_payment_signature(self, order_id, payment_id, signature):
-        if not signature or not self.key_secret:
-            return False
-        msg = f"{order_id}|{payment_id}"
-        generated = hmac.new(
-            self.key_secret.encode(), msg.encode(), hashlib.sha256
-        ).hexdigest()
-        return hmac.compare_digest(generated, signature)
-
-
-class PaymentService:
-    @staticmethod
-    def get_provider(provider_name="Mock"):
-        if provider_name == "Razorpay":
-            # Bug fix: this previously hardcoded "mock_key"/"mock_secret",
-            # so real credentials set via RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET
-            # were silently ignored even in production. Now reads from Config.
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
             return RazorpayProvider(Config.RAZORPAY_KEY_ID, Config.RAZORPAY_KEY_SECRET)
         return MockPaymentProvider()
 
     @staticmethod
-<<<<<<< HEAD
     def get_active_provider():
         """Return Razorpay if configured, else Mock."""
         rzp = RazorpayProvider(Config.RAZORPAY_KEY_ID, Config.RAZORPAY_KEY_SECRET)
@@ -649,8 +568,6 @@ class PaymentService:
     # ------------------------------------------------------------------
 
     @staticmethod
-=======
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     def initiate_payment(
         bill_id,
         amount_to_pay,
@@ -658,11 +575,7 @@ class PaymentService:
         idempotency_key=None,
         provider_name="Mock",
     ):
-<<<<<<< HEAD
         """Initiates a payment order with idempotency check (legacy mock path)."""
-=======
-        """Initiates a payment order with idempotency check."""
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         if idempotency_key:
             existing = Payment.query.filter_by(idempotency_key=idempotency_key).first()
             if existing:
@@ -676,11 +589,7 @@ class PaymentService:
         provider = PaymentService.get_provider(provider_name)
         order = provider.create_order(amount_to_pay)
         return {
-<<<<<<< HEAD
             "order_id": order.get("id") or order.get("order_id"),
-=======
-            "order_id": order["order_id"],
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
             "amount": amount_to_pay,
             "provider": provider_name,
             "is_duplicate": False,
@@ -717,16 +626,8 @@ class PaymentService:
         ):
             raise ValueError("Payment does not match the bill owner")
 
-<<<<<<< HEAD
         bill = BillingService.apply_partial_payment(bill_id, amount_paid)
 
-=======
-        # Keep balance and payment creation in the same transaction.  The billing
-        # service only mutates the session here; this method owns the commit.
-        bill = BillingService.apply_partial_payment(bill_id, amount_paid)
-
-        # Save payment record
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         payment = Payment(
             transaction_id=transaction_id,
             idempotency_key=idempotency_key,
@@ -738,53 +639,31 @@ class PaymentService:
             provider_name=provider_name,
             provider_order_id=provider_order_id,
             provider_payment_id=provider_payment_id,
-<<<<<<< HEAD
             status="captured",
             payment_date=utcnow(),
             notes=notes,
             webhook_verified=True,
             verified_at=utcnow(),
-=======
-            status="Success",
-            payment_date=utcnow(),
-            notes=notes,
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         )
         db.session.add(payment)
         db.session.flush()
 
-<<<<<<< HEAD
         receipt_num = (
             f"RCPT-{society_id}-{payment.id}-{utcnow().strftime('%Y%m%d')}"
         )
         canonical_path = ReceiptService.get_receipt_file_path(receipt_num)
-=======
-        # Generate payment receipt record
-        receipt_num = (
-            f"RCPT-{society_id}-{payment.id}-{utcnow().strftime('%Y%m%d')}"
-        )
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         receipt = PaymentReceipt(
             receipt_number=receipt_num,
             payment_id=payment.id,
             society_id=society_id,
-<<<<<<< HEAD
             file_path=str(canonical_path),
         )
         db.session.add(receipt)
 
-=======
-            file_path=f"instance/documents/receipt_{receipt_num}.pdf",
-        )
-        db.session.add(receipt)
-
-        # Audit log
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         db.session.add(
             AuditLog(
                 society_id=society_id,
                 action="PAYMENT_RECORDED",
-<<<<<<< HEAD
                 details=(
                     f"Received payment of \u20b9{amount_paid} for Bill "
                     f"#{bill.bill_number} (Status: {bill.status})"
@@ -812,13 +691,6 @@ class PaymentService:
         except Exception as ledger_exc:
             logger.warning("Accounting ledger entry failed (non-fatal): %s", ledger_exc)
 
-=======
-                details=f"Received payment of ₹{amount_paid} for Bill #{bill.bill_number} (Status: {bill.status})",
-            )
-        )
-
-        db.session.commit()
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         notification_resident_id = resident_id or bill.resident_id
         resident = (
             db.session.get(Resident, notification_resident_id)
@@ -833,7 +705,6 @@ class PaymentService:
                 user,
                 bill.billing_month,
                 "PAYMENT_SUCCESS",
-<<<<<<< HEAD
                 f"Your society maintenance payment of ₹{amount_paid:,.2f} for "
                 f"{bill.billing_month} has been received successfully. Thank you.",
             )
@@ -855,24 +726,10 @@ class PaymentService:
         payload_hash = hashlib.sha256(payload_str.encode()).hexdigest()
 
         # Deduplication — same payload hash means already processed
-=======
-                f"Your society maintenance payment of ₹{amount_paid:,.2f} for {bill.billing_month} has been received successfully. Thank you.",
-            )
-        return payment
-
-    @staticmethod
-    def handle_webhook(provider, payload_dict, signature=None):
-        """Processes payment gateway webhooks safely with deduplication logic."""
-        payload_str = json.dumps(payload_dict, sort_keys=True)
-        payload_hash = hashlib.sha256(payload_str.encode()).hexdigest()
-
-        # Deduplication check
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         existing = WebhookLog.query.filter_by(payload_hash=payload_hash).first()
         if existing:
             return {"status": "Ignored", "message": "Duplicate webhook payload"}
 
-<<<<<<< HEAD
         # Signature verification for Razorpay webhooks
         sig_verified = False
         if provider_name.lower() == "razorpay" and body_bytes:
@@ -1572,19 +1429,3 @@ class PaymentService:
         followup.updated_at = utcnow()
         db.session.commit()
         return followup
-=======
-        log = WebhookLog(
-            provider=provider,
-            event_type=payload_dict.get("event", "payment.captured"),
-            payload_hash=payload_hash,
-            payload_json=payload_str,
-            status="Processed",
-        )
-        db.session.add(log)
-        db.session.commit()
-        return {"status": "Success", "message": "Webhook processed successfully"}
-
-
-
-
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32

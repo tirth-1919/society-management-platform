@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 from flask import (
     Blueprint,
     render_template,
@@ -13,16 +12,10 @@ from app.models import ExpenseVoucher, AccountLedger, User, Role, Resident, db
 from app.services.accounting_service import AccountingService
 from app.services.billing_service import BillingService
 from app.services.tenant_service import TenantService
-=======
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
-from app.models import ExpenseVoucher, AccountLedger
-from app.services.accounting_service import AccountingService
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 accounting_bp = Blueprint("accounting", __name__, url_prefix="/accounting")
 
 
-<<<<<<< HEAD
 @accounting_bp.before_request
 def admin_only_guard():
     user_id = session.get("user_id")
@@ -46,12 +39,6 @@ def vouchers():
     society_id = session.get("society_id") or user.society_id
     TenantService.enforce_tenant_isolation(user, society_id)
     user_id = user.id
-=======
-@accounting_bp.route("/vouchers", methods=["GET", "POST"])
-def vouchers():
-    society_id = session.get("society_id")
-    user_id = session.get("user_id")
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
     if request.method == "POST":
         category = request.form.get("category")
@@ -88,7 +75,6 @@ def vouchers():
 
 @accounting_bp.route("/ledger")
 def ledger():
-<<<<<<< HEAD
     user = db.session.get(User, session.get("user_id"))
     society_id = session.get("society_id") or user.society_id
     TenantService.enforce_tenant_isolation(user, society_id)
@@ -96,19 +82,12 @@ def ledger():
     entries = (
         AccountLedger.query.filter_by(society_id=society_id)
         .order_by(AccountLedger.entry_date.desc(), AccountLedger.id.desc())
-=======
-    society_id = session.get("society_id")
-    entries = (
-        AccountLedger.query.filter_by(society_id=society_id)
-        .order_by(AccountLedger.entry_date.desc())
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         .all()
     )
     fin_summary = AccountingService.get_financial_summary(society_id)
     return render_template(
         "accounting/ledger.html", entries=entries, summary=fin_summary
     )
-<<<<<<< HEAD
 
 
 @accounting_bp.route("/resident-ledger/<int:resident_id>")
@@ -125,5 +104,3 @@ def admin_resident_ledger(resident_id):
     )
     return render_template("accounting/resident_ledger.html", ledger_data=ledger_data, resident=resident)
 
-=======
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32

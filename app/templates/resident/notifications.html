@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% block title %}Notifications · Society SaaS{% endblock %}
-<<<<<<< HEAD
 
 {% block breadcrumbs %}
 <nav class="breadcrumb-nav" aria-label="Breadcrumb">
@@ -101,27 +100,5 @@
         </p>
     </div>
     {% endfor %}
-=======
-{% block content %}
-<div class="page-heading"><div><p class="eyebrow">Updates</p><h1>Notifications</h1><p>Billing, payment, and account updates in one place.</p></div></div>
-<div class="notification-filters" role="tablist" aria-label="Notification categories">
-  <a href="{{ url_for('resident.notifications') }}" class="{{ 'active' if not category }}">All</a>
-  {% for c in categories %}<a href="{{ url_for('resident.notifications', category=c) }}" class="{{ 'active' if category == c }}">{{ c }}</a>{% endfor %}
-</div>
-<section class="card notification-list">
-{% for item in notifications %}<article class="notification-item {{ 'unread' if not item.read_at else '' }}">
-  <div class="notification-icon"><i class="fa-solid {{ 'fa-circle-check' if item.notification_type == 'PAYMENT_SUCCESS' else ('fa-triangle-exclamation' if item.notification_type in ['OVERDUE_REMINDER', 'LATE_FEE_NOTICE'] else 'fa-bell') }}"></i></div>
-  <div class="notification-copy">
-    <div class="notification-title">{{ item.subject or item.notification_type|replace('_', ' ')|title }} <span class="badge badge-info" style="margin-left:6px;">{{ notification_category(item.notification_type) }}</span></div>
-    <p>{{ item.message }}</p>
-    <small>{{ item.created_at.strftime('%d %b %Y, %I:%M %p') }}</small>
-  </div>
-  <div class="notification-action" style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
-    {% if item.id in links %}<a class="btn btn-primary btn-small" href="{{ links[item.id][1] }}">{{ links[item.id][0] }}</a>{% endif %}
-    {% if not item.read_at %}<form method="post" action="{{ url_for('resident.mark_notification_read', notification_id=item.id) }}"><button class="btn btn-secondary btn-small">Mark read</button></form>{% endif %}
-  </div>
-</article>
-{% else %}<div class="empty-state"><i class="fa-regular fa-bell"></i><h2>You're all caught up</h2><p>{{ 'No notifications in this category yet.' if category else 'New maintenance and payment updates will appear here.' }}</p></div>{% endfor %}
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 </section>
 {% endblock %}

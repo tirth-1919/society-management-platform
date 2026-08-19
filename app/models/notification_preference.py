@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 from app.models.tenant import db
 from app.utils import utcnow
-=======
-﻿from datetime import datetime
-from app.models.tenant import db
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class NotificationPreference(db.Model):
@@ -32,15 +27,9 @@ class NotificationPreference(db.Model):
     payment_confirmations = db.Column(db.Boolean, default=True, nullable=False)
     announcements = db.Column(db.Boolean, default=True, nullable=False)
 
-<<<<<<< HEAD
     created_at = db.Column(db.DateTime, default=utcnow)
     updated_at = db.Column(
         db.DateTime, default=utcnow, onupdate=utcnow
-=======
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     )
 
     user = db.relationship(

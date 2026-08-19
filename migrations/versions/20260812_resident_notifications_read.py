@@ -4,14 +4,7 @@ from alembic import op
 import sqlalchemy as sa
 
 revision = "20260812_resident_notifications_read"
-<<<<<<< HEAD
 down_revision = "20260811_bill_resident_month_uniqueness"
-=======
-down_revision = (
-    "20260811_bill_resident_month_uniqueness",
-    "20260811_maintenance_start_and_notification_idempotency",
-)
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 branch_labels = None
 depends_on = None
 

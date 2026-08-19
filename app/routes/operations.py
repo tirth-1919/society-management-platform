@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 from flask import (
     Blueprint,
     render_template,
@@ -22,16 +21,10 @@ from app.models import (
 )
 from app.services.inventory_service import InventoryService
 from app.services.tenant_service import TenantService
-=======
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
-from app.models import Asset, InventoryItem, InventoryTransaction
-from app.services.inventory_service import InventoryService
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 operations_bp = Blueprint("operations", __name__, url_prefix="/operations")
 
 
-<<<<<<< HEAD
 @operations_bp.before_request
 def admin_only_guard():
     user_id = session.get("user_id")
@@ -55,12 +48,6 @@ def inventory():
     society_id = session.get("society_id") or user.society_id
     TenantService.enforce_tenant_isolation(user, society_id)
     user_id = user.id
-=======
-@operations_bp.route("/inventory", methods=["GET", "POST"])
-def inventory():
-    society_id = session.get("society_id")
-    user_id = session.get("user_id")
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
     if request.method == "POST":
         item_id = int(request.form.get("item_id"))
@@ -90,7 +77,6 @@ def inventory():
 
 @operations_bp.route("/assets")
 def assets():
-<<<<<<< HEAD
     user = db.session.get(User, session.get("user_id"))
     society_id = session.get("society_id") or user.society_id
     TenantService.enforce_tenant_isolation(user, society_id)
@@ -217,8 +203,3 @@ def allocate_parking():
     db.session.commit()
     return redirect(url_for("operations.parking"))
 
-=======
-    society_id = session.get("society_id")
-    assets_list = Asset.query.filter_by(society_id=society_id).all()
-    return render_template("operations/assets.html", assets=assets_list)
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32

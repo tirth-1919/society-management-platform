@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 from app.models.tenant import db
 from app.utils import utcnow
-=======
-﻿from datetime import datetime
-from app.models.tenant import db
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class BackupLog(db.Model):
@@ -16,11 +11,7 @@ class BackupLog(db.Model):
     file_size_bytes = db.Column(db.Integer, default=0)
     backup_type = db.Column(db.String(30), default="Scheduled")  # Scheduled, Manual
     status = db.Column(db.String(20), default="Completed")  # Completed, Failed
-<<<<<<< HEAD
     created_at = db.Column(db.DateTime, default=utcnow)
-=======
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class NotificationLog(db.Model):
@@ -52,7 +43,6 @@ class NotificationLog(db.Model):
     subject = db.Column(db.String(150), nullable=True)
     message = db.Column(db.Text, nullable=False)
     status = db.Column(db.String(20), default="Sent")  # Sent, Delivered, Failed
-<<<<<<< HEAD
     sent_at = db.Column(db.DateTime, default=utcnow)
     retry_count = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=utcnow)
@@ -62,13 +52,6 @@ class NotificationLog(db.Model):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-=======
-    sent_at = db.Column(db.DateTime, default=datetime.utcnow)
-    retry_count = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    read_at = db.Column(db.DateTime, nullable=True)
-
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     user = db.relationship("User", backref="notification_logs", lazy=True)
 
 

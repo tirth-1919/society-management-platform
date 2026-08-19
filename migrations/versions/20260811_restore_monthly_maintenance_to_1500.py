@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 """Restore the standard monthly maintenance rate to ₹1,500.
-=======
-﻿"""Restore the standard monthly maintenance rate to ₹1,500.
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 Revision ID: 20260811_restore_monthly_maintenance_to_1500
 Revises: 20260811_set_monthly_maintenance_to_500

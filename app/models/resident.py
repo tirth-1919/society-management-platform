@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 from app.models.tenant import db
 from app.utils import utcnow
-=======
-﻿from datetime import datetime
-from app.models.tenant import db
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class Resident(db.Model):
@@ -32,18 +27,11 @@ class Resident(db.Model):
         db.String(20), default="Active"
     )  # Active, Inactive, Moved Out
     is_primary = db.Column(db.Boolean, default=True)
-<<<<<<< HEAD
     advance_balance = db.Column(db.Float, default=0.0)
     move_in_date = db.Column(db.Date, nullable=True)
     created_at = db.Column(db.DateTime, default=utcnow)
     updated_at = db.Column(
         db.DateTime, default=utcnow, onupdate=utcnow
-=======
-    move_in_date = db.Column(db.Date, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     )
 
     emergency_contacts = db.relationship(
@@ -53,13 +41,10 @@ class Resident(db.Model):
         "Dependent", backref="resident", lazy=True, cascade="all, delete-orphan"
     )
 
-<<<<<<< HEAD
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-=======
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 class EmergencyContact(db.Model):
     __tablename__ = "emergency_contacts"

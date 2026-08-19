@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 from app.models.tenant import db
 from app.utils import utcnow
-=======
-﻿from datetime import datetime
-from app.models.tenant import db
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class Facility(db.Model):
@@ -42,19 +37,12 @@ class FacilityBooking(db.Model):
     end_time = db.Column(db.String(10), nullable=False)  # e.g. "12:00"
     total_cost = db.Column(db.Float, default=0.0)
     purpose = db.Column(db.String(150), nullable=True)
-<<<<<<< HEAD
     notes = db.Column(db.Text, nullable=True)
-=======
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
     status = db.Column(
         db.String(20), default="Confirmed", index=True
     )  # Pending, Confirmed, Cancelled, Rejected
-<<<<<<< HEAD
     created_at = db.Column(db.DateTime, default=utcnow)
-=======
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
     facility = db.relationship("Facility", backref="bookings", lazy=True)
 

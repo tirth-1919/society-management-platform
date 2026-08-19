@@ -32,13 +32,10 @@ class Config:
     PAYMENT_PROVIDER = os.environ.get("PAYMENT_PROVIDER", "Mock")
     RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "mock_key_id")
     RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "mock_key_secret")
-<<<<<<< HEAD
     # RAZORPAY_WEBHOOK_SECRET: Set this in the Razorpay Dashboard → Webhooks.
     # Used exclusively for server-side HMAC verification of incoming webhooks.
     # NEVER expose this value to HTML, JavaScript, or browser responses.
     RAZORPAY_WEBHOOK_SECRET = os.environ.get("RAZORPAY_WEBHOOK_SECRET", "")
-=======
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
     # Public URL used for QR portal access. Left blank in development so the
     # QR route falls back to the incoming request's own host (works for

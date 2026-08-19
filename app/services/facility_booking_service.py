@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 from datetime import datetime, date
 from app.models import db, Facility, FacilityBooking
 
@@ -14,14 +13,10 @@ DEFAULT_FACILITIES = [
     ("Garden", 100, 0.0, False),
     ("Children's Play Area", 40, 0.0, False),
 ]
-=======
-﻿from app.models import db, Facility, FacilityBooking
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class FacilityBookingService:
     @staticmethod
-<<<<<<< HEAD
     def ensure_default_facilities(society_id):
         """
         Seeds/ensures all 10 default facilities exist for a society without duplicates.
@@ -49,8 +44,6 @@ class FacilityBookingService:
             db.session.commit()
 
     @staticmethod
-=======
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     def book_facility(
         society_id,
         facility_id,
@@ -60,15 +53,11 @@ class FacilityBookingService:
         start_time,
         end_time,
         purpose=None,
-<<<<<<< HEAD
         notes=None,
-=======
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     ):
         """
         Books a facility slot with atomic database locking to prevent double booking collisions.
         """
-<<<<<<< HEAD
         if isinstance(booking_date, str):
             try:
                 booking_date = datetime.strptime(booking_date, "%Y-%m-%d").date()
@@ -91,8 +80,6 @@ class FacilityBookingService:
         if et <= st:
             raise ValueError("End time must be later than start time.")
 
-=======
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         facility = db.session.get(Facility, facility_id)
         if not facility or not facility.is_active:
             raise ValueError("Facility unavailable or inactive")
@@ -100,14 +87,9 @@ class FacilityBookingService:
         # Concurrency safety: check existing overlapping bookings for the same date and time range
         overlapping = (
             FacilityBooking.query.filter_by(
-<<<<<<< HEAD
                 facility_id=facility_id, booking_date=booking_date
             )
             .filter(FacilityBooking.status != "Cancelled")
-=======
-                facility_id=facility_id, booking_date=booking_date, status="Confirmed"
-            )
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
             .filter(
                 (
                     (FacilityBooking.start_time <= start_time)
@@ -141,10 +123,7 @@ class FacilityBookingService:
             end_time=end_time,
             total_cost=facility.hourly_rate,
             purpose=purpose,
-<<<<<<< HEAD
             notes=notes,
-=======
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
             status="Confirmed",
         )
         db.session.add(booking)

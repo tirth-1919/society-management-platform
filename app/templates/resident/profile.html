@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% block title %}My Profile · Society SaaS{% endblock %}
-<<<<<<< HEAD
 
 {% block breadcrumbs %}
 <nav class="breadcrumb-nav" aria-label="Breadcrumb">
@@ -187,35 +186,5 @@
             </a>
         </div>
     </section>
-=======
-{% block content %}
-<div class="page-heading"><div><p class="eyebrow">Resident account</p><h1>My Profile</h1><p>Keep your contact details current. Society and flat details are managed by the office.</p></div></div>
-<div class="profile-grid">
-  <section class="card"><h2 class="card-title">Personal information <span class="badge badge-info" style="margin-left:8px;">Editable</span></h2>
-    <div style="display:flex; align-items:center; gap:14px; margin-bottom:16px;">
-      {% if resident.profile_photo %}<img src="{{ resident.profile_photo }}" alt="Profile photo" style="width:56px; height:56px; border-radius:50%; object-fit:cover; border:2px solid var(--border-color);">
-      {% else %}<div style="width:56px; height:56px; border-radius:50%; background:var(--primary-light); color:var(--primary); display:grid; place-items:center; font:700 20px var(--font-heading);">{{ user.full_name[0]|upper if user.full_name else '?' }}</div>{% endif %}
-      <div><strong>{{ user.full_name }}</strong><br><small style="color:var(--text-secondary);">{{ resident.resident_type }} · {{ resident.flat.flat_number }}</small></div>
-    </div>
-    <form method="post" class="stack-form">
-      <label>Full name <input name="full_name" value="{{ user.full_name }}" required></label>
-      <label>Mobile number <input value="{{ user.mobile }}" disabled aria-describedby="mobile-help"><small id="mobile-help">Contact the society office to change your mobile number.</small></label>
-      <label>Email address <input name="email" type="email" value="{{ user.email or '' }}" placeholder="you@example.com"></label>
-      <button class="btn btn-primary" type="submit">Save changes</button>
-    </form>
-  </section>
-  <section class="card"><h2 class="card-title">Society information <span class="badge badge-warning" style="margin-left:8px;">Admin controlled</span></h2>
-    <dl class="details-list"><dt>Society</dt><dd>{{ user.society.name }}</dd><dt>Wing / Block</dt><dd>{{ resident.flat.building.name if resident.flat.building else '—' }} / {{ resident.flat.block.name if resident.flat.block else '—' }}</dd><dt>Flat number</dt><dd>{{ resident.flat.flat_number }}</dd><dt>Resident type</dt><dd>{{ resident.resident_type }}</dd><dt>Account status</dt><dd><span class="badge badge-success">{{ user.account_status }}</span></dd><dt>Maintenance start</dt><dd>{{ user.maintenance_start_month or '—' }}</dd><dt>Registered</dt><dd>{{ user.created_at.strftime('%d %b %Y') }}</dd><dt>Approved</dt><dd>{{ approval.approved_at.strftime('%d %b %Y') if approval and approval.approved_at else '—' }}</dd></dl>
-    <small style="color:var(--text-secondary); display:block; margin-top:10px;">These details are managed by the society office and can't be changed from your account.</small>
-  </section>
-  <section class="card"><h2 class="card-title">Security</h2>
-    <form method="post" action="{{ url_for('resident.change_password') }}" class="stack-form">
-      <label>Current password <input type="password" name="current_password" required autocomplete="current-password"></label>
-      <label>New password <input type="password" name="new_password" required minlength="8" autocomplete="new-password"></label>
-      <label>Confirm new password <input type="password" name="confirm_password" required minlength="8" autocomplete="new-password"></label>
-      <button class="btn btn-secondary" type="submit">Change password</button>
-    </form>
-  </section>
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 </div>
 {% endblock %}

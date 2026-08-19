@@ -96,7 +96,6 @@ def test_tenant_service_isolation_enforcement(app):
         with pytest.raises(HTTPException) as exc_info:
             TenantService.enforce_tenant_isolation(user1, s2.id)
         assert exc_info.value.code == 403
-<<<<<<< HEAD
 
 
 def test_cross_society_and_idor_bill_access(client, app):
@@ -332,5 +331,3 @@ def test_cross_society_facility_booking_and_cancellation_idor(client, app):
     res = client.post(f"/facilities/{booking2_id}/cancel")
     assert res.status_code in [403, 404]
 
-=======
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32

@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 from app.models.tenant import db
 from app.utils import utcnow
-=======
-﻿from datetime import datetime
-from app.models.tenant import db
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class SupportRequest(db.Model):
@@ -28,25 +23,16 @@ class SupportRequest(db.Model):
     status = db.Column(
         db.String(20), default="OPEN", index=True
     )  # OPEN, IN_PROGRESS, RESOLVED, CLOSED
-<<<<<<< HEAD
     created_at = db.Column(db.DateTime, default=utcnow)
     updated_at = db.Column(
         db.DateTime, default=utcnow, onupdate=utcnow
-=======
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     )
 
     user = db.relationship("User", backref="support_requests", lazy=True)
 
-<<<<<<< HEAD
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-=======
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 

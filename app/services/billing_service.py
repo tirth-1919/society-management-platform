@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 from app.utils import utcnow
-=======
-﻿from app.utils import utcnow
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 from datetime import datetime, date
 from sqlalchemy.exc import IntegrityError
 from app.config import Config
@@ -70,11 +66,8 @@ class BillingService:
 
     @staticmethod
     def ensure_bill_for_flat(society_id, flat_id, resident_id=None, billing_month=None):
-<<<<<<< HEAD
         if not society_id:
             raise ValueError("Society ID is required to generate bill")
-=======
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         billing_month = billing_month or utcnow().strftime("%Y-%m")
         resident = (
             Resident.query.filter_by(id=resident_id, flat_id=flat_id).first()
@@ -119,7 +112,6 @@ class BillingService:
             due_date=due_date,
             status="Pending",
         )
-<<<<<<< HEAD
         # Check if resident has advance credit to automatically apply
         if resident and hasattr(resident, "advance_balance") and resident.advance_balance and resident.advance_balance > 0:
             advance_to_use = min(bill.remaining_amount, resident.advance_balance)
@@ -128,8 +120,6 @@ class BillingService:
             bill.status = "Paid" if bill.remaining_amount == 0.0 else "Partially Paid"
             resident.advance_balance = round(resident.advance_balance - advance_to_use, 2)
 
-=======
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         try:
             db.session.add(bill)
             db.session.flush()
@@ -242,12 +232,9 @@ class BillingService:
         Generates maintenance bills for all active flats in a society for a given month (YYYY-MM).
         Ensures idempotency & prevents duplicate bill creation.
         """
-<<<<<<< HEAD
         if not society_id:
             raise ValueError("Society ID is required to generate monthly bills")
 
-=======
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
         as_of = as_of or utcnow().date()
         current_month = as_of.strftime("%Y-%m")
         if not billing_month:
@@ -318,7 +305,6 @@ class BillingService:
         return generated_bills
 
     @staticmethod
-<<<<<<< HEAD
     def generate_missing_bills_summary(society_id=None, month=None):
         """
         Wrapper used by automation engine to generate missing bills across one or all societies.
@@ -342,8 +328,6 @@ class BillingService:
         }
 
     @staticmethod
-=======
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     def apply_partial_payment(bill_id, payment_amount):
         """
         Updates bill balance transactionally after payment.
@@ -371,7 +355,6 @@ class BillingService:
 
         return bill
 
-<<<<<<< HEAD
     @staticmethod
     def allocate_multi_month_payment(resident_id, society_id, payment_amount):
         """
@@ -891,8 +874,6 @@ class BillingService:
         }
 
 
-=======
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 

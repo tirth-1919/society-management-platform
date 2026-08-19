@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 {% extends "base.html" %}
 {% block title %}Payment Successful · Society SaaS{% endblock %}
 {% block content %}
@@ -84,11 +83,3 @@
   </div>
 </section>
 {% endblock %}
-=======
-﻿{% extends "base.html" %}
-{% block title %}Payment Successful Â· Society SaaS{% endblock %}
-{% block content %}
-<section class="payment-result card success-result" role="status"><i class="fa-solid fa-circle-check" aria-hidden="true"></i><p class="eyebrow">Payment complete</p><h1>Payment Successful</h1><p>Your maintenance payment has been recorded securely.</p><dl><dt>Amount paid</dt><dd>₹{{ '{:,.2f}'.format(payment.amount_paid) }}</dd><dt>Bill number</dt><dd>{{ payment.bill.bill_number }}</dd><dt>Transaction ID</dt><dd>{{ payment.transaction_id }}</dd><dt>Date</dt><dd>{{ payment.payment_date.strftime('%d %b %Y, %I:%M %p') }}</dd><dt>Payment method</dt><dd>{{ payment.payment_method }}</dd></dl><div class="bill-detail-actions"><a class="btn btn-secondary" href="{{ url_for('payments.download_receipt', payment_id=payment.id) }}">View / Download Receipt</a><a class="btn btn-primary" href="{{ url_for('main.dashboard') }}">Back to Dashboard</a></div></section>
-{% endblock %}
-
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32

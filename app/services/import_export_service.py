@@ -1,10 +1,6 @@
 import csv
 import io
-<<<<<<< HEAD
 from app.models import db, Flat, Resident, Payment, MaintenanceBill, Complaint
-=======
-from app.models import db, Flat, Resident
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class ImportExportService:
@@ -84,7 +80,6 @@ class ImportExportService:
             )
 
         return output.getvalue()
-<<<<<<< HEAD
 
     @staticmethod
     def export_defaulters_csv(
@@ -312,5 +307,3 @@ class ImportExportService:
 
         return output.getvalue()
 
-=======
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32

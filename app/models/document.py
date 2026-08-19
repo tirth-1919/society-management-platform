@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 from app.models.tenant import db
 from app.utils import utcnow
-=======
-﻿from datetime import datetime
-from app.models.tenant import db
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class DocumentCategory(db.Model):
@@ -33,11 +28,7 @@ class Document(db.Model):
     access_level = db.Column(
         db.String(30), default="ADMIN_ONLY"
     )  # ADMIN_ONLY, RESIDENT_PUBLIC, VENDOR_RESTRICTED
-<<<<<<< HEAD
     created_at = db.Column(db.DateTime, default=utcnow)
-=======
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class DocumentAccessLog(db.Model):
@@ -48,11 +39,7 @@ class DocumentAccessLog(db.Model):
         db.Integer, db.ForeignKey("documents.id"), nullable=False, index=True
     )
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-<<<<<<< HEAD
     accessed_at = db.Column(db.DateTime, default=utcnow)
-=======
-    accessed_at = db.Column(db.DateTime, default=datetime.utcnow)
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 

@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 from app.models.tenant import db
 from app.utils import utcnow
-=======
-﻿from datetime import datetime
-from app.models.tenant import db
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class ExpenseVoucher(db.Model):
@@ -28,11 +23,7 @@ class ExpenseVoucher(db.Model):
         db.String(20), default="Approved"
     )  # Draft, Submitted, Approved, Paid, Rejected
     approved_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
-<<<<<<< HEAD
     created_at = db.Column(db.DateTime, default=utcnow)
-=======
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class AccountLedger(db.Model):
@@ -42,11 +33,7 @@ class AccountLedger(db.Model):
     society_id = db.Column(
         db.Integer, db.ForeignKey("societies.id"), nullable=False, index=True
     )
-<<<<<<< HEAD
     entry_date = db.Column(db.Date, nullable=False, default=lambda: utcnow().date())
-=======
-    entry_date = db.Column(db.Date, nullable=False, default=datetime.utcnow)
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     account_head = db.Column(
         db.String(100), nullable=False
     )  # Maintenance Collection, Water Charges, Salary Expense, Repairs
@@ -59,11 +46,7 @@ class AccountLedger(db.Model):
     )  # BILL_PAYMENT, EXPENSE_VOUCHER, VENDOR_PAYMENT
     reference_id = db.Column(db.Integer, nullable=True)
     narration = db.Column(db.Text, nullable=False)
-<<<<<<< HEAD
     created_at = db.Column(db.DateTime, default=utcnow)
-=======
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 class FinancialYear(db.Model):

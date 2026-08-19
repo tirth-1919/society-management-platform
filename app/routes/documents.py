@@ -1,9 +1,5 @@
-<<<<<<< HEAD
 import secrets
 from pathlib import Path
-=======
-﻿from pathlib import Path
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 from flask import (
     Blueprint,
     render_template,
@@ -17,10 +13,7 @@ from flask import (
 )
 from werkzeug.utils import secure_filename
 from app.models import db, Document, User, Role
-<<<<<<< HEAD
 from app.services.tenant_service import TenantService
-=======
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 documents_bp = Blueprint("documents", __name__, url_prefix="/documents")
 
@@ -43,38 +36,26 @@ def admin_only_guard():
         or user.role not in [Role.SUPER_ADMIN, Role.SOCIETY_ADMIN]
     ):
         abort(403, description="Forbidden: admin access required")
-<<<<<<< HEAD
     society_id = session.get("society_id") or user.society_id
     TenantService.enforce_tenant_isolation(user, society_id)
-=======
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
 
 @documents_bp.route("/")
 def vault():
-<<<<<<< HEAD
     user = db.session.get(User, session.get("user_id"))
     society_id = session.get("society_id") or user.society_id
     TenantService.enforce_tenant_isolation(user, society_id)
-=======
-    society_id = session.get("society_id")
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     docs = Document.query.filter_by(society_id=society_id).all()
     return render_template("documents/vault.html", documents=docs)
 
 
 @documents_bp.route("/upload", methods=["POST"])
 def upload():
-<<<<<<< HEAD
     user = db.session.get(User, session.get("user_id"))
     society_id = session.get("society_id") or user.society_id
     TenantService.enforce_tenant_isolation(user, society_id)
     user_id = user.id
 
-=======
-    society_id = session.get("society_id")
-    user_id = session.get("user_id")
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
     title = request.form.get("title")
     category = request.form.get("category", "General")
@@ -99,11 +80,7 @@ def upload():
 
     save_dir = Path("instance/documents")
     save_dir.mkdir(parents=True, exist_ok=True)
-<<<<<<< HEAD
     safe_name = f"doc_{society_id}_{secrets.token_hex(4)}_{secure_filename(title or 'file')}.{ext}"
-=======
-    safe_name = f"doc_{society_id}_{secure_filename(title or 'file')}.{ext}"
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     save_path = (save_dir / safe_name).resolve()
     # Defence in depth against path traversal even though secure_filename
     # already strips '../' and absolute-path components.
@@ -132,7 +109,6 @@ def upload():
 
 @documents_bp.route("/download/<int:doc_id>")
 def download(doc_id):
-<<<<<<< HEAD
     user = db.session.get(User, session.get("user_id"))
     doc = Document.query.get_or_404(doc_id)
     TenantService.enforce_tenant_isolation(user, doc.society_id)
@@ -140,9 +116,4 @@ def download(doc_id):
     if not p.exists():
         abort(404, description="Document file not found on server.")
     return send_file(str(p), as_attachment=True)
-=======
-    society_id = session.get("society_id")
-    doc = Document.query.filter_by(id=doc_id, society_id=society_id).first_or_404()
-    return send_file(doc.file_path, as_attachment=True)
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 

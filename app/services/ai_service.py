@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import json
 import logging
 from datetime import datetime, timedelta
@@ -206,13 +205,6 @@ class AIService:
 
     # ── 4. Natural Language Assistant (Read-Only) ─────────────────────────────
 
-=======
-﻿from app.models import MaintenanceBill, Complaint, Notice, Resident
-from app.services.accounting_service import AccountingService
-
-
-class AIService:
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
     @staticmethod
     def answer_query(user, prompt):
         """
@@ -228,32 +220,12 @@ class AIService:
             if user and user.role == "Resident":
                 resident = Resident.query.filter_by(user_id=user.id).first()
                 if resident:
-<<<<<<< HEAD
                     insights = AIService.get_resident_payment_insights(resident.id, resident.society_id)
                     return f"Hello {resident.full_name}, your flat ({resident.flat.property_key if resident.flat else ''}) has {insights['unpaid_count']} pending bill(s). Total outstanding due: ₹{insights['total_due']:,.2f}."
 
             # Admin summary query
             if society_id:
                 fin = AccountingService.get_financial_summary(society_id)
-=======
-                    bills = MaintenanceBill.query.filter(
-                        MaintenanceBill.society_id == user.society_id,
-                        MaintenanceBill.resident_id == resident.id,
-                        MaintenanceBill.status.in_(
-                            ["Pending", "Overdue", "Partially Paid"]
-                        ),
-                    ).all()
-                    summary = {
-                        "pending_bills_count": len(bills),
-                        "total_remaining_due": sum(b.remaining_amount for b in bills),
-                        "total_base_amount": sum(b.base_amount for b in bills),
-                        "total_late_fees": sum(b.late_fee for b in bills),
-                    }
-                    return f"Hello {resident.full_name}, your flat has {summary['pending_bills_count']} pending bill(s). Total remaining due: ₹{summary['total_remaining_due']:,.2f} (Base: ₹{summary['total_base_amount']:,.2f}, Late Fees: ₹{summary['total_late_fees']:,.2f})."
-
-            # Admin summary query
-            if society_id:
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
                 bills = (
                     MaintenanceBill.query.filter_by(society_id=society_id)
                     .filter(
@@ -264,11 +236,7 @@ class AIService:
                     .all()
                 )
                 total_pending = sum(b.remaining_amount for b in bills)
-<<<<<<< HEAD
                 return f"Society Overdue Summary: There are currently {len(bills)} pending/overdue maintenance bill(s) totaling ₹{total_pending:,.2f} pending collection."
-=======
-                return f"Society Overdue Summary: There are currently {len(bills)} overdue maintenance bill(s) totaling ₹{total_pending:,.2f} pending collection."
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
 
         # Complaints status query
         if any(w in p for w in ["complaint", "ticket", "issue", "repair"]):
@@ -295,11 +263,7 @@ class AIService:
             if society_id:
                 notices = (
                     Notice.query.filter_by(society_id=society_id)
-<<<<<<< HEAD
                     .order_by(Notice.created_at.desc())
-=======
-                    .order_by(Notice.publish_date.desc())
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
                     .limit(3)
                     .all()
                 )
@@ -312,7 +276,3 @@ class AIService:
 
         # Default helpful assistant response
         return "I am your AI Society Assistant. You can ask me questions like: 'How much maintenance is pending?', 'Show my complaint status', or 'Give me this month's collection summary'."
-<<<<<<< HEAD
-=======
-
->>>>>>> c4eff3ccaafe1830d27d73a4d6db5050498d5d32
