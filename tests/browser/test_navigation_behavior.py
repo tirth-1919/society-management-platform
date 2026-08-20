@@ -485,3 +485,21 @@ def test_regression_existing_functionality(page: Page, app, live_server: str):
         page.goto(f"{live_server}{admin_route}")
         page.wait_for_load_state("networkidle")
         assert page.locator("main.page-body").is_visible()
+
+
+def test_admin_entry_login_opens_admin_dashboard(page: Page, live_server: str):
+    '''Open the Admin entry point, submit credentials, and verify the Admin dashboard.'''
+    page.goto(f"{live_server}/admin/login", timeout=15000)
+    assert "/admin/login" in page.url
+    assert page.locator("#admin-login-form").is_visible()
+    assert page.locator("#admin-username").is_visible()
+    assert page.locator("#admin-password").is_visible()
+    page.fill("#admin-username", "admin")
+    page.fill("#admin-password", "Admin@123")
+    page.click("#admin-login-btn")
+    page.wait_for_load_state("networkidle")
+    assert page.url.rstrip("/").endswith("/dashboard")
+    assert page.locator(".page-body").is_visible()
+    assert page.locator("text=Admin Quick Tools").is_visible()
+    assert "/login" not in page.url
+    assert "/admin/login" not in page.url
