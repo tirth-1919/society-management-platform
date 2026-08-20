@@ -11,14 +11,43 @@ def test_admin_login_success(client):
     res = client.post(
         "/admin/login",
         data={"username": "admin", "password": "Admin@123"},
-        follow_redirects=True,
+        follow_redirects=False,
     )
-    assert res.status_code == 200
-    assert (
-        b"Logged in to Admin Portal" in res.data
-        or b"Pending Resident Registrations" in res.data
-    )
+    assert res.status_code == 302
+    assert res.headers["Location"].endswith("/dashboard")
 
+
+def test_authenticated_admin_login_redirects_to_admin_dashboard(client, app):
+    with app.app_context():
+        admin = User.query.filter_by(username="admin").first()
+        admin_id = admin.id
+    with client.session_transaction() as sess:
+        sess["user_id"] = admin_id
+        sess["role"] = Role.SUPER_ADMIN
+    res = client.get("/admin/login")
+    assert res.status_code == 302
+    assert res.headers["Location"].endswith("/dashboard")
+
+
+def test_resident_cannot_be_redirected_into_admin_dashboard(client, app):
+    with app.app_context():
+        resident = User(
+            full_name="Admin Redirect Resident",
+            mobile="9800000099",
+            role=Role.RESIDENT,
+            account_status="ACTIVE",
+            is_active=True,
+        )
+        resident.set_password("Resident@123")
+        db.session.add(resident)
+        db.session.commit()
+        resident_id = resident.id
+    with client.session_transaction() as sess:
+        sess["user_id"] = resident_id
+        sess["role"] = Role.RESIDENT
+    res = client.get("/admin/login")
+    assert res.status_code == 200
+    assert b"Admin Login" in res.data
 
 def test_admin_login_failure(client):
     res = client.post(

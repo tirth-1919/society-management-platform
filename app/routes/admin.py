@@ -11,6 +11,7 @@ from flask import (
     current_app,
     jsonify,
 )
+from sqlalchemy import func
 from app.models import (
     db,
     Society,
@@ -53,6 +54,17 @@ def admin_guard():
 
 @admin_bp.route("/login", methods=["GET", "POST"])
 def admin_login():
+    # Keep authenticated administrators in the Admin portal.  The shared
+    # dashboard is role-aware and renders the existing Admin dashboard for
+    # SUPER_ADMIN/SOCIETY_ADMIN users.
+    current_user = db.session.get(User, session.get("user_id"))
+    if (
+        current_user
+        and current_user.account_status == "ACTIVE"
+        and current_user.role in [Role.SUPER_ADMIN, Role.SOCIETY_ADMIN]
+    ):
+        return redirect(url_for("main.dashboard"))
+
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "").strip()
@@ -89,7 +101,7 @@ def admin_login():
             db.session.commit()
 
             flash(f"Logged in to Admin Portal as {user.full_name}", "success")
-            return redirect(url_for("admin.registrations"))
+            return redirect(url_for("main.dashboard"))
 
         audit = AuditLog(
             user_id=user.id if user else None,
@@ -119,11 +131,13 @@ def registrations():
             .all()
         )
 
-    # Keep the pending count server-side so it uses the same persisted status
-    # value as the registration list, rather than relying on Jinja filtering.
-    pending_count = sum(
-        1 for registration in regs if registration.status == "PENDING_APPROVAL"
-    )
+    # Use the persisted request status for the count, tolerating legacy
+    # whitespace/casing without changing the stored value or request workflow.
+    pending_status = func.upper(func.trim(RegistrationRequest.status)) == "PENDING_APPROVAL"
+    pending_query = RegistrationRequest.query.filter(pending_status)
+    if user.role != Role.SUPER_ADMIN:
+        pending_query = pending_query.filter_by(society_id=user.society_id)
+    pending_count = pending_query.count()
     return render_template(
         "admin/registrations.html",
         registrations=regs,
