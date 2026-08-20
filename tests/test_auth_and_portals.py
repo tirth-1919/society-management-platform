@@ -280,3 +280,17 @@ def test_logout_workflow(client, app):
     res_logout = client.get("/logout", follow_redirects=True)
     assert b"You have been logged out" in res_logout.data
 
+
+
+def test_admin_dashboard_navigation_is_relative_and_portal_local(client):
+    response = client.post(
+        "/admin/login",
+        data={"username": "admin", "password": "Admin@123"},
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert 'href="/dashboard"' in html
+    assert "192.168.29.220" not in html
+    assert "127.0.0.1:5001" not in html
+    assert "localhost:5001" not in html
