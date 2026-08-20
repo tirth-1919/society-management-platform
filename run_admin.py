@@ -14,8 +14,8 @@ load_dotenv()
 # Admin service is initialized with its own session from the first request.
 os.environ["SESSION_COOKIE_NAME"] = "society_admin_session"
 
-from app import create_app
-from app.models import db
+from app import create_app  # noqa: E402
+from app.models import db  # noqa: E402
 app = create_app()
 app.config["SESSION_COOKIE_NAME"] = "society_admin_session"
 

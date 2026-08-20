@@ -416,7 +416,6 @@ def test_yearly_summary_uses_database_independent_payment_date_ranges(client, ap
         db.session.commit()
         user_id = user.id
         society_id = society.id
-        resident_id = resident.id
     with client.session_transaction() as session:
         session["user_id"] = user_id
         session["society_id"] = society_id

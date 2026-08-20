@@ -25,7 +25,6 @@ def test_announcements_use_notice_created_at(client, app):
     with app.app_context():
         user_id, _resident_id, society_id = _resident_setup(app)
         society = db.session.get(Society, society_id)
-        user = db.session.get(User, user_id)
         notice = Notice(society_id=society.id, title="Water Notice", content="Water supply update", created_at=datetime(2026, 8, 20), notice_type="Water")
         db.session.add(notice)
         db.session.commit()
