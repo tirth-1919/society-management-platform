@@ -356,3 +356,75 @@ def test_admin_login_form_includes_csrf_and_opens_dashboard(client):
     )
     assert response.status_code == 302
     assert response.headers["Location"].endswith("/dashboard")
+
+
+def test_yearly_summary_uses_database_independent_payment_date_ranges(client, app):
+    from datetime import datetime, date
+    from app.models import Payment, Resident, Society, User
+    with app.app_context():
+        society = Society.query.first()
+        user = User(
+            username="yearly_resident",
+            full_name="Yearly Resident",
+            mobile="9800000088",
+            society_id=society.id,
+            role=Role.RESIDENT,
+            account_status="ACTIVE",
+            is_active=True,
+        )
+        user.set_password("Resident@123")
+        db.session.add(user)
+        db.session.flush()
+        resident = Resident(
+            society_id=society.id,
+            flat_id=1,
+            user_id=user.id,
+            full_name=user.full_name,
+            mobile=user.mobile,
+            is_primary=True,
+            occupancy_status="Active",
+        )
+        db.session.add(resident)
+        db.session.flush()
+        from app.models import Building, Block, Flat, MaintenanceBill
+        building = Building.query.filter_by(society_id=society.id).first()
+        block = Block.query.filter_by(society_id=society.id, building_id=building.id).first()
+        flat = Flat.query.filter_by(society_id=society.id, building_id=building.id, block_id=block.id).first()
+        resident.flat_id = flat.id
+        bill = MaintenanceBill(
+            society_id=society.id, building_id=building.id, block_id=block.id,
+            flat_id=flat.id, resident_id=resident.id, bill_number="Y-BILL",
+            billing_month="2026-01", base_amount=100, total_amount=100,
+            amount_paid=100, remaining_amount=0, due_date=date(2026, 1, 10), status="Paid",
+        )
+        db.session.add(bill)
+        db.session.flush()
+        payments = [
+            Payment(bill_id=bill.id, society_id=society.id, resident_id=resident.id, payment_date=datetime(2026, 1, 1), amount_paid=10, status="captured", transaction_id="Y-START"),
+            Payment(bill_id=bill.id, society_id=society.id, resident_id=resident.id, payment_date=datetime(2026, 12, 31, 23, 59), amount_paid=20, status="Success", transaction_id="Y-END"),
+            Payment(bill_id=bill.id, society_id=society.id, resident_id=resident.id, payment_date=datetime(2027, 1, 1), amount_paid=30, status="captured", transaction_id="Y-NEXT"),
+        ]
+        other = User(full_name="Other Resident", mobile="9800000089", society_id=society.id, role=Role.RESIDENT, account_status="ACTIVE", is_active=True)
+        other.set_password("Resident@123")
+        db.session.add(other)
+        db.session.flush()
+        other_resident = Resident(society_id=society.id, flat_id=flat.id, user_id=other.id, full_name=other.full_name, mobile=other.mobile, is_primary=True, occupancy_status="Active")
+        db.session.add(other_resident)
+        db.session.flush()
+        payments.append(Payment(bill_id=bill.id, society_id=society.id, resident_id=other_resident.id, payment_date=datetime(2026, 6, 1), amount_paid=40, status="captured", transaction_id="Y-OTHER"))
+        db.session.add_all(payments)
+        db.session.commit()
+        user_id = user.id
+        society_id = society.id
+        resident_id = resident.id
+    with client.session_transaction() as session:
+        session["user_id"] = user_id
+        session["society_id"] = society_id
+        session["role"] = Role.RESIDENT
+    response = client.get("/resident/payments/yearly?year=2026")
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "Y-START" in html
+    assert "Y-END" in html
+    assert "Y-NEXT" not in html
+    assert "Y-OTHER" not in html

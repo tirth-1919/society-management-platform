@@ -6,6 +6,7 @@ never an identifier supplied by the browser.
 
 import csv
 import io
+from datetime import date
 
 from flask import (
     Blueprint,
@@ -1182,11 +1183,14 @@ def yearly_summary():
         .all()
     )
 
+    year_start = date(int(year), 1, 1)
+    year_end = date(int(year) + 1, 1, 1)
     payments_this_year = (
         Payment.query.filter(
             Payment.resident_id == resident.id,
             Payment.society_id == user.society_id,
-            db.func.strftime("%Y", Payment.payment_date) == year,
+            Payment.payment_date >= year_start,
+            Payment.payment_date < year_end,
             Payment.status.in_(["captured", "Success"]),
         )
         .order_by(Payment.payment_date.asc())

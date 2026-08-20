@@ -10,7 +10,7 @@ Security principles:
 """
 
 import secrets
-
+from datetime import date
 from flask import (
     Blueprint,
     abort,
@@ -519,12 +519,25 @@ def payment_history():
     if status_filter:
         query = query.filter_by(status=status_filter)
     if month_filter and len(month_filter) == 7:
-        query = query.filter(
-            db.func.strftime("%Y-%m", Payment.payment_date) == month_filter
-        )
+        try:
+            month_start = date.fromisoformat(f"{month_filter}-01")
+            month_end = date(
+                month_start.year + (month_start.month == 12),
+                1 if month_start.month == 12 else month_start.month + 1,
+                1,
+            )
+            query = query.filter(
+                Payment.payment_date >= month_start,
+                Payment.payment_date < month_end,
+            )
+        except ValueError:
+            pass
     elif year_filter.isdigit() and len(year_filter) == 4:
+        year_start = date(int(year_filter), 1, 1)
+        year_end = date(int(year_filter) + 1, 1, 1)
         query = query.filter(
-            db.func.strftime("%Y", Payment.payment_date) == year_filter
+            Payment.payment_date >= year_start,
+            Payment.payment_date < year_end,
         )
     if method_filter:
         query = query.filter_by(payment_method=method_filter)
@@ -534,16 +547,14 @@ def payment_history():
         page=page, per_page=10, error_out=False
     )
 
-    years = [
-        v[0]
-        for v in db.session.query(
-            db.func.strftime("%Y", Payment.payment_date)
-        )
-        .filter_by(society_id=user.society_id, resident_id=resident.id)
-        .distinct()
-        .order_by(db.desc(db.func.strftime("%Y", Payment.payment_date)))
-        .all()
-    ]
+    payment_dates = db.session.query(Payment.payment_date).filter_by(
+        society_id=user.society_id,
+        resident_id=resident.id,
+    ).all()
+    years = sorted(
+        {payment_date.year for (payment_date,) in payment_dates if payment_date},
+        reverse=True,
+    )
 
     return render_template(
         "maintenance/payment_history.html",
@@ -762,13 +773,19 @@ def admin_payment_dashboard():
         or 0.0
     )
 
-    this_month = utcnow().strftime("%Y-%m")
+    this_month_start = utcnow().date().replace(day=1)
+    this_month_end = date(
+        this_month_start.year + (this_month_start.month == 12),
+        1 if this_month_start.month == 12 else this_month_start.month + 1,
+        1,
+    )
     month_collected = (
         db.session.query(func.sum(Payment.amount_paid))
         .filter(
             Payment.society_id == society_id,
             Payment.status.in_(["captured", "Success"]),
-            db.func.strftime("%Y-%m", Payment.payment_date) == this_month,
+            Payment.payment_date >= this_month_start,
+            Payment.payment_date < this_month_end,
         )
         .scalar()
         or 0.0
