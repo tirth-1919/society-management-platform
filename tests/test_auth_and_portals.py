@@ -343,3 +343,16 @@ def test_society_admin_session_reaches_admin_dashboard(client, app):
     assert dashboard.status_code == 200
     assert b"Dashboard Overview" in dashboard.data
     assert b"Admin Quick Tools" in dashboard.data
+
+
+def test_admin_login_form_includes_csrf_and_opens_dashboard(client):
+    login_page = client.get("/admin/login")
+    assert login_page.status_code == 200
+    assert b'name="csrf_token"' in login_page.data
+    response = client.post(
+        "/admin/login",
+        data={"username": "admin", "password": "Admin@123"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/dashboard")
