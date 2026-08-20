@@ -128,7 +128,20 @@ def register():
             flash("Invalid society or flat selection.", "danger")
             societies = Society.query.order_by(Society.name.asc()).all()
             return render_template("auth/register.html", societies=societies), 400
-        flat_obj = Flat.query.filter_by(id=flat_id, society_id=society_id).first()
+        selected_society = db.session.get(Society, society_id)
+        if not selected_society:
+            abort(403, description="Selected society does not exist")
+
+        # Load by ID first so an existing flat from another society is treated
+        # as a tampered hierarchy (403), while a genuinely missing flat keeps
+        # the existing user-facing 400 response below.
+        submitted_flat = db.session.get(Flat, flat_id)
+        if submitted_flat is None:
+            flat_obj = None
+        elif submitted_flat.society_id != society_id:
+            abort(403, description="Selected flat does not belong to the selected society")
+        else:
+            flat_obj = submitted_flat
         building_id_raw = request.form.get("building_id")
         block_id_raw = request.form.get("block_id")
         try:

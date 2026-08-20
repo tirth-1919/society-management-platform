@@ -37,6 +37,13 @@ from app.config import Config
 
 main_bp = Blueprint("main", __name__)
 
+REGISTRATION_FLAT_NUMBERS = {
+    "101", "102", "103", "104",
+    "201", "202", "203", "204",
+    "301", "302", "303", "304",
+    "401", "402", "403", "404",
+    "501", "502", "503", "504",
+}
 
 @main_bp.route("/")
 def index():
@@ -532,20 +539,18 @@ def api_flats():
         block = Block.query.filter_by(id=block_id, society_id=society_id).first()
         if not block:
             return jsonify({"error": "Block does not belong to the selected society", "flats": []}), 403
-        flats = (
-            Flat.query.filter_by(society_id=society_id, block_id=block_id)
-            .order_by(Flat.floor_number.asc(), Flat.flat_number.asc())
-            .all()
-        )
+        flats_query = Flat.query.filter_by(society_id=society_id, block_id=block_id)
+        if request.args.get("registration") == "1":
+            flats_query = flats_query.filter(Flat.flat_number.in_(REGISTRATION_FLAT_NUMBERS))
+        flats = flats_query.order_by(Flat.floor_number.asc(), Flat.flat_number.asc()).all()
     elif building_id:
         building = Building.query.filter_by(id=building_id, society_id=society_id).first()
         if not building:
             return jsonify({"error": "Building does not belong to the selected society", "flats": []}), 403
-        flats = (
-            Flat.query.filter_by(society_id=society_id, building_id=building_id)
-            .order_by(Flat.floor_number.asc(), Flat.flat_number.asc())
-            .all()
-        )
+        flats_query = Flat.query.filter_by(society_id=society_id, building_id=building_id)
+        if request.args.get("registration") == "1":
+            flats_query = flats_query.filter(Flat.flat_number.in_(REGISTRATION_FLAT_NUMBERS))
+        flats = flats_query.order_by(Flat.floor_number.asc(), Flat.flat_number.asc()).all()
     else:
         return jsonify({"flats": []})
     return jsonify(
