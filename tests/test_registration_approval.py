@@ -186,3 +186,60 @@ def test_duplicate_active_mobile_blocked(client, app):
     )
     assert b"Mobile number already registered and active" in res.data
 
+
+
+def _registration_data(app, mobile="9888777666"):
+    with app.app_context():
+        society = Society.query.first()
+        building = Building.query.filter_by(society_id=society.id).first()
+        flat = Flat.query.filter_by(building_id=building.id).first()
+        return {
+            "full_name": "Status Applicant", "mobile": mobile,
+            "email": "status@example.com", "society_id": society.id,
+            "building_id": building.id, "flat_id": flat.id,
+            "occupancy_type": "OWNER", "password": "Password@123",
+            "confirm_password": "Password@123",
+        }
+
+
+def test_registration_redirects_to_owned_status_page(client, app):
+    response = client.post("/register", data=_registration_data(app))
+    assert response.status_code == 302
+    assert "/registration-status/" in response.headers["Location"]
+    status = client.get(response.headers["Location"])
+    assert status.status_code == 200
+    assert b"Registration Pending Approval" in status.data
+    assert b"PENDING_APPROVAL" in status.data
+
+def test_status_page_rejects_another_unauthenticated_request(client, app):
+    client.post("/register", data=_registration_data(app, "9888777666"))
+    with app.app_context():
+        req = RegistrationRequest.query.filter_by(mobile="9888777666").first()
+        request_id = req.id
+    with client.session_transaction() as sess:
+        sess["registration_request_id"] = request_id
+    assert client.get(f"/registration-status/{request_id + 1}").status_code in (403, 404)
+
+
+def test_registration_form_contains_csrf_token(client, app):
+    app.config["WTF_CSRF_ENABLED"] = True
+    response = client.get("/register")
+    assert response.status_code == 200
+    assert b'name="csrf_token"' in response.data
+
+def test_registration_without_csrf_token_is_rejected(client, app):
+    app.config["WTF_CSRF_ENABLED"] = True
+    response = client.post("/register", data=_registration_data(app, "9888777667"))
+    assert response.status_code == 400
+
+
+def test_registration_with_valid_csrf_token_succeeds(client, app):
+    import re
+    app.config["WTF_CSRF_ENABLED"] = True
+    page = client.get("/register")
+    token = re.search(rb'name="csrf_token" value="([^"]+)"', page.data).group(1).decode()
+    data = _registration_data(app, "9888777668")
+    data["csrf_token"] = token
+    response = client.post("/register", data=data)
+    assert response.status_code == 302
+    assert "/registration-status/" in response.headers["Location"]

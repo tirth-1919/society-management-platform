@@ -246,9 +246,10 @@ def register():
 def registration_status(registration_id):
     reg = RegistrationRequest.query.get_or_404(registration_id)
     user_id = session.get("user_id")
-    if not user_id and session.get("registration_request_id") != reg.id:
-        abort(403, description="You are not authorized to view this registration request")
-    if user_id and reg.user_id != user_id:
+    session_request_id = session.get("registration_request_id")
+    owns_session_request = session_request_id == reg.id
+    owns_authenticated_request = user_id is not None and reg.user_id == user_id
+    if not (owns_session_request or owns_authenticated_request):
         abort(403, description="You are not authorized to view this registration request")
     return render_template("auth/registration_status.html", reg=reg, status=reg.status)
 

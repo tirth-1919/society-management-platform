@@ -18,6 +18,7 @@
             <div><strong>Name:</strong> {{ reg.full_name }}</div>
             <div><strong>Mobile:</strong> {{ reg.mobile }}</div>
             <div><strong>Email:</strong> {{ reg.email or '—' }}</div>
+            <div><strong>Society:</strong> {{ reg.society.name }}</div>
             <div><strong>Block:</strong> {{ reg.building.name if reg.building else (reg.block.name if reg.block else '—') }}</div>
             <div><strong>Flat Number:</strong> {{ reg.flat.flat_number if reg.flat else reg.flat_id }}</div>
             <div><strong>Occupancy Type:</strong> {{ reg.occupancy_type }}</div>
@@ -46,9 +47,11 @@
         </div>
         {% if reg and reg.rejection_reason %}
         <div style="background: #fee2e2; color: #991b1b; padding: 12px; border-radius: 8px; margin-top: 16px;">
-            <strong>Reason:</strong> {{ reg.rejection_reason }}
+            <strong>Rejection Reason:</strong> {{ reg.rejection_reason }}
         </div>
         {% endif %}
+        <a href="{{ url_for('auth.register') }}" class="btn btn-primary" style="margin-top: 20px;">Register Again</a>
+        <a href="{{ url_for('auth.login') }}" class="btn btn-secondary" style="margin-top: 20px;">Back to Login</a>
         {% elif status == 'APPROVED' %}
         <div style="font-size: 48px; color: #10b981; margin-bottom: 16px;">
 
