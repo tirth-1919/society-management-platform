@@ -294,3 +294,52 @@ def test_admin_dashboard_navigation_is_relative_and_portal_local(client):
     assert "192.168.29.220" not in html
     assert "127.0.0.1:5001" not in html
     assert "localhost:5001" not in html
+
+
+def test_admin_session_cookie_is_distinct_and_dashboard_stays_admin(client, app):
+    app.config["SESSION_COOKIE_NAME"] = app.config["ADMIN_SESSION_COOKIE_NAME"]
+    response = client.post(
+        "/admin/login",
+        data={"username": "admin", "password": "Admin@123"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/dashboard")
+    set_cookie = response.headers.get("Set-Cookie", "")
+    assert "society_user_session" not in set_cookie
+    dashboard = client.get("/dashboard", follow_redirects=False)
+    assert dashboard.status_code == 200
+    assert b"Dashboard Overview" in dashboard.data
+    assert b"Admin Quick Tools" in dashboard.data
+    assert "/login" not in dashboard.headers.get("Location", "")
+    assert "/admin/login" not in dashboard.headers.get("Location", "")
+
+
+def test_society_admin_session_reaches_admin_dashboard(client, app):
+    with app.app_context():
+        from app.models import Society
+        society = Society.query.first()
+        admin = User(
+            username="society_admin_flow",
+            full_name="Society Admin Flow",
+            mobile="9800000077",
+            society_id=society.id,
+            role=Role.SOCIETY_ADMIN,
+            account_status="ACTIVE",
+            is_active=True,
+        )
+        admin.set_password("Admin@123")
+        db.session.add(admin)
+        db.session.commit()
+
+    response = client.post(
+        "/admin/login",
+        data={"username": "society_admin_flow", "password": "Admin@123"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/dashboard")
+    dashboard = client.get("/dashboard", follow_redirects=False)
+    assert dashboard.status_code == 200
+    assert b"Dashboard Overview" in dashboard.data
+    assert b"Admin Quick Tools" in dashboard.data

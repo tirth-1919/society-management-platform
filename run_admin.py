@@ -6,16 +6,16 @@ URL: http://127.0.0.1:5001/admin/login
 
 import os
 import sys
-
 from dotenv import load_dotenv
 from flask import redirect
-from app import create_app
-from app.models import db
-
 sys.stdout.reconfigure(encoding="utf-8")
 load_dotenv()
+# Set the Admin cookie name before importing/creating the Flask app so the
+# Admin service is initialized with its own session from the first request.
 os.environ["SESSION_COOKIE_NAME"] = "society_admin_session"
 
+from app import create_app
+from app.models import db
 app = create_app()
 app.config["SESSION_COOKIE_NAME"] = "society_admin_session"
 
