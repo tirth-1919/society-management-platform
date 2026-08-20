@@ -8,7 +8,7 @@
   <div class="notification-copy">
     <div class="notification-title">{{ notice.title }} <span class="badge {{ 'badge-danger' if notice.priority == 'Urgent' else ('badge-warning' if notice.priority == 'High' else 'badge-info') }}" style="margin-left:6px;">{{ notice.priority }}</span></div>
     <p>{{ notice.content }}</p>
-    <small>{{ notice.publish_date.strftime('%d %b %Y') }} · {{ notice.notice_type }}</small>
+    <small>{{ notice.created_at.strftime('%d %b %Y') if notice.created_at else '—' }} · {{ notice.notice_type }}</small>
   </div>
 </article>
 {% else %}<div class="empty-state"><i class="fa-regular fa-bullhorn" aria-hidden="true"></i><h2>No announcements yet</h2><p>Society notices will appear here when published.</p></div>{% endfor %}

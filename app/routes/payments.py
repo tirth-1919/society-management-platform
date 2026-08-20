@@ -63,18 +63,15 @@ def _require_resident_session():
 
 
 def _require_admin_session():
-    """Return user for logged-in admin; abort 403 otherwise."""
+    '''Return an active society-scoped admin for admin payment routes.'''
     user = db.session.get(User, session.get("user_id"))
-    if not user or user.role == Role.RESIDENT:
+    if (
+        not user
+        or user.account_status != "ACTIVE"
+        or user.role not in [Role.SUPER_ADMIN, Role.SOCIETY_ADMIN]
+    ):
         abort(403)
     return user
-
-
-# ---------------------------------------------------------------------------
-# Admin / staff routes — bill listing & generation
-# ---------------------------------------------------------------------------
-
-
 @payments_bp.route("/bills")
 def bills():
     society_id = session.get("society_id")
@@ -637,7 +634,7 @@ def download_receipt(payment_id):
 
 @payments_bp.route("/receipt/verify/<receipt_number>")
 def verify_receipt(receipt_number):
-    """Public receipt QR verification — no login required."""
+    """Public receipt QR verification - no login required."""
     receipt = PaymentReceipt.query.filter_by(
         receipt_number=receipt_number
     ).first_or_404()
@@ -745,7 +742,11 @@ def webhook(provider):
 @payments_bp.route("/admin/dashboard")
 def admin_payment_dashboard():
     user = _require_admin_session()
-    society_id = session.get("society_id") or user.society_id
+    society_id = session.get("society_id")
+    if society_id is None:
+        society_id = user.society_id
+    if society_id is None:
+        abort(403, description="An Admin society is required for the Payment Center")
     TenantService.enforce_tenant_isolation(user, society_id)
 
     # Summary stats

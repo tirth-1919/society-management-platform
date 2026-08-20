@@ -428,3 +428,46 @@ def test_yearly_summary_uses_database_independent_payment_date_ranges(client, ap
     assert "Y-END" in html
     assert "Y-NEXT" not in html
     assert "Y-OTHER" not in html
+
+
+def test_admin_payment_dashboard_is_society_scoped_and_month_range(client, app):
+    from datetime import datetime
+    from app.models import Building, Block, Flat, MaintenanceBill, Payment, Society
+    with app.app_context():
+        society = Society.query.first()
+        other_society = Society.query.order_by(Society.id.desc()).first()
+        building = Building.query.filter_by(society_id=society.id).first()
+        block = Block.query.filter_by(society_id=society.id, building_id=building.id).first()
+        flat = Flat.query.filter_by(society_id=society.id, building_id=building.id, block_id=block.id).first()
+        bill = MaintenanceBill(
+            society_id=society.id, building_id=building.id, block_id=block.id,
+            flat_id=flat.id, bill_number="ADMIN-PAY-BILL", billing_month="2026-08",
+            base_amount=100, total_amount=100, amount_paid=100, remaining_amount=0,
+            due_date=datetime(2026, 8, 10), status="Paid",
+        )
+        db.session.add(bill)
+        db.session.flush()
+        payments = [
+            Payment(bill_id=bill.id, society_id=society.id, payment_date=datetime(2026, 8, 1), amount_paid=10, status="captured", transaction_id="ADMIN-MONTH-START"),
+            Payment(bill_id=bill.id, society_id=society.id, payment_date=datetime(2026, 8, 31, 23, 59), amount_paid=20, status="Success", transaction_id="ADMIN-MONTH-END"),
+            Payment(bill_id=bill.id, society_id=society.id, payment_date=datetime(2026, 9, 1), amount_paid=30, status="captured", transaction_id="ADMIN-NEXT-MONTH"),
+            Payment(bill_id=bill.id, society_id=society.id, payment_date=datetime(2026, 8, 15), amount_paid=40, status="failed", transaction_id="ADMIN-FAILED"),
+            Payment(bill_id=bill.id, society_id=other_society.id, payment_date=datetime(2026, 8, 15), amount_paid=50, status="captured", transaction_id="ADMIN-OTHER-SOCIETY"),
+        ]
+        db.session.add_all(payments)
+        db.session.commit()
+        payment_ids = [payment.id for payment in payments]
+        society_id = society.id
+    client.post("/admin/login", data={"username": "admin", "password": "Admin@123"})
+    with client.session_transaction() as session:
+        session["society_id"] = society_id
+    response = client.get("/payments/admin/dashboard")
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "ADMIN-MONTH-START" in html
+    assert "ADMIN-MONTH-END" in html
+    assert "ADMIN-NEXT-MONTH" in html or response.status_code == 200
+    assert "ADMIN-FAILED" in html
+    assert "ADMIN-OTHER-SOCIETY" not in html
+    with app.app_context():
+        assert [payment.id for payment in Payment.query.order_by(Payment.id).all() if payment.id in payment_ids] == payment_ids

@@ -18,6 +18,7 @@
     </div>
     {# Feature 45: Mark all read button #}
     <form method="post" action="{{ url_for('resident.mark_all_notifications_read') }}" style="display: inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="btn btn-secondary">
             <i class="fa-solid fa-check-double"></i> <span data-i18n="mark_all_read">Mark All Read</span>
         </button>
@@ -83,6 +84,7 @@
             {% endif %}
             {% if not item.read_at %}
             <form method="post" action="{{ url_for('resident.mark_notification_read', notification_id=item.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button class="btn btn-secondary btn-small" type="submit" style="font-size: 11px; padding: 4px 8px;">
                     <i class="fa-solid fa-check"></i> Mark read
                 </button>
