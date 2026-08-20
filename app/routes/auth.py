@@ -77,6 +77,7 @@ def login():
                         .first()
                     )
                     if reg:
+                        session["registration_request_id"] = reg.id
                         return redirect(
                             url_for("auth.registration_status", registration_id=reg.id)
                         )
@@ -84,8 +85,17 @@ def login():
                         flash("Your registration is pending approval.", "info")
                         return redirect(url_for("auth.login"))
                 else:
-                    # REJECTED, SUSPENDED, INACTIVE
+                    # REJECTED, SUSPENDED, INACTIVE: show the applicant's own
+                    # rejected registration status without creating a session.
                     db.session.commit()
+                    reg = (
+                        RegistrationRequest.query.filter_by(user_id=user.id)
+                        .order_by(RegistrationRequest.created_at.desc())
+                        .first()
+                    )
+                    if reg and reg.status == "REJECTED":
+                        session["registration_request_id"] = reg.id
+                        return redirect(url_for("auth.registration_status", registration_id=reg.id))
                     flash(
                         "Your account is not active. Please contact support.", "danger"
                     )
@@ -213,6 +223,7 @@ def register():
                 "Registration request submitted successfully. Awaiting admin approval.",
                 "info",
             )
+            session["registration_request_id"] = req.id
             return redirect(url_for("auth.registration_status", registration_id=req.id))
         except HTTPException:
             raise
@@ -234,6 +245,11 @@ def register():
 @auth_bp.route("/registration-status/<int:registration_id>")
 def registration_status(registration_id):
     reg = RegistrationRequest.query.get_or_404(registration_id)
+    user_id = session.get("user_id")
+    if not user_id and session.get("registration_request_id") != reg.id:
+        abort(403, description="You are not authorized to view this registration request")
+    if user_id and reg.user_id != user_id:
+        abort(403, description="You are not authorized to view this registration request")
     return render_template("auth/registration_status.html", reg=reg, status=reg.status)
 
 

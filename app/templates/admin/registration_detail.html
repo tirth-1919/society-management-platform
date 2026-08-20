@@ -160,6 +160,7 @@
     <div
       style="border-top: 1px solid var(--border-color); padding-top: 20px; display: flex; gap: 14px; flex-wrap: wrap;">
       <form action="{{ url_for('admin.approve_registration', id=reg.id) }}" method="POST" style="margin: 0;">
+        {% if csrf_token is defined %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
         <button type="submit" class="btn btn-primary"
           style="background: linear-gradient(135deg,#10b981,#059669); font-weight: 700; padding: 10px 24px;"
           onclick="return confirm('Approve this registration request?')">
@@ -177,6 +178,7 @@
     <div id="detail-reject-panel"
       style="display: none; margin-top: 16px; background: var(--bg-primary); padding: 16px; border-radius: 10px; border: 1px solid #ef4444;">
       <form action="{{ url_for('admin.reject_registration', id=reg.id) }}" method="POST">
+        {% if csrf_token is defined %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
         <label
           style="display: block; font-weight: 600; font-size: 13px; margin-bottom: 6px; color: var(--text-primary);">Rejection
           Reason *</label>

@@ -40,8 +40,7 @@ from app.services.payment_service import PaymentService
 from app.services.receipt_service import ReceiptService
 from app.services.tenant_service import TenantService
 from app.utils import utcnow
-
-
+from app import csrf
 payments_bp = Blueprint("payments", __name__, url_prefix="/payments")
 
 
@@ -704,6 +703,7 @@ def refund_status(refund_id):
 
 
 @payments_bp.route("/webhook/<provider>", methods=["POST"])
+@csrf.exempt
 def webhook(provider):
     """
     Razorpay webhook receiver.

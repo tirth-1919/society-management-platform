@@ -2,10 +2,12 @@ import os
 import click
 from flask import Flask, render_template
 from flask_migrate import Migrate
+from flask_wtf.csrf import CSRFProtect
 from app.config import config
 from app.models import db
 
 migrate = Migrate()
+csrf = CSRFProtect()
 
 
 def create_app(config_name=None):
@@ -18,6 +20,7 @@ def create_app(config_name=None):
     # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
+    csrf.init_app(app)
 
     # Ensure instance directories exist
     os.makedirs(app.config["INSTANCE_DIR"], exist_ok=True)

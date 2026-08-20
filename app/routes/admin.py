@@ -106,6 +106,8 @@ def admin_login():
 @admin_bp.route("/registrations")
 def registrations():
     user = db.session.get(User, session.get("user_id"))
+    if not user or user.role not in [Role.SUPER_ADMIN, Role.SOCIETY_ADMIN]:
+        abort(403, description="Only administrators can access registration requests")
     if user.role == Role.SUPER_ADMIN:
         regs = RegistrationRequest.query.order_by(
             RegistrationRequest.created_at.desc()
@@ -131,6 +133,8 @@ def registration_detail(id):
 @admin_bp.route("/registrations/<int:id>/approve", methods=["POST"])
 def approve_registration(id):
     admin_user = db.session.get(User, session.get("user_id"))
+    if not admin_user or admin_user.role not in [Role.SUPER_ADMIN, Role.SOCIETY_ADMIN]:
+        abort(403, description="Only administrators can approve registrations")
     try:
         RegistrationService.approve_request(id, admin_user)
         flash("Resident registration approved successfully.", "success")
@@ -142,6 +146,8 @@ def approve_registration(id):
 @admin_bp.route("/registrations/<int:id>/reject", methods=["POST"])
 def reject_registration(id):
     admin_user = db.session.get(User, session.get("user_id"))
+    if not admin_user or admin_user.role not in [Role.SUPER_ADMIN, Role.SOCIETY_ADMIN]:
+        abort(403, description="Only administrators can reject registrations")
     reason = request.form.get("rejection_reason", "Rejected by administrator")
     try:
         RegistrationService.reject_request(id, admin_user, reason)

@@ -142,6 +142,7 @@
               <div style="display:flex; flex-direction:column; gap:6px; margin-top:4px;">
                 <!-- APPROVE -->
                 <form action="{{ url_for('admin.approve_registration', id=reg.id) }}" method="POST" style="margin:0;">
+                  {% if csrf_token is defined %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
                   <button type="submit" id="approve-btn-{{ reg.id }}"
                     style="width:100%; padding:6px 12px; border-radius:7px; border:none; cursor:pointer;
                            background:linear-gradient(135deg,#10b981,#059669); color:#fff; font-size:12px; font-weight:700;"
@@ -160,6 +161,7 @@
                 <!-- Reject Form (hidden) -->
                 <div id="reject-panel-{{ reg.id }}" style="display:none; margin-top:4px;">
                   <form action="{{ url_for('admin.reject_registration', id=reg.id) }}" method="POST">
+                    {% if csrf_token is defined %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
                     <textarea name="rejection_reason" required placeholder="Reason for rejection..."
                       style="width:100%; padding:8px; border-radius:7px; border:1px solid #ef4444;
                              font-size:12px; resize:none; height:60px; box-sizing:border-box;
