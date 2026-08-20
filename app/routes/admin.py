@@ -118,7 +118,17 @@ def registrations():
             .order_by(RegistrationRequest.created_at.desc())
             .all()
         )
-    return render_template("admin/registrations.html", registrations=regs)
+
+    # Keep the pending count server-side so it uses the same persisted status
+    # value as the registration list, rather than relying on Jinja filtering.
+    pending_count = sum(
+        1 for registration in regs if registration.status == "PENDING_APPROVAL"
+    )
+    return render_template(
+        "admin/registrations.html",
+        registrations=regs,
+        pending_count=pending_count,
+    )
 
 
 @admin_bp.route("/registrations/<int:id>")

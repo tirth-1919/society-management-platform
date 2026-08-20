@@ -193,3 +193,24 @@ def test_registration_actions_are_post_only_and_forms_expose_csrf_hook(client, a
     html = client.get("/admin/registrations").get_data(as_text=True)
     if "csrf_token" in app.jinja_env.globals:
         assert 'name="csrf_token"' in html
+
+
+def test_pending_request_is_counted_and_has_review_actions(client, app):
+    with app.app_context():
+        society = Society.query.first()
+        admin = _admin(app, society, "999")
+        applicant = _resident_user(society, "999")
+        req = _request(society, applicant, "999")
+        admin_id, society_id, req_id = admin.id, society.id, req.id
+        applicant_name = applicant.full_name
+    _login(client, admin_id, society_id)
+    response = client.get("/admin/registrations")
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert "1 Pending" in html
+    assert f"#{req_id}" in html
+    assert applicant_name in html
+    assert "PENDING_APPROVAL" in html
+    assert f'id="approve-btn-{req_id}"' in html
+    assert f"/admin/registrations/{req_id}/reject" in html

@@ -19,7 +19,7 @@
     <div style="display:flex; gap:10px;">
       <span style="background:rgba(245,158,11,0.12); color:#d97706; padding:6px 14px; border-radius:20px; font-size:13px; font-weight:700; border:1px solid rgba(245,158,11,0.3);">
         <i class="fa-solid fa-hourglass-half"></i>
-        {{ registrations | selectattr('status','eq','PENDING_APPROVAL') | list | length }} Pending
+        {{ pending_count }} Pending
       </span>
       <a href="{{ url_for('admin.admin_login') }}" onclick="event.preventDefault(); if(confirm('Log out?')) window.location='{{ url_for('auth.logout') }}';"
         style="background:transparent; border:1px solid var(--border-color); color:var(--text-secondary); padding:6px 14px; border-radius:20px; font-size:13px; text-decoration:none; font-weight:600;">
@@ -30,7 +30,6 @@
 
   <!-- Stats Row -->
   <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:24px;">
-    {% set pending_count = registrations | selectattr('status','eq','PENDING_APPROVAL') | list | length %}
     {% set approved_count = registrations | selectattr('status','eq','APPROVED') | list | length %}
     {% set rejected_count = registrations | selectattr('status','eq','REJECTED') | list | length %}
     <div class="card" style="padding:18px; border-left:4px solid #f59e0b;">
