@@ -1,8 +1,7 @@
 import logging
 from logging.config import fileConfig
-
 from flask import current_app
-
+from sqlalchemy import Column, MetaData, PrimaryKeyConstraint, String, Table, inspect, text
 from alembic import context
 
 # this is the Alembic Config object, which provides
@@ -69,6 +68,42 @@ def run_migrations_offline():
         context.run_migrations()
 
 
+def ensure_version_table_can_store_long_revisions(connection):
+    # Widen Alembic bookkeeping before it writes a long revision ID.
+    # Alembic's default version table uses VARCHAR(32), while this repository
+    # contains revision IDs longer than 32 characters. Existing PostgreSQL
+    # installations must be altered before the first pending migration runs.
+    # SQLite does not enforce VARCHAR length, so it needs no ALTER.
+    inspector = inspect(connection)
+    if "alembic_version" not in inspector.get_table_names():
+        version_table = Table(
+            "alembic_version",
+            MetaData(),
+            Column("version_num", String(255), nullable=False),
+            PrimaryKeyConstraint("version_num", name="alembic_version_pkc"),
+        )
+        version_table.create(connection, checkfirst=True)
+        return
+    if connection.dialect.name == "sqlite":
+        return
+    version_column = next(
+        (column for column in inspector.get_columns("alembic_version")
+         if column["name"] == "version_num"),
+        None,
+    )
+    current_length = (
+        getattr(version_column.get("type"), "length", None)
+        if version_column else None
+    )
+    if version_column and current_length is not None and current_length < 255:
+        connection.execute(
+            text(
+                "ALTER TABLE alembic_version "
+                "ALTER COLUMN version_num TYPE VARCHAR(255)"
+            )
+        )
+
+
 def run_migrations_online():
     """Run migrations in 'online' mode.
 
@@ -94,6 +129,8 @@ def run_migrations_online():
     connectable = get_engine()
 
     with connectable.connect() as connection:
+        ensure_version_table_can_store_long_revisions(connection)
+        connection.commit()
         context.configure(
             connection=connection, target_metadata=get_metadata(), **conf_args
         )
