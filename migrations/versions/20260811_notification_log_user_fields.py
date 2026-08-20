@@ -15,41 +15,127 @@ branch_labels = None
 depends_on = None
 
 
+def _existing_columns():
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    return {
+        column["name"]
+        for column in inspector.get_columns("notification_logs")
+    }
+
+
+def _existing_indexes():
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    return {
+        index["name"]
+        for index in inspector.get_indexes("notification_logs")
+    }
+
+
 def upgrade():
-    """Extend the legacy table without altering or discarding its rows."""
-    with op.batch_alter_table("notification_logs", schema=None) as batch_op:
-        batch_op.add_column(
+    """Add notification fields without rebuilding the SQLite table."""
+
+    columns = _existing_columns()
+
+    if "user_id" not in columns:
+        op.add_column(
+            "notification_logs",
             sa.Column(
                 "user_id",
                 sa.Integer(),
-                sa.ForeignKey("users.id", name="fk_notification_logs_user_id_users"),
                 nullable=True,
-            )
+            ),
         )
-        batch_op.add_column(
-            sa.Column("notification_type", sa.String(length=50), nullable=True)
+
+    if "notification_type" not in columns:
+        op.add_column(
+            "notification_logs",
+            sa.Column(
+                "notification_type",
+                sa.String(length=50),
+                nullable=True,
+            ),
         )
-        batch_op.add_column(
-            sa.Column("billing_month", sa.String(length=7), nullable=True)
+
+    if "billing_month" not in columns:
+        op.add_column(
+            "notification_logs",
+            sa.Column(
+                "billing_month",
+                sa.String(length=7),
+                nullable=True,
+            ),
         )
-        batch_op.add_column(sa.Column("sent_at", sa.DateTime(), nullable=True))
-        batch_op.create_index("ix_notification_logs_user_id", ["user_id"], unique=False)
-        batch_op.create_index(
+
+    if "sent_at" not in columns:
+        op.add_column(
+            "notification_logs",
+            sa.Column(
+                "sent_at",
+                sa.DateTime(),
+                nullable=True,
+            ),
+        )
+
+    indexes = _existing_indexes()
+
+    if "ix_notification_logs_user_id" not in indexes:
+        op.create_index(
+            "ix_notification_logs_user_id",
+            "notification_logs",
+            ["user_id"],
+            unique=False,
+        )
+
+    if "ix_notification_logs_notification_type" not in indexes:
+        op.create_index(
             "ix_notification_logs_notification_type",
+            "notification_logs",
             ["notification_type"],
             unique=False,
         )
-        batch_op.create_index(
-            "ix_notification_logs_billing_month", ["billing_month"], unique=False
+
+    if "ix_notification_logs_billing_month" not in indexes:
+        op.create_index(
+            "ix_notification_logs_billing_month",
+            "notification_logs",
+            ["billing_month"],
+            unique=False,
         )
 
 
 def downgrade():
-    with op.batch_alter_table("notification_logs", schema=None) as batch_op:
-        batch_op.drop_index("ix_notification_logs_billing_month")
-        batch_op.drop_index("ix_notification_logs_notification_type")
-        batch_op.drop_index("ix_notification_logs_user_id")
-        batch_op.drop_column("sent_at")
-        batch_op.drop_column("billing_month")
-        batch_op.drop_column("notification_type")
-        batch_op.drop_column("user_id")
+    indexes = _existing_indexes()
+    columns = _existing_columns()
+
+    if "ix_notification_logs_billing_month" in indexes:
+        op.drop_index(
+            "ix_notification_logs_billing_month",
+            table_name="notification_logs",
+        )
+
+    if "ix_notification_logs_notification_type" in indexes:
+        op.drop_index(
+            "ix_notification_logs_notification_type",
+            table_name="notification_logs",
+        )
+
+    if "ix_notification_logs_user_id" in indexes:
+        op.drop_index(
+            "ix_notification_logs_user_id",
+            table_name="notification_logs",
+        )
+
+    # Only remove columns that this migration added.
+    if "sent_at" in columns:
+        op.drop_column("notification_logs", "sent_at")
+
+    if "billing_month" in columns:
+        op.drop_column("notification_logs", "billing_month")
+
+    if "notification_type" in columns:
+        op.drop_column("notification_logs", "notification_type")
+
+    if "user_id" in columns:
+        op.drop_column("notification_logs", "user_id")
