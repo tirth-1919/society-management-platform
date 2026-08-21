@@ -34,6 +34,9 @@ from app.services.payment_service import PaymentService
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
 
+def _get_current_user():
+    user_id = session.get("user_id")
+    return db.session.get(User, user_id) if user_id else None
 @admin_bp.before_request
 def admin_guard():
     if request.endpoint == "admin.admin_login":
@@ -57,7 +60,7 @@ def admin_login():
     # Keep authenticated administrators in the Admin portal.  The shared
     # dashboard is role-aware and renders the existing Admin dashboard for
     # SUPER_ADMIN/SOCIETY_ADMIN users.
-    current_user = db.session.get(User, session.get("user_id"))
+    current_user = _get_current_user()
     if (
         current_user
         and current_user.account_status == "ACTIVE"
@@ -117,7 +120,7 @@ def admin_login():
 
 @admin_bp.route("/registrations")
 def registrations():
-    user = db.session.get(User, session.get("user_id"))
+    user = _get_current_user()
     if not user or user.role not in [Role.SUPER_ADMIN, Role.SOCIETY_ADMIN]:
         abort(403, description="Only administrators can access registration requests")
     if user.role == Role.SUPER_ADMIN:
@@ -149,14 +152,14 @@ def registrations():
 def registration_detail(id):
     """Full detail view of a single registration request."""
     reg = RegistrationRequest.query.get_or_404(id)
-    user = db.session.get(User, session.get("user_id"))
+    user = _get_current_user()
     TenantService.enforce_tenant_isolation(user, reg.society_id)
     return render_template("admin/registration_detail.html", reg=reg)
 
 
 @admin_bp.route("/registrations/<int:id>/approve", methods=["POST"])
 def approve_registration(id):
-    admin_user = db.session.get(User, session.get("user_id"))
+    admin_user = _get_current_user()
     if not admin_user or admin_user.role not in [Role.SUPER_ADMIN, Role.SOCIETY_ADMIN]:
         abort(403, description="Only administrators can approve registrations")
     try:
@@ -169,7 +172,7 @@ def approve_registration(id):
 
 @admin_bp.route("/registrations/<int:id>/reject", methods=["POST"])
 def reject_registration(id):
-    admin_user = db.session.get(User, session.get("user_id"))
+    admin_user = _get_current_user()
     if not admin_user or admin_user.role not in [Role.SUPER_ADMIN, Role.SOCIETY_ADMIN]:
         abort(403, description="Only administrators can reject registrations")
     reason = request.form.get("rejection_reason", "Rejected by administrator")
@@ -183,7 +186,7 @@ def reject_registration(id):
 
 @admin_bp.route("/societies")
 def societies():
-    user = db.session.get(User, session.get("user_id"))
+    user = _get_current_user()
     if not user or user.role != Role.SUPER_ADMIN:
         abort(403, description="Only Super Admin can access societies list")
 
@@ -194,7 +197,7 @@ def societies():
 @admin_bp.route("/flats", methods=["GET", "POST"])
 def flats():
     society_id = session.get("society_id")
-    user = db.session.get(User, session.get("user_id"))
+    user = _get_current_user()
     TenantService.enforce_tenant_isolation(user, society_id)
 
     if request.method == "POST":
@@ -226,7 +229,7 @@ def flats():
 def member_details():
     # Permanent directory of approved members for the current society."
     society_id = session.get("society_id")
-    user = db.session.get(User, session.get("user_id"))
+    user = _get_current_user()
     if not society_id and user and user.society_id:
         society_id = user.society_id
         session["society_id"] = society_id
@@ -281,7 +284,7 @@ def member_details():
 @admin_bp.route("/residents")
 def residents():
     society_id = session.get("society_id")
-    user = db.session.get(User, session.get("user_id"))
+    user = _get_current_user()
     TenantService.enforce_tenant_isolation(user, society_id)
 
     search_q = request.args.get("q", "").strip()
@@ -312,7 +315,7 @@ def residents():
 def resident_profile(resident_id):
     """Full financial and personal profile for a single resident."""
     society_id = session.get("society_id")
-    user = db.session.get(User, session.get("user_id"))
+    user = _get_current_user()
     TenantService.enforce_tenant_isolation(user, society_id)
 
     resident = Resident.query.filter_by(
@@ -384,7 +387,7 @@ def resident_profile(resident_id):
 def collection_dashboard():
     """Admin collection analytics dashboard — all numbers from DB."""
     society_id = session.get("society_id")
-    user = db.session.get(User, session.get("user_id"))
+    user = _get_current_user()
     if not society_id and user and user.society_id:
         society_id = user.society_id
         session["society_id"] = society_id
@@ -441,7 +444,7 @@ def collection_dashboard():
 def payments_list():
     """All payments list with search and filter for admin."""
     society_id = session.get("society_id")
-    user = db.session.get(User, session.get("user_id"))
+    user = _get_current_user()
     if not society_id and user and user.society_id:
         society_id = user.society_id
         session["society_id"] = society_id
@@ -518,7 +521,7 @@ def flat_availability_api():
 
 @admin_bp.route("/reconciliation")
 def reconciliation():
-    user = db.session.get(User, session.get("user_id"))
+    user = _get_current_user()
     society_id = session.get("society_id") or user.society_id
     from app.services.reconciliation_service import PaymentReconciliationService
     issues = PaymentReconciliationService.get_open_issues(society_id=society_id)
@@ -532,7 +535,7 @@ def reconciliation():
 
 @admin_bp.route("/reconciliation/<int:id>/resolve", methods=["POST"])
 def resolve_reconciliation(id):
-    user = db.session.get(User, session.get("user_id"))
+    user = _get_current_user()
     notes = request.form.get("notes", "Resolved from Admin UI")
     from app.services.reconciliation_service import PaymentReconciliationService
     res = PaymentReconciliationService.resolve_issue(id, user, notes)
@@ -545,7 +548,7 @@ def resolve_reconciliation(id):
 
 @admin_bp.route("/reconciliation/<int:id>/dismiss", methods=["POST"])
 def dismiss_reconciliation(id):
-    user = db.session.get(User, session.get("user_id"))
+    user = _get_current_user()
     notes = request.form.get("notes", "Dismissed from Admin UI")
     from app.services.reconciliation_service import PaymentReconciliationService
     res = PaymentReconciliationService.dismiss_issue(id, user, notes)
@@ -561,7 +564,7 @@ def dismiss_reconciliation(id):
 
 @admin_bp.route("/automation")
 def automation_center():
-    user = db.session.get(User, session.get("user_id"))
+    user = _get_current_user()
     society_id = session.get("society_id") or user.society_id
     from app.services.automation_service import AutomationService
     history = AutomationService.get_automation_history(society_id=society_id, limit=30)
@@ -575,7 +578,7 @@ def automation_center():
 
 @admin_bp.route("/automation/run/<action_name>", methods=["POST"])
 def run_automation_action(action_name):
-    user = db.session.get(User, session.get("user_id"))
+    user = _get_current_user()
     society_id = session.get("society_id") or user.society_id
     from app.services.automation_service import AutomationService
     res = AutomationService.execute_job(
@@ -596,7 +599,7 @@ def run_automation_action(action_name):
 
 @admin_bp.route("/society-health")
 def society_health():
-    user = db.session.get(User, session.get("user_id"))
+    user = _get_current_user()
     society_id = session.get("society_id") or user.society_id
     from app.services.society_health_service import SocietyHealthService
     health = SocietyHealthService.calculate_society_health(society_id=society_id)
@@ -613,7 +616,7 @@ def society_health():
 
 @admin_bp.route("/residents/<int:id>/detail")
 def resident_detail(id):
-    user = db.session.get(User, session.get("user_id"))
+    user = _get_current_user()
     resident = db.session.get(Resident, id)
     if not resident:
         abort(404)
@@ -747,7 +750,7 @@ def resident_detail(id):
 
 @admin_bp.route("/residents/<int:id>/followup", methods=["POST"])
 def create_defaulter_followup(id):
-    user = db.session.get(User, session.get("user_id"))
+    user = _get_current_user()
     resident = db.session.get(Resident, id)
     if not resident:
         abort(404)
@@ -781,7 +784,7 @@ def create_defaulter_followup(id):
 
 @admin_bp.route("/disputes/<int:id>/resolve", methods=["POST"])
 def resolve_dispute(id):
-    user = db.session.get(User, session.get("user_id"))
+    user = _get_current_user()
     from app.models import PaymentDispute
     dispute = db.session.get(PaymentDispute, id)
     if not dispute:
@@ -807,7 +810,7 @@ def resolve_dispute(id):
 
 @admin_bp.route("/period-close")
 def period_close():
-    user = db.session.get(User, session.get("user_id"))
+    user = _get_current_user()
     society_id = session.get("society_id") or user.society_id
     TenantService.enforce_tenant_isolation(user, society_id)
 
@@ -825,7 +828,7 @@ def period_close():
 
 @admin_bp.route("/residents/<int:id>/move-out", methods=["POST"])
 def resident_move_out(id):
-    user = db.session.get(User, session.get("user_id"))
+    user = _get_current_user()
     resident = db.session.get(Resident, id)
     if not resident:
         abort(404)
