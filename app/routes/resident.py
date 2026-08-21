@@ -20,7 +20,7 @@ from flask import (
     session,
     url_for,
 )
-from sqlalchemy import or_
+from sqlalchemy import extract, or_
 
 from app.models import (
     AuditLog,
@@ -406,21 +406,16 @@ def receipts():
         )
 
     if month and len(month) == 7:
-        query = query.filter(
-            db.func.strftime(
-                "%Y-%m",
-                Payment.payment_date,
+        month_year, month_number = month.split("-", 1)
+        if month_year.isdigit() and month_number.isdigit():
+            query = query.filter(
+                extract("year", Payment.payment_date) == int(month_year),
+                extract("month", Payment.payment_date) == int(month_number),
             )
-            == month
-        )
 
     elif year.isdigit() and len(year) == 4:
         query = query.filter(
-            db.func.strftime(
-                "%Y",
-                Payment.payment_date,
-            )
-            == year
+            extract("year", Payment.payment_date) == int(year)
         )
 
     page = max(
@@ -444,10 +439,10 @@ def receipts():
         value[0]
         for value in (
             db.session.query(
-                db.func.strftime(
-                    "%Y",
+                extract(
+                    "year",
                     Payment.payment_date,
-                )
+                ).label("year")
             )
             .join(
                 PaymentReceipt,
@@ -459,12 +454,10 @@ def receipts():
             )
             .distinct()
             .order_by(
-                db.desc(
-                    db.func.strftime(
-                        "%Y",
-                        Payment.payment_date,
-                    )
-                )
+                extract(
+                    "year",
+                    Payment.payment_date,
+                ).desc()
             )
             .all()
         )
