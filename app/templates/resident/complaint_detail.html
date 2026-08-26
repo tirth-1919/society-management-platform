@@ -88,6 +88,7 @@
             </div>
             {% else %}
             <form method="post" action="{{ url_for('resident.rate_complaint', complaint_id=complaint.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
                 <div style="margin-bottom: 16px;">
                     <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 8px;" data-i18n="rating">Your Rating</label>
                     <div style="display: flex; gap: 10px;">

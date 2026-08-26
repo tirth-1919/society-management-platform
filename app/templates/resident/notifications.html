@@ -25,6 +25,19 @@
     </form>
 </div>
 
+<!-- Smart Notification Digest Banner -->
+{% set unread_list = notifications|rejectattr('read_at')|list %}
+{% if unread_list|length > 0 %}
+<div class="card" style="margin-bottom: 16px; padding: 12px 18px; border-left: 4px solid var(--primary); background: rgba(79,70,229,0.05); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <i class="fa-solid fa-bell" style="color: var(--primary); font-size: 16px;"></i>
+        <span style="font-size: 13.5px; font-weight: 600;">
+            You have <strong>{{ unread_list|length }}</strong> unread update{{ 's' if unread_list|length > 1 else '' }} requiring your attention.
+        </span>
+    </div>
+</div>
+{% endif %}
+
 {# Feature 45: Category tabs #}
 <div class="notification-filters" role="tablist" aria-label="Notification categories" style="margin-bottom: 16px;">
     <a href="{{ url_for('resident.notifications') }}"
@@ -82,14 +95,19 @@
                 {{ links[item.id][0] }}
             </a>
             {% endif %}
-            {% if not item.read_at %}
-            <form method="post" action="{{ url_for('resident.mark_notification_read', notification_id=item.id) }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button class="btn btn-secondary btn-small" type="submit" style="font-size: 11px; padding: 4px 8px;">
-                    <i class="fa-solid fa-check"></i> Mark read
+            <div style="display: flex; gap: 4px;">
+                <button type="button" class="btn btn-secondary btn-small" data-snooze-notification="{{ item.id }}" style="font-size: 11px; padding: 4px 8px;" title="Snooze for this session">
+                    <i class="fa-regular fa-clock"></i> Snooze
                 </button>
-            </form>
-            {% endif %}
+                {% if not item.read_at %}
+                <form method="post" action="{{ url_for('resident.mark_notification_read', notification_id=item.id) }}" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-secondary btn-small" type="submit" style="font-size: 11px; padding: 4px 8px;">
+                        <i class="fa-solid fa-check"></i> Mark read
+                    </button>
+                </form>
+                {% endif %}
+            </div>
         </div>
     </article>
 

@@ -88,6 +88,7 @@
             </div>
         </div>
         <form method="post" class="stack-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
             <label>
                 <span data-i18n="full_name">Full name</span>
                 <input name="full_name" value="{{ user.full_name }}" required maxlength="120">
@@ -144,6 +145,7 @@
             <i class="fa-solid fa-key" style="color: var(--warning);"></i> Security
         </h2>
         <form method="post" action="{{ url_for('resident.change_password') }}" class="stack-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
             <label>
                 <span data-i18n="current_password">Current password</span>
                 <input type="password" name="current_password" required autocomplete="current-password">

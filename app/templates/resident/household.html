@@ -37,6 +37,7 @@
         {# Add Dependent Form #}
         <div id="add-dep-form" style="display: none; background: var(--bg-primary); border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px;">
             <form method="post" action="{{ url_for('resident.add_dependent') }}" class="stack-form" style="gap: 10px;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
                 <label><span>Name <span style="color: var(--danger);">*</span></span>
                     <input type="text" name="name" required maxlength="100" placeholder="Full name"></label>
                 <label><span>Relation <span style="color: var(--danger);">*</span></span>
@@ -74,6 +75,7 @@
                 </div>
                 <form method="post" action="{{ url_for('resident.remove_dependent', dep_id=dep.id) }}"
                       onsubmit="return confirm('Remove {{ dep.name }} from your household?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
                     <button type="submit" class="btn btn-danger btn-small" aria-label="Remove {{ dep.name }}">
                         <i class="fa-solid fa-trash"></i>
                     </button>
@@ -101,6 +103,7 @@
         {# Add Emergency Contact Form #}
         <div id="add-ec-form" style="display: none; background: var(--bg-primary); border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px;">
             <form method="post" action="{{ url_for('resident.add_emergency_contact') }}" class="stack-form" style="gap: 10px;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
                 <label><span>Name <span style="color: var(--danger);">*</span></span>
                     <input type="text" name="name" required maxlength="100" placeholder="Contact name"></label>
                 <label><span>Relation <span style="color: var(--danger);">*</span></span>
@@ -137,6 +140,7 @@
                 </div>
                 <form method="post" action="{{ url_for('resident.remove_emergency_contact', ec_id=ec.id) }}"
                       onsubmit="return confirm('Remove emergency contact {{ ec.name }}?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
                     <button type="submit" class="btn btn-danger btn-small" aria-label="Remove {{ ec.name }}">
                         <i class="fa-solid fa-trash"></i>
                     </button>

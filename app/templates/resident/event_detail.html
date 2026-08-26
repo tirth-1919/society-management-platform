@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+{% block title %}{{ event.title }} | Sunrise Heights Events{% endblock %}
+
+{% block content %}
+<div class="event-detail-header-wrap">
+    <div class="event-breadcrumb">
+        <a href="{{ url_for('event_photos.resident_events') }}" class="back-link">
+            <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back to Events
+        </a>
+    </div>
+
+    <!-- Event Cover Hero -->
+    <div class="card event-hero-card">
+        {% if event.cover_media and event.cover_media.status == 'APPROVED' %}
+        <div class="event-hero-media">
+            <img src="{{ url_for('event_photos.media', photo_id=event.cover_media.id) }}" alt="Cover for {{ event.title }}" class="event-hero-cover" data-image-fallback>
+        </div>
+        {% endif %}
+
+        <div class="event-hero-body">
+            <div class="event-hero-top">
+                {% set is_past = (event.end_date and event.end_date < now) or (not event.end_date and event.start_date and event.start_date < now) %}
+                {% set is_upcoming = event.start_date and event.start_date > now %}
+                {% set is_ongoing = not is_past and not is_upcoming %}
+
+                <div class="event-hero-badges">
+                    {% if is_upcoming %}
+                    <span class="badge-status badge-status-upcoming"><i class="fa-regular fa-clock"></i> UPCOMING</span>
+                    {% elif is_ongoing %}
+                    <span class="badge-status badge-status-ongoing"><i class="fa-solid fa-bolt"></i> ONGOING</span>
+                    {% else %}
+                    <span class="badge-status badge-status-past"><i class="fa-solid fa-circle-check"></i> PAST</span>
+                    {% endif %}
+
+                    {% if is_upcoming and event.start_date %}
+                    <span class="event-countdown-chip hero-countdown" data-countdown="{{ event.start_date.isoformat() }}">
+                        <i class="fa-solid fa-stopwatch"></i> <span data-countdown-text>Starts in...</span>
+                    </span>
+                    {% endif %}
+                </div>
+
+                {% if uploads_open and uploaded_count < config.EVENT_PHOTO_MAX_PER_USER_EVENT %}
+                <a class="btn btn-primary btn-sm hero-upload-btn" href="#upload">
+                    <i class="fa-solid fa-plus"></i> Add Image / Video
+                </a>
+                {% endif %}
+            </div>
+
+            <h1 class="event-hero-title">{{ event.title }}</h1>
+
+            <div class="event-hero-meta-grid">
+                <div class="hero-meta-box">
+                    <i class="fa-regular fa-calendar-days"></i>
+                    <div>
+                        <small>Date</small>
+                        <strong>{{ event.start_date.strftime('%a, %d %b %Y') if event.start_date else 'To be announced' }}</strong>
+                    </div>
+                </div>
+
+                <div class="hero-meta-box">
+                    <i class="fa-regular fa-clock"></i>
+                    <div>
+                        <small>Time</small>
+                        <strong>{{ event.start_date.strftime('%I:%M %p') if event.start_date else 'TBA' }}</strong>
+                    </div>
+                </div>
+
+                <div class="hero-meta-box">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <div>
+                        <small>Venue</small>
+                        <strong>{{ event.location or 'Sunrise Heights Grounds' }}</strong>
+                    </div>
+                </div>
+
+                <div class="hero-meta-box">
+                    <i class="fa-regular fa-images"></i>
+                    <div>
+                        <small>Gallery</small>
+                        <strong>{{ approved_photo_count }} Photos • {{ approved_video_count }} Videos</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- About Event Section -->
+<div class="card event-about-card">
+    <div class="section-title-wrap">
+        <h2><i class="fa-solid fa-circle-info"></i> About Event</h2>
+    </div>
+    <div class="event-about-text">
+        <p>{{ event.description or 'Join your society community for this special event at Sunrise Heights. Connect with fellow residents, participate in activities, and create memorable moments together.' }}</p>
+    </div>
+</div>
+
+<!-- Community Gallery Section -->
+<section class="card gallery-section" id="gallery">
+    <div class="gallery-header-wrap">
+        <div>
+            <h2><i class="fa-regular fa-images" aria-hidden="true"></i> Community Gallery</h2>
+            <p>Approved photos and videos shared by Sunrise Heights residents.</p>
+        </div>
+
+        <div class="gallery-controls-wrap">
+            <nav class="gallery-type-filter" aria-label="Gallery media type filters">
+                <a href="?media=ALL&sort={{ gallery_sort }}#gallery" class="gallery-type-btn {{ 'active' if media_filter == 'ALL' else '' }}">All ({{ approved_photo_count + approved_video_count }})</a>
+                <a href="?media=PHOTO&sort={{ gallery_sort }}#gallery" class="gallery-type-btn {{ 'active' if media_filter == 'PHOTO' else '' }}">Photos ({{ approved_photo_count }})</a>
+                <a href="?media=VIDEO&sort={{ gallery_sort }}#gallery" class="gallery-type-btn {{ 'active' if media_filter == 'VIDEO' else '' }}">Videos ({{ approved_video_count }})</a>
+            </nav>
+
+            <div class="gallery-sort-wrap">
+                <label for="sort-select" class="sr-only">Sort by</label>
+                <select id="sort-select" class="gallery-sort-select" onchange="location.href='?media={{ media_filter }}&sort='+this.value+'#gallery'">
+                    <option value="NEWEST" {{ 'selected' if gallery_sort == 'NEWEST' else '' }}>Newest First</option>
+                    <option value="OLDEST" {{ 'selected' if gallery_sort == 'OLDEST' else '' }}>Oldest First</option>
+                    <option value="FEATURED" {{ 'selected' if gallery_sort == 'FEATURED' else '' }}>Featured First</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Media Grid -->
+    <div class="photo-grid" data-lightbox-gallery>
+        {% for photo in pagination.items %}
+        <article class="photo-card">
+            {% if photo.is_featured %}
+            <span class="featured-badge"><i class="fa-solid fa-star"></i> Featured</span>
+            {% endif %}
+
+            {% if photo.media_type == 'VIDEO' %}
+            <div class="video-tile-wrap">
+                <video loading="lazy" src="{{ url_for('event_photos.media', photo_id=photo.id) }}" controls preload="metadata" aria-label="Video from {{ event.title }}"></video>
+            </div>
+            {% else %}
+            <button class="photo-tile" type="button" data-lightbox-src="{{ url_for('event_photos.media', photo_id=photo.id) }}" data-lightbox-caption="{{ photo.caption or '' }}" aria-label="View photo: {{ photo.caption or event.title }}">
+                <img loading="lazy" src="{{ url_for('event_photos.media', photo_id=photo.id) }}" alt="{{ photo.caption or 'Photo from ' ~ event.title }}" data-image-fallback onerror="this.closest('.photo-card').classList.add('image-failed')">
+                <span class="photo-overlay"><i class="fa-solid fa-expand"></i></span>
+            </button>
+            {% endif %}
+
+            <div class="photo-card-info">
+                {% if photo.caption %}
+                <p class="photo-caption">{{ photo.caption }}</p>
+                {% endif %}
+                <button class="report-photo-trigger" type="button" data-photo-id="{{ photo.id }}">
+                    <i class="fa-regular fa-flag"></i> Report
+                </button>
+            </div>
+        </article>
+        {% else %}
+        <div class="empty-gallery-state">
+            <i class="fa-regular fa-images"></i>
+            <h3>No approved media in this view yet</h3>
+            <p>Be the first to share your favorite memories from this event!</p>
+            {% if uploads_open %}
+            <a class="btn btn-primary btn-sm" href="#upload"><i class="fa-solid fa-plus"></i> Upload Photo/Video</a>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if pagination.pages > 1 %}
+    <nav class="pagination gallery-pagination" aria-label="Gallery pages">
+        {% for p in pagination.iter_pages() %}
+        {% if p %}
+        <a class="{{ 'active' if p == pagination.page else '' }}" href="?page={{ p }}&media={{ media_filter }}&sort={{ gallery_sort }}#gallery" aria-current="{{ 'page' if p == pagination.page else 'false' }}">{{ p }}</a>
+        {% endif %}
+        {% endfor %}
+    </nav>
+    {% endif %}
+</section>
+
+<!-- Upload Media Section -->
+{% if uploads_open %}
+<section class="card upload-panel-card" id="upload">
+    <div class="upload-panel-header">
+        <div>
+            <h2><i class="fa-solid fa-cloud-arrow-up"></i> Add Image / Video</h2>
+            <p>Share your moments with Sunrise Heights residents. Submissions are reviewed by the society admin before appearing in the public gallery.</p>
+        </div>
+        <div class="upload-quota-chip">
+            <i class="fa-solid fa-circle-info"></i> {{ uploaded_count }} / {{ config.EVENT_PHOTO_MAX_PER_USER_EVENT }} uploads used
+        </div>
+    </div>
+
+    {% if uploaded_count >= config.EVENT_PHOTO_MAX_PER_USER_EVENT %}
+    <div class="action-message-box error-box">
+        <i class="fa-solid fa-triangle-exclamation"></i> You have reached the maximum limit of {{ config.EVENT_PHOTO_MAX_PER_USER_EVENT }} uploads for this event.
+    </div>
+    {% else %}
+    <form class="event-photo-upload-form" action="{{ url_for('event_photos.upload_photo', event_id=event.id) }}" method="post" enctype="multipart/form-data" data-max-files="{{ config.EVENT_PHOTO_MAX_PER_UPLOAD }}" data-max-size="{{ config.EVENT_PHOTO_MAX_SIZE_MB }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <label class="upload-dropzone-box" for="photo-files">
+            <div class="dropzone-icon-wrap">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+            </div>
+            <strong>Click to browse or drag & drop files here</strong>
+            <span>Supports JPG, PNG, WEBP, MP4, MOV, WEBM • Up to {{ config.EVENT_PHOTO_MAX_SIZE_MB }} MB each • Max {{ config.EVENT_PHOTO_MAX_PER_UPLOAD }} files per upload</span>
+            <input id="photo-files" name="photo" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm" multiple required>
+        </label>
+
+        <!-- Preview Thumbnails Area -->
+        <div class="photo-preview-grid" id="photo-preview-list" aria-live="polite"></div>
+
+        <div class="upload-form-inputs">
+            <label for="upload-caption-input">Caption (optional)
+                <input id="upload-caption-input" name="caption" maxlength="255" placeholder="Add a caption or description for your upload...">
+            </label>
+        </div>
+
+        <!-- Progress Tracker Bar -->
+        <div class="upload-progress-container" id="upload-progress-container" style="display: none;">
+            <div class="progress-info-row">
+                <span class="progress-status-text" id="progress-status-text">Uploading... 0%</span>
+                <span class="progress-hint">Please keep this page open.</span>
+            </div>
+            <div class="progress-bar-track">
+                <div class="progress-bar-fill" id="upload-progress-fill" style="width: 0%;"></div>
+            </div>
+        </div>
+
+        <!-- Action / Status Message -->
+        <div class="action-message-box" data-upload-message aria-live="polite" style="display: none;"></div>
+
+        <div class="upload-form-actions">
+            <button class="btn btn-primary upload-submit-btn" type="submit">
+                <i class="fa-solid fa-upload"></i> Upload for Admin Review
+            </button>
+        </div>
+    </form>
+    {% endif %}
+</section>
+{% else %}
+<section class="card upload-panel-card closed-panel" id="upload">
+    <div class="closed-notice">
+        <i class="fa-solid fa-lock"></i>
+        <h3>Media Uploads Closed</h3>
+        <p>Media submissions are currently closed for this event.</p>
+    </div>
+</section>
+{% endif %}
+
+<!-- Resident's Own Uploads for This Event -->
+<section class="card my-uploads-panel-card">
+    <div class="section-title-wrap">
+        <div>
+            <h2><i class="fa-solid fa-user-check"></i> My Uploads for this Event</h2>
+            <p>Track the status of your photos and videos submitted for {{ event.title }}.</p>
+        </div>
+    </div>
+
+    <div class="my-upload-cards-grid">
+        {% for photo in event_uploads %}
+        <article class="my-upload-item-card">
+            <div class="my-upload-thumb-wrap">
+                {% if photo.media_type == 'VIDEO' %}
+                <video src="{{ url_for('event_photos.media', photo_id=photo.id) }}" controls preload="metadata" aria-label="Your video"></video>
+                {% else %}
+                <img src="{{ url_for('event_photos.media', photo_id=photo.id) }}" alt="{{ photo.caption or 'Your upload' }}" data-image-fallback>
+                {% endif %}
+            </div>
+
+            <div class="my-upload-detail">
+                <div class="my-upload-top">
+                    <strong>{{ photo.caption or 'Event Moment' }}</strong>
+                    <span class="status-badge status-{{ photo.status|lower }}">
+                        {% if photo.status == 'PENDING' %}
+                        🟡 Pending Review
+                        {% elif photo.status == 'APPROVED' %}
+                        🟢 Approved
+                        {% else %}
+                        🔴 Rejected
+                        {% endif %}
+                    </span>
+                </div>
+
+                <small class="upload-date"><i class="fa-regular fa-clock"></i> Uploaded {{ photo.created_at.strftime('%d %b %Y, %I:%M %p') if photo.created_at else '' }}</small>
+
+                <p class="status-explanation">
+                    {% if photo.status == 'PENDING' %}
+                    Your submission is waiting for Admin review.
+                    {% elif photo.status == 'APPROVED' %}
+                    Approved and visible to all Sunrise Heights residents in the community gallery!
+                    {% else %}
+                    Not approved. {% if photo.rejection_reason %}<strong>Reason:</strong> {{ photo.rejection_reason }}{% endif %}
+                    {% endif %}
+                </p>
+            </div>
+        </article>
+        {% else %}
+        <div class="empty-my-uploads">
+            <i class="fa-regular fa-folder-open"></i>
+            <p>You haven't uploaded any media for this event yet.</p>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Lightbox Modal -->
+<div class="lightbox" id="photo-lightbox" role="dialog" aria-modal="true" aria-label="Photo viewer" aria-hidden="true">
+    <button class="lightbox-close" type="button" aria-label="Close photo viewer"><i class="fa-solid fa-xmark"></i></button>
+    <button class="lightbox-prev" type="button" aria-label="Previous photo"><i class="fa-solid fa-chevron-left"></i></button>
+    <div class="lightbox-image-wrap">
+        <img alt="" src="">
+        <p class="lightbox-caption-text"></p>
+    </div>
+    <button class="lightbox-next" type="button" aria-label="Next photo"><i class="fa-solid fa-chevron-right"></i></button>
+</div>
+
+<!-- Report Media Dialog -->
+<dialog id="report-photo-dialog" class="photo-dialog">
+    <form method="dialog" id="report-photo-form">
+        <div class="dialog-header">
+            <h2><i class="fa-solid fa-triangle-exclamation"></i> Report Media</h2>
+            <p>Report inappropriate content to the society administrator.</p>
+        </div>
+        <input type="hidden" name="photo_id">
+        <label>Reason for reporting
+            <select name="reason" required>
+                <option value="">Select a reason</option>
+                <option value="INAPPROPRIATE_CONTENT">Inappropriate content</option>
+                <option value="WRONG_EVENT">Wrong event</option>
+                <option value="PRIVACY_CONCERN">Privacy concern</option>
+                <option value="DUPLICATE">Duplicate</option>
+                <option value="OFFENSIVE_CONTENT">Offensive content</option>
+                <option value="OTHER">Other</option>
+            </select>
+        </label>
+        <label>Additional details (optional)
+            <textarea name="description" maxlength="1000" placeholder="Provide any details to help admin review..."></textarea>
+        </label>
+        <div class="action-message-box" data-report-message aria-live="polite" style="display: none;"></div>
+        <div class="dialog-actions">
+            <button class="btn btn-secondary" type="button" data-dialog-close>Cancel</button>
+            <button class="btn btn-danger" type="submit">Submit Report</button>
+        </div>
+    </form>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/event-photos.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Events | Admin{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Events</h1>
+        <p>Create, publish, and manage community events.</p>
+    </div><a class="btn btn-primary" href="{{ url_for('admin.create_event') }}">+ Add Event</a>
+</div>
+<div class="event-grid admin-event-grid">{% for event in events %}<article class="card event-card">
+        <div class="event-card-body"><span class="badge badge-info">{{ event.status }}</span>
+            <h2>{{ event.title }}</h2>
+            <p>{{ event.description or 'No description' }}</p>
+            <div class="event-meta">{{ event.start_date.strftime('%d %b %Y') if event.start_date else 'Date to be
+                announced' }} · {{ event.location or 'Venue to be announced' }}</div>
+            <div class="event-footer"><strong><i class="fa-regular fa-images" aria-hidden="true"></i> {{ event.approved_photos_count }} approved media</strong><a
+                    class="btn btn-secondary"
+                    href="{{ url_for('admin.event_photo_moderation_event', event_id=event.id) }}">Manage Media</a></div>
+        </div>
+    </article>{% else %}<div class="card empty-state">
+        <h2>No events yet</h2>
+        <p>Create the first event for residents.</p>
+    </div>{% endfor %}</div>
+{% endblock %}

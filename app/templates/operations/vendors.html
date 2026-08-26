@@ -24,6 +24,7 @@
         Provider</div>
     <form method="POST" action="{{ url_for('operations.create_vendor') }}"
         style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: flex-end;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
         <div class="form-group" style="margin-bottom: 0;">
             <label for="company_name" class="form-label">Company / Agency Name</label>
             <input type="text" name="company_name" id="company_name" class="form-control"

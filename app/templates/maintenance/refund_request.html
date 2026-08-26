@@ -29,6 +29,7 @@
   </dl>
 
   <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
     <div style="margin-bottom:16px;">
       <label style="font-weight:600; font-size:13px; display:block; margin-bottom:6px;">
         Refund Amount (₹) <span style="color:var(--danger);">*</span>

@@ -12,6 +12,7 @@ from flask import (
     request,
     Response,
 )
+from app.services.single_society_service import SingleSocietyService
 from app.models import (
     db,
     Society,
@@ -465,8 +466,8 @@ def api_buildings():
         society_id = int(society_id_raw)
     except (TypeError, ValueError):
         return jsonify({"error": "Invalid society_id", "buildings": []}), 400
-    if society_id <= 0 or not db.session.get(Society, society_id):
-        return jsonify({"error": "Invalid society_id", "buildings": []}), 400
+    if society_id != SingleSocietyService.get_id():
+        return jsonify({"error": "Invalid society_id", "buildings": []}), 403
     try:
         TenantService.ensure_default_blocks_and_flats(society_id)
     except Exception:
@@ -494,6 +495,13 @@ def api_blocks():
     if not building_id and not society_id:
         return jsonify({"blocks": []})
     if society_id:
+        try:
+            society_id_int = int(society_id)
+        except (TypeError, ValueError):
+            return jsonify({"error": "Invalid society_id", "blocks": []}), 400
+        if society_id_int != SingleSocietyService.get_id():
+            return jsonify({"error": "Invalid society_id", "blocks": []}), 403
+        society_id = society_id_int
         try:
             TenantService.ensure_default_blocks_and_flats(int(society_id))
         except Exception:
@@ -528,8 +536,8 @@ def api_flats():
         building_id = int(building_id_raw) if building_id_raw else None
     except (TypeError, ValueError):
         return jsonify({"error": "Invalid society, block, or building ID", "flats": []}), 400
-    if society_id is not None and (society_id <= 0 or not db.session.get(Society, society_id)):
-        return jsonify({"error": "Invalid society_id", "flats": []}), 400
+    if society_id is not None and society_id != SingleSocietyService.get_id():
+        return jsonify({"error": "Invalid society_id", "flats": []}), 403
     if building_id and society_id is None:
         building = db.session.get(Building, building_id)
         if not building:

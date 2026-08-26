@@ -11,8 +11,8 @@
 <section class="card" style="max-width:640px; margin:0 auto;">
   <!-- Success Icon -->
   <div style="text-align:center; padding:20px 0 8px;">
-    <div style="width:72px; height:72px; background:linear-gradient(135deg,#22c55e,#16a34a); border-radius:50%; display:inline-flex; align-items:center; justify-content:center; margin-bottom:16px;">
-      <i class="fa-solid fa-check" style="font-size:32px; color:#fff;"></i>
+    <div class="payment-success-circle">
+      <i class="fa-solid fa-check"></i>
     </div>
     <h2 style="color:var(--success,#22c55e); margin:0 0 6px;">Payment Confirmed</h2>
     <p style="color:var(--text-secondary); margin:0;" data-i18n="payment_success">Your maintenance payment has been verified and recorded securely.</p>
@@ -82,4 +82,55 @@
     </a>
   </div>
 </section>
+
+{# ── PHASE 1: AI Payment Status Explanation (success page) ─────────── #}
+{% if payment.id %}
+<section class="card" style="max-width:640px; margin:16px auto 0; border-left:3px solid var(--primary);">
+  <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <div style="width:32px; height:32px; border-radius:50%; background:rgba(79,70,229,0.12); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0;">
+        <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+      </div>
+      <div style="font-weight:700; font-size:13.5px; color:var(--text-primary);">
+        AI Payment Summary
+        <div style="font-size:11.5px; font-weight:400; color:var(--text-secondary);">Plain-language explanation of this payment</div>
+      </div>
+    </div>
+    <button type="button" id="explain-success-btn" class="btn btn-secondary" style="font-size:12.5px;"
+            onclick="raiExplainPayment({{ payment.id }})">
+      <i class="fa-solid fa-lightbulb" aria-hidden="true"></i> Explain
+    </button>
+  </div>
+  <div id="ai-payment-result" style="display:none; margin-top:12px; padding:12px 14px; background:var(--bg-base); border-radius:var(--radius-md); border:1px solid var(--border-color);">
+    <div id="ai-payment-loading" style="display:flex; gap:5px; align-items:center; color:var(--text-secondary); font-size:13px;">
+      <span style="width:6px;height:6px;border-radius:50%;background:var(--primary);animation:raiDot 1.2s infinite;"></span>
+      <span style="width:6px;height:6px;border-radius:50%;background:var(--primary);animation:raiDot 1.2s infinite .2s;"></span>
+      <span style="width:6px;height:6px;border-radius:50%;background:var(--primary);animation:raiDot 1.2s infinite .4s;"></span>
+      <span style="margin-left:5px;">Generating…</span>
+    </div>
+    <div id="ai-payment-text" style="display:none; font-size:13.5px; line-height:1.65; color:var(--text-primary);"></div>
+    <div id="ai-payment-error" style="display:none; font-size:13px; color:var(--danger);">
+      <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> AI temporarily unavailable.
+    </div>
+  </div>
+</section>
+<style>
+@keyframes raiDot{0%,100%{opacity:.3;transform:scale(.85);}50%{opacity:1;transform:scale(1);}}
+</style>
+<script>
+function raiExplainPayment(paymentId) {
+  const btn=document.getElementById('explain-success-btn');
+  const res=document.getElementById('ai-payment-result');
+  const ldr=document.getElementById('ai-payment-loading');
+  const txt=document.getElementById('ai-payment-text');
+  const err=document.getElementById('ai-payment-error');
+  btn.disabled=true; res.style.display='block'; ldr.style.display='flex'; txt.style.display='none'; err.style.display='none';
+  fetch('/api/v1/resident/ai/explain-payment/'+paymentId)
+    .then(r=>{if(!r.ok)throw new Error(r.status);return r.json();})
+    .then(d=>{ldr.style.display='none';if(d.error||!d.explanation){err.style.display='block';}else{txt.textContent=d.explanation;txt.style.display='block';}})
+    .catch(()=>{ldr.style.display='none';err.style.display='block';})
+    .finally(()=>{btn.disabled=false;});
+}
+</script>
+{% endif %}
 {% endblock %}

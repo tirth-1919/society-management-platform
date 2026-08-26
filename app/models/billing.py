@@ -64,6 +64,7 @@ class MaintenanceBill(db.Model):
         "BillLineItem", backref="bill", lazy=True, cascade="all, delete-orphan"
     )
     payments = db.relationship("Payment", backref="bill", lazy=True)
+    resident = db.relationship("Resident", foreign_keys=[resident_id], lazy=True)
 
     def __init__(self, **kwargs):
         for key, value in kwargs.items():

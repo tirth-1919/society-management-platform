@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Vehicle — Admin Portal{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{{ url_for('admin.vehicles') }}">Parking &amp; Vehicles</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Edit Vehicle</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:800px; margin:24px auto; padding:0 16px;">
+    <div class="page-header" style="margin-bottom:24px;">
+        <h1 style="font-size:24px; font-weight:800; color:var(--text-primary); margin:0 0 6px 0;">
+            <i class="fa-solid fa-pen-to-square" style="color:var(--primary); margin-right:8px;"></i>Admin Edit: {{ vehicle.vehicle_number }}
+        </h1>
+        <p style="color:var(--text-secondary); margin:0; font-size:14px;">
+            Update vehicle details, status, or parking allocation
+        </p>
+    </div>
+
+    <div class="card" style="padding:28px; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:12px; box-shadow:var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.05));">
+        <form method="POST" action="{{ url_for('admin.edit_vehicle', vehicle_id=vehicle.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:16px;">
+                <div>
+                    <label for="vehicle_number" style="display:block; font-size:13px; font-weight:700; color:var(--text-primary); margin-bottom:6px;">Number Plate *</label>
+                    <input type="text" id="vehicle_number" name="vehicle_number" value="{{ vehicle.vehicle_number }}" required style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-main, #fff); color:var(--text-primary); font-size:14px; font-weight:700; text-transform:uppercase;">
+                </div>
+
+                <div>
+                    <label for="vehicle_type" style="display:block; font-size:13px; font-weight:700; color:var(--text-primary); margin-bottom:6px;">Vehicle Type *</label>
+                    <select id="vehicle_type" name="vehicle_type" required style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-main, #fff); color:var(--text-primary); font-size:14px;">
+                        {% for t in ['Car', 'Bike', 'Scooter', 'Electric Car', 'Electric Bike', 'Cycle', 'Commercial Vehicle', 'Other'] %}
+                        <option value="{{ t }}" {% if vehicle.vehicle_type == t %}selected{% endif %}>{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label for="status" style="display:block; font-size:13px; font-weight:700; color:var(--text-primary); margin-bottom:6px;">Status *</label>
+                    <select id="status" name="status" required style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-main, #fff); color:var(--text-primary); font-size:14px;">
+                        {% for s in ['ACTIVE', 'INACTIVE', 'SOLD', 'TRANSFERRED'] %}
+                        <option value="{{ s }}" {% if vehicle.status == s %}selected{% endif %}>{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:16px;">
+                <div>
+                    <label for="make" style="display:block; font-size:13px; font-weight:700; color:var(--text-primary); margin-bottom:6px;">Make / Brand *</label>
+                    <input type="text" id="make" name="make" value="{{ vehicle.make or '' }}" required style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-main, #fff); color:var(--text-primary); font-size:14px;">
+                </div>
+
+                <div>
+                    <label for="model" style="display:block; font-size:13px; font-weight:700; color:var(--text-primary); margin-bottom:6px;">Model</label>
+                    <input type="text" id="model" name="model" value="{{ vehicle.model or '' }}" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-main, #fff); color:var(--text-primary); font-size:14px;">
+                </div>
+
+                <div>
+                    <label for="color" style="display:block; font-size:13px; font-weight:700; color:var(--text-primary); margin-bottom:6px;">Color</label>
+                    <input type="text" id="color" name="color" value="{{ vehicle.color or '' }}" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-main, #fff); color:var(--text-primary); font-size:14px;">
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:16px;">
+                <div>
+                    <label for="parking_slot_number" style="display:block; font-size:13px; font-weight:700; color:var(--text-primary); margin-bottom:6px;">Parking Slot</label>
+                    <input type="text" id="parking_slot_number" name="parking_slot_number" value="{{ vehicle.parking_slot_number or '' }}" placeholder="e.g. P-42" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-main, #fff); color:var(--text-primary); font-size:14px;">
+                </div>
+
+                <div>
+                    <label for="secondary_mobile" style="display:block; font-size:13px; font-weight:700; color:var(--text-primary); margin-bottom:6px;">Secondary Mobile</label>
+                    <input type="text" id="secondary_mobile" name="secondary_mobile" value="{{ vehicle.secondary_mobile or '' }}" placeholder="e.g. 9876543210" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-main, #fff); color:var(--text-primary); font-size:14px;">
+                </div>
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <label for="notes" style="display:block; font-size:13px; font-weight:700; color:var(--text-primary); margin-bottom:6px;">Notes / Remarks</label>
+                <textarea id="notes" name="notes" rows="2" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-main, #fff); color:var(--text-primary); font-size:13px;">{{ vehicle.notes or '' }}</textarea>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:12px; border-top:1px solid var(--border-color); padding-top:20px;">
+                <a href="{{ url_for('admin.vehicle_detail', vehicle_id=vehicle.id) }}" class="btn btn-secondary" style="padding:10px 20px; border-radius:8px; font-weight:600; text-decoration:none; display:inline-flex; align-items:center;">Cancel</a>
+                <button type="submit" class="btn btn-primary" style="padding:10px 24px; border-radius:8px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-check"></i> Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

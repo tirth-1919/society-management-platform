@@ -9,8 +9,10 @@ class Role:
     ADMIN = "Society Admin"
     RESIDENT = "Resident"
     SECURITY = "Security Staff"
+    GUARD = "Security Staff"
     MAINTENANCE = "Maintenance Staff"
     VENDOR = "Vendor"
+    COMMITTEE_MEMBER = "Committee Member"
 
     ALL_ROLES = [SUPER_ADMIN, SOCIETY_ADMIN, RESIDENT, SECURITY, MAINTENANCE, VENDOR]
 
@@ -24,7 +26,7 @@ class User(db.Model):
     )  # admin username, optional for residents
     society_id = db.Column(
         db.Integer, db.ForeignKey("societies.id"), nullable=True, index=True
-    )  # None for Super Admin
+    )  # Retained for tenant filtering; Admin accounts use the configured society.
     full_name = db.Column(db.String(120), nullable=False)
     mobile = db.Column(db.String(20), unique=True, nullable=False, index=True)
     email = db.Column(db.String(120), unique=True, nullable=True)

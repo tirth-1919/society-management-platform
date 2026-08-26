@@ -7,6 +7,7 @@ from app.models import db, User, Role, Society, Building, Flat
 def app():
     app = create_app("testing")
     app.config["WTF_CSRF_ENABLED"] = False
+    app.config["SINGLE_SOCIETY_ID"] = "1"
     with app.app_context():
         db.create_all()
 
@@ -65,6 +66,7 @@ def app():
             mobile="9000000000",
             email="admin@test.com",
             role=Role.SUPER_ADMIN,
+            society_id=s1.id,
             account_status="ACTIVE",
             is_active=True,
         )

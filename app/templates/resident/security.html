@@ -40,6 +40,7 @@
             <span><i class="fa-solid fa-laptop" style="color: var(--primary);"></i> Active Sessions ({{ active_sessions|length }})</span>
             {% if active_sessions|length > 1 %}
             <form method="post" action="{{ url_for('resident.logout_all_devices') }}" onsubmit="return confirm('Log out from all other devices?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
                 <button type="submit" class="btn btn-danger btn-small">
                     <i class="fa-solid fa-right-from-bracket"></i> Logout All Others
                 </button>

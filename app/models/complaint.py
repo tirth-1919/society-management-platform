@@ -42,6 +42,7 @@ class Complaint(db.Model):
     comments = db.relationship(
         "ComplaintComment", backref="complaint", lazy=True, cascade="all, delete-orphan"
     )
+    resident = db.relationship("Resident", foreign_keys=[resident_id], lazy=True)
 
 
 class ComplaintComment(db.Model):

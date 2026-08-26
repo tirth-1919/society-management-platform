@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}Add Vehicle · Resident Portal{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{{ url_for('resident.vehicles') }}">Parking &amp; Vehicles</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Add Vehicle</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom: 24px;">
+    <h1 style="font-size: 24px; font-weight: 800; color: var(--text-primary); margin: 0 0 6px 0;">
+        <i class="fa-solid fa-car-side" style="color: var(--primary); margin-right: 8px;"></i>Register New Vehicle
+    </h1>
+    <p style="color: var(--text-secondary); margin: 0; font-size: 14px;">
+        Register your vehicle for community security, gate pass clearance, and parking management.
+    </p>
+</div>
+
+<div class="card" style="max-width: 800px; margin: 0 auto; padding: 28px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.05));">
+    <form method="POST" action="{{ url_for('resident.add_vehicle') }}" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <!-- Section 1: Owner Information (Profile-derived, Read-only) -->
+        <div style="margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                <h2 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0;">
+                    <i class="fa-solid fa-user-check" style="color: var(--success, #10b981); margin-right: 6px;"></i>Owner Profile Information
+                </h2>
+                <span class="badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981; font-weight: 600; font-size: 11px; padding: 4px 8px; border-radius: 6px;">
+                    <i class="fa-solid fa-lock" style="font-size: 10px;"></i> Verified Profile
+                </span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; background: var(--bg-alt, rgba(0,0,0,0.02)); padding: 16px; border-radius: 8px;">
+                <div>
+                    <label style="display: block; font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">Full Name</label>
+                    <div style="font-size: 14px; font-weight: 700; color: var(--text-primary);">{{ user.full_name }}</div>
+                    <small style="color: var(--text-secondary); font-size: 11px;">✓ From your profile</small>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">Flat Number</label>
+                    <div style="font-size: 14px; font-weight: 700; color: var(--text-primary);">{{ resident.flat.property_key or resident.flat.flat_number }}</div>
+                    <small style="color: var(--text-secondary); font-size: 11px;">✓ From your profile</small>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">Primary Mobile</label>
+                    <div style="font-size: 14px; font-weight: 700; color: var(--text-primary);">{{ user.mobile }}</div>
+                    <small style="color: var(--text-secondary); font-size: 11px;">✓ From your profile</small>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">Email</label>
+                    <div style="font-size: 14px; font-weight: 700; color: var(--text-primary);">{{ user.email or 'N/A' }}</div>
+                    <small style="color: var(--text-secondary); font-size: 11px;">✓ From your profile</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Vehicle Information -->
+        <div style="margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color);">
+            <h2 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0 0 16px 0;">
+                <i class="fa-solid fa-car" style="color: var(--primary); margin-right: 6px;"></i>Vehicle Details
+            </h2>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label for="vehicle_type" style="display: block; font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Vehicle Type *</label>
+                    <select id="vehicle_type" name="vehicle_type" required style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-main, #fff); color: var(--text-primary); font-size: 14px;">
+                        <option value="Car" selected>Car</option>
+                        <option value="Bike">Bike</option>
+                        <option value="Scooter">Scooter</option>
+                        <option value="Electric Car">Electric Car</option>
+                        <option value="Electric Bike">Electric Bike</option>
+                        <option value="Cycle">Cycle</option>
+                        <option value="Commercial Vehicle">Commercial Vehicle</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="vehicle_number" style="display: block; font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Number Plate *</label>
+                    <input type="text" id="vehicle_number" name="vehicle_number" required placeholder="e.g. GJ01AB1234" style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-main, #fff); color: var(--text-primary); font-size: 14px; font-weight: 700; text-transform: uppercase;">
+                    <small style="color: var(--text-secondary); font-size: 11px;">Format will be automatically normalized</small>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label for="make" style="display: block; font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Make / Brand *</label>
+                    <input type="text" id="make" name="make" required placeholder="e.g. Hyundai, Honda, Tata" style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-main, #fff); color: var(--text-primary); font-size: 14px;">
+                </div>
+
+                <div>
+                    <label for="model" style="display: block; font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Model</label>
+                    <input type="text" id="model" name="model" placeholder="e.g. Creta, City, Activa" style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-main, #fff); color: var(--text-primary); font-size: 14px;">
+                </div>
+
+                <div>
+                    <label for="color" style="display: block; font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Color</label>
+                    <input type="text" id="color" name="color" placeholder="e.g. White, Silver, Black" style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-main, #fff); color: var(--text-primary); font-size: 14px;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: Parking & Contact Information -->
+        <div style="margin-bottom: 24px;">
+            <h2 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0 0 16px 0;">
+                <i class="fa-solid fa-square-parking" style="color: var(--primary); margin-right: 6px;"></i>Parking &amp; Contact Info
+            </h2>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label for="parking_slot_number" style="display: block; font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Parking Slot</label>
+                    <input type="text" id="parking_slot_number" name="parking_slot_number" placeholder="e.g. P-42 or B1-04" style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-main, #fff); color: var(--text-primary); font-size: 14px;">
+                </div>
+
+                <div>
+                    <label for="secondary_mobile" style="display: block; font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Secondary Mobile (Optional)</label>
+                    <input type="text" id="secondary_mobile" name="secondary_mobile" placeholder="e.g. 9876543210" style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-main, #fff); color: var(--text-primary); font-size: 14px;">
+                </div>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label for="notes" style="display: block; font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Notes / Remarks (Optional)</label>
+                <textarea id="notes" name="notes" rows="2" placeholder="Any special remarks or instructions..." style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-main, #fff); color: var(--text-primary); font-size: 13px;"></textarea>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+            <a href="{{ url_for('resident.vehicles') }}" class="btn btn-secondary" style="padding: 10px 20px; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center;">Cancel</a>
+            <button type="submit" class="btn btn-primary" style="padding: 10px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-check"></i> Save Vehicle
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}AI Predictive Maintenance{% endblock %}
+
+{% block content %}
+<div class="page-body">
+    {% include "admin/ai/nav_tabs.html" %}
+
+    <div class="card"
+        style="border-radius: var(--radius-md); padding: 20px; background: var(--bg-surface); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+            <div>
+                <h2 style="font-size: 18px; font-weight: 800; margin: 0;">Asset Failure Risk &amp; Preventive
+                    Maintenance</h2>
+                <span style="font-size: 13px; color: var(--text-secondary);">Real-time statistical failure probability
+                    calculated from work orders, service intervals, and asset age</span>
+            </div>
+            <form action="{{ url_for('admin.ai_run_analysis') }}" method="POST" style="margin:0;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+                <button type="submit" class="btn btn-sm btn-outline"><i class="fa-solid fa-arrows-rotate"></i>
+                    Re-analyze Assets</button>
+            </form>
+        </div>
+
+        {% if analyses %}
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            {% for item in analyses %}
+            <div style="padding: 18px; border-radius: 8px; background: var(--bg-primary); border: 1px solid var(--border-color);" class="border-severity-{{ 'critical' if item.maintenance_priority == 'CRITICAL' else ('high' if item.maintenance_priority == 'HIGH' else ('medium' if item.maintenance_priority == 'MEDIUM' else 'low')) }}">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 280px;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                            <span style="font-size: 16px; font-weight: 800;">{{ item.asset_name }}</span>
+                            <span class="badge" style="font-size: 11px; background: var(--bg-surface);">{{ item.category
+                                }}</span>
+                            <span style="font-size: 12px; color: var(--text-secondary);"><i
+                                    class="fa-solid fa-location-dot"></i> {{ item.location }}</span>
+                        </div>
+
+                        <div
+                            style="display: flex; gap: 16px; margin: 8px 0; font-size: 12px; color: var(--text-secondary); flex-wrap: wrap;">
+                            <span>Status: <strong>{{ item.status }}</strong></span>
+                            <span>Last Service: <strong>{{ item.last_service_date or 'None recorded' }}</strong></span>
+                            <span>Next Service Due: <strong>{{ item.next_service_due or 'Not scheduled'
+                                    }}</strong></span>
+                            <span>Work Orders: <strong>{{ item.total_work_orders }}</strong></span>
+                            <span>Confidence: <strong>{{ item.confidence_percent }}%</strong></span>
+                        </div>
+
+                        <!-- Failure Probability Meter -->
+                        <div style="margin: 10px 0;">
+                            <div
+                                style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; margin-bottom: 4px;">
+                                <span>Estimated Failure Probability:</span>
+                                <span class="{{ 'text-danger-color' if item.risk_score >= 75 else ('text-warning-color' if item.risk_score >= 45 else 'text-success-color') }}">{{ item.failure_probability }}% (Priority: {{ item.maintenance_priority }})</span>
+                            </div>
+                            <div style="margin-top: 4px;">
+                                <progress class="ai-progress-meter {{ 'progress-danger' if item.risk_score >= 75 else ('progress-warning' if item.risk_score >= 45 else 'progress-success') }}" value="{{ item.failure_probability }}" max="100"></progress>
+                            </div>
+                        </div>
+
+                        <!-- Reasons breakdown -->
+                        <div style="font-size: 12px; margin: 8px 0;">
+                            <strong style="color: var(--text-primary);">Identified Contributing Factors:</strong>
+                            <ul style="margin: 4px 0 0; padding-left: 18px; color: var(--text-secondary);">
+                                {% for r in item.reasons %}
+                                <li>{{ r }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+
+                        <div style="font-size: 12px; color: var(--primary); font-weight: 700; margin-top: 6px;">
+                            <i class="fa-solid fa-wrench"></i> Recommended Action: {{ item.recommended_action }}
+                        </div>
+
+                        {% if not item.has_sufficient_data %}
+                        <div
+                            style="font-size: 11px; color: var(--text-secondary); margin-top: 4px; font-style: italic;">
+                            <i class="fa-solid fa-info-circle"></i> {{ item.data_sufficiency_note }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Action Work Order Form -->
+                    <div
+                        style="min-width: 200px; background: var(--bg-surface); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <div style="font-size: 12px; font-weight: 700; margin-bottom: 8px;">Schedule Preventive Task
+                        </div>
+                        <form action="{{ url_for('admin.ai_maintenance_create_task', asset_id=item.asset_id) }}"
+                            method="POST">
+                            <input type="hidden" name="csrf_token"
+                                value="{{ csrf_token() if csrf_token is defined else '' }}">
+                            <div style="margin-bottom: 8px;">
+                                <select name="vendor_id" class="form-control" style="font-size: 12px; height: 32px;">
+                                    <option value="">Assign Vendor (Optional)</option>
+                                    {% for v in vendors %}
+                                    <option value="{{ v.id }}">{{ v.company_name }} ({{ v.category }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-primary"
+                                style="width: 100%; font-size: 11px; justify-content: center;">
+                                <i class="fa-solid fa-plus"></i> Create Work Order
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 32px 16px; color: var(--text-secondary);">
+            <p>No physical assets currently configured for predictive analysis.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

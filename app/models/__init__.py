@@ -22,11 +22,26 @@ from app.models.document import Document, DocumentCategory, DocumentAccessLog
 from app.models.system import BackupLog, NotificationLog, SystemSetting
 from app.models.support import SupportRequest
 from app.models.notification_preference import NotificationPreference
-from app.models.automation import AutomationRule, AutomationExecution, AutomationFailure
+from app.models.automation import AutomationRule, AutomationExecution, AutomationFailure, AutomationAlert
 from app.models.reconciliation import PaymentReconciliationIssue
 from app.models.occupancy import PropertyOccupancyHistory
 from app.models.ai_insight import AIInsight, AIPrediction, AIFeedback
 from app.models.recovery import DefaulterFollowUp, PaymentDispute, DefaulterStateTransition
+from app.models.event import Event, EventPhoto, EventPhotoModerationHistory, EventPhotoReport, EventPhotoStorageUsage
+from app.models.ai_operations import (
+    AIFinding,
+    AIFindingSeverity,
+    AIFindingStatus,
+    AISystemType,
+    AIAnalysisRun,
+    AIModelVersion,
+    AIInvestigation,
+    AIDocumentAnalysis,
+    AIDuplicateCandidate,
+    AIEnergyReading,
+    AIParkingEvent,
+    AIFindingFeedback,
+)
 
 __all__ = [
     "db",
@@ -83,6 +98,7 @@ __all__ = [
     "AutomationRule",
     "AutomationExecution",
     "AutomationFailure",
+    "AutomationAlert",
     "PaymentReconciliationIssue",
     "PropertyOccupancyHistory",
     "AIInsight",
@@ -91,4 +107,21 @@ __all__ = [
     "DefaulterFollowUp",
     "PaymentDispute",
     "DefaulterStateTransition",
+    "Event",
+    "EventPhoto",
+    "EventPhotoModerationHistory",
+    "EventPhotoReport",
+    "EventPhotoStorageUsage",
+    "AIFinding",
+    "AIFindingSeverity",
+    "AIFindingStatus",
+    "AISystemType",
+    "AIAnalysisRun",
+    "AIModelVersion",
+    "AIInvestigation",
+    "AIDocumentAnalysis",
+    "AIDuplicateCandidate",
+    "AIEnergyReading",
+    "AIParkingEvent",
+    "AIFindingFeedback",
 ]

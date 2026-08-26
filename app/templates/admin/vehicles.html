@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Vehicle Directory — Admin Portal{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Parking &amp; Vehicles</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:1200px; margin:24px auto; padding:0 16px;">
+
+  <!-- Header -->
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
+    <div>
+      <h1 style="font-size:24px; font-weight:800; margin:0; color:var(--text-primary);">
+        <i class="fa-solid fa-car" style="color:var(--primary); margin-right: 8px;"></i>Vehicle &amp; Parking Directory
+      </h1>
+      <p style="color:var(--text-secondary); margin:4px 0 0; font-size:14px;">
+        Manage all registered vehicles and parking assignments within the community
+      </p>
+    </div>
+  </div>
+
+  <!-- Search & Filter Card -->
+  <div class="card" style="padding:20px; margin-bottom:24px; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:12px;">
+    <form method="GET" action="{{ url_for('admin.vehicles') }}" style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;">
+      <div style="flex:2; min-width:220px;">
+        <label style="font-size:11px; text-transform:uppercase; color:var(--text-secondary); font-weight:700; display:block; margin-bottom:4px;">Search Plate / Owner / Flat</label>
+        <input type="text" name="q" value="{{ search_q or '' }}" placeholder="Search plate (e.g. GJ01AB1234), owner name, flat..." style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-main, #fff); color:var(--text-primary); font-size:13px;">
+      </div>
+
+      <div style="flex:1; min-width:140px;">
+        <label style="font-size:11px; text-transform:uppercase; color:var(--text-secondary); font-weight:700; display:block; margin-bottom:4px;">Status</label>
+        <select name="status" style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-main, #fff); color:var(--text-primary); font-size:13px;">
+          <option value="">All Statuses</option>
+          <option value="ACTIVE" {% if status_filter == 'ACTIVE' %}selected{% endif %}>Active</option>
+          <option value="INACTIVE" {% if status_filter == 'INACTIVE' %}selected{% endif %}>Inactive</option>
+          <option value="SOLD" {% if status_filter == 'SOLD' %}selected{% endif %}>Sold</option>
+          <option value="TRANSFERRED" {% if status_filter == 'TRANSFERRED' %}selected{% endif %}>Transferred</option>
+        </select>
+      </div>
+
+      <div style="flex:1; min-width:140px;">
+        <label style="font-size:11px; text-transform:uppercase; color:var(--text-secondary); font-weight:700; display:block; margin-bottom:4px;">Vehicle Type</label>
+        <select name="type" style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-main, #fff); color:var(--text-primary); font-size:13px;">
+          <option value="">All Types</option>
+          <option value="Car" {% if type_filter == 'Car' %}selected{% endif %}>Car</option>
+          <option value="Bike" {% if type_filter == 'Bike' %}selected{% endif %}>Bike</option>
+          <option value="Scooter" {% if type_filter == 'Scooter' %}selected{% endif %}>Scooter</option>
+          <option value="Electric Car" {% if type_filter == 'Electric Car' %}selected{% endif %}>Electric Car</option>
+          <option value="Electric Bike" {% if type_filter == 'Electric Bike' %}selected{% endif %}>Electric Bike</option>
+          <option value="Cycle" {% if type_filter == 'Cycle' %}selected{% endif %}>Cycle</option>
+          <option value="Other" {% if type_filter == 'Other' %}selected{% endif %}>Other</option>
+        </select>
+      </div>
+
+      <div style="flex:1; min-width:140px;">
+        <label style="font-size:11px; text-transform:uppercase; color:var(--text-secondary); font-weight:700; display:block; margin-bottom:4px;">Parking Slot</label>
+        <select name="parking" style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-main, #fff); color:var(--text-primary); font-size:13px;">
+          <option value="">All</option>
+          <option value="assigned" {% if parking_filter == 'assigned' %}selected{% endif %}>Assigned</option>
+          <option value="unassigned" {% if parking_filter == 'unassigned' %}selected{% endif %}>Unassigned</option>
+        </select>
+      </div>
+
+      <div style="display:flex; gap:8px;">
+        <button type="submit" class="btn btn-primary" style="padding:9px 16px; border-radius:8px; font-weight:600; font-size:13px; cursor:pointer;">
+          <i class="fa-solid fa-magnifying-glass"></i> Filter
+        </button>
+        {% if search_q or status_filter or type_filter or parking_filter %}
+        <a href="{{ url_for('admin.vehicles') }}" class="btn btn-secondary" style="padding:9px 14px; border-radius:8px; font-weight:600; font-size:13px; text-decoration:none; display:inline-flex; align-items:center;">
+          Reset
+        </a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  <!-- Vehicles Table -->
+  <div class="card" style="padding:0; overflow:hidden; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:12px;">
+    <div style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; font-size:13px;">
+        <thead>
+          <tr style="background:var(--bg-primary, rgba(0,0,0,0.03)); border-bottom:1px solid var(--border-color);">
+            <th style="padding:12px 16px; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-secondary);">Vehicle Plate</th>
+            <th style="padding:12px 16px; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-secondary);">Type &amp; Model</th>
+            <th style="padding:12px 16px; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-secondary);">Owner / Contact</th>
+            <th style="padding:12px 16px; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-secondary);">Flat Number</th>
+            <th style="padding:12px 16px; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-secondary);">Parking Slot</th>
+            <th style="padding:12px 16px; text-align:left; font-size:11px; text-transform:uppercase; color:var(--text-secondary);">Status</th>
+            <th style="padding:12px 16px; text-align:right; font-size:11px; text-transform:uppercase; color:var(--text-secondary);">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if vehicles and vehicles|length > 0 %}
+          {% for v in vehicles %}
+          <tr style="border-bottom:1px solid var(--border-color);">
+            <td style="padding:12px 16px; font-weight:700; font-family:monospace; color:var(--primary); font-size:14px;">
+              {{ v.vehicle_number }}
+            </td>
+            <td style="padding:12px 16px;">
+              <strong style="color:var(--text-primary); display:block;">{{ v.brand_model or v.make_model or '-' }}</strong>
+              <span style="color:var(--text-secondary); font-size:11px;">{{ v.vehicle_type }} • {{ v.color or 'N/A' }}</span>
+            </td>
+            <td style="padding:12px 16px;">
+              <strong style="color:var(--text-primary); display:block;">
+                {{ v.owner.full_name if v.owner else (v.resident.full_name if v.resident else 'Unknown') }}
+              </strong>
+              <span style="color:var(--text-secondary); font-size:11px;">
+                {{ v.owner.mobile if v.owner else (v.resident.mobile if v.resident else '-') }}
+              </span>
+            </td>
+            <td style="padding:12px 16px; font-weight:600; color:var(--text-primary);">
+              {{ v.flat.property_key if v.flat else '-' }}
+            </td>
+            <td style="padding:12px 16px; font-weight:600; color:var(--text-primary);">
+              {{ v.parking_slot_display }}
+            </td>
+            <td style="padding:12px 16px;">
+              <span class="badge {{ 'badge-success' if v.status == 'ACTIVE' else 'badge-danger' }}" style="font-weight:700; font-size:11px; padding:3px 8px; border-radius:6px;">
+                {{ v.status }}
+              </span>
+            </td>
+            <td style="padding:12px 16px; text-align:right;">
+              <div style="display:inline-flex; gap:6px; justify-content:flex-end;">
+                <a href="{{ url_for('admin.vehicle_detail', vehicle_id=v.id) }}" class="btn btn-secondary btn-sm" style="padding:5px 9px; font-size:11px; font-weight:600; border-radius:6px; text-decoration:none;" title="View Details">
+                  <i class="fa-solid fa-eye"></i>
+                </a>
+                <a href="{{ url_for('admin.edit_vehicle', vehicle_id=v.id) }}" class="btn btn-secondary btn-sm" style="padding:5px 9px; font-size:11px; font-weight:600; border-radius:6px; text-decoration:none;" title="Edit">
+                  <i class="fa-solid fa-pen"></i>
+                </a>
+                {% if v.status == 'ACTIVE' %}
+                <form method="POST" action="{{ url_for('admin.deactivate_vehicle', vehicle_id=v.id) }}" onsubmit="return confirm('Deactivate vehicle {{ v.vehicle_number }}?');" style="display:inline; margin:0;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn btn-danger btn-sm" style="padding:5px 9px; font-size:11px; font-weight:600; border-radius:6px; cursor:pointer;" title="Deactivate">
+                    <i class="fa-solid fa-power-off"></i>
+                  </button>
+                </form>
+                {% else %}
+                <form method="POST" action="{{ url_for('admin.reactivate_vehicle', vehicle_id=v.id) }}" onsubmit="return confirm('Reactivate vehicle {{ v.vehicle_number }}?');" style="display:inline; margin:0;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn btn-primary btn-sm" style="padding:5px 9px; font-size:11px; font-weight:600; border-radius:6px; cursor:pointer;" title="Reactivate">
+                    <i class="fa-solid fa-rotate-right"></i>
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+          {% else %}
+          <tr>
+            <td colspan="7" style="text-align:center; padding:36px; color:var(--text-secondary);">
+              <div style="font-size:36px; margin-bottom:8px;">🚗</div>
+              <h4 style="margin:0 0 4px 0; color:var(--text-primary);">No vehicles found</h4>
+              <p style="margin:0; font-size:13px;">No vehicles match the selected criteria.</p>
+            </td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

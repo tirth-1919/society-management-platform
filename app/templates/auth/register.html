@@ -80,26 +80,24 @@
         <!-- Divider -->
         <div style="height:1px; background:var(--border-color); margin: 20px 0;"></div>
         <div style="margin-bottom: 10px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-secondary);">
-          <i class="fa-solid fa-building"></i> Location Selection (Block → Flat Number) — Society → Block / Wing → Flat Number
+          <i class="fa-solid fa-building"></i> Location Selection (Block → Flat Number)
         </div>
 
-        <!-- Society → Block/Wing → Flat cascading selection -->
+        <!-- Society (Read-Only) & Block/Wing → Flat cascading selection -->
         <div style="margin-bottom: 16px;">
-          <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Select Your Society *</label>
-          <select name="society_id" id="society-select" required onchange="loadBlocks(this.value)"
-            style="width:100%; padding:11px 14px; border-radius:9px; border:1.5px solid var(--border-color); background:#ffffff !important; color:#111827 !important; font-size:14px; box-sizing:border-box; color-scheme:light;">
-            <option value="" style="background:#ffffff; color:#111827;">Select Society</option>
-            {% for soc in societies if soc.name and soc.name|string|trim %}
-            <option value="{{ soc.id | int }}" style="background:#ffffff; color:#111827;">{{ soc.name|string|trim }}</option>
-            {% endfor %}
-          </select>
+          <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Society</label>
+          <div style="padding: 11px 14px; border-radius: 9px; border: 1.5px solid var(--border-color); background: var(--bg-primary, rgba(0,0,0,0.02)); color: var(--text-primary); font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-building-circle-check" style="color: #10b981;"></i>
+            <span>{{ society.name if society else 'Sunrise Heights' }}</span>
+          </div>
+          <input type="hidden" name="society_id" id="society-select" value="{{ society.id if society else 2 }}">
         </div>
 
         <div style="margin-bottom: 16px;">
           <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Block / Wing *</label>
-          <select name="building_id" id="block-select" required disabled onchange="onBlockChange(this.value)"
+          <select name="building_id" id="block-select" required onchange="onBlockChange(this.value)"
             style="width:100%; padding:11px 10px; border-radius:9px; border:1.5px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:13px; box-sizing:border-box;">
-            <option value="">— Select Society First —</option>
+            <option value="">— Loading Blocks... —</option>
           </select>
           <input type="hidden" name="block_id" id="hidden-block-id" value="">
         </div>
@@ -305,5 +303,11 @@ async function loadFlats(blockId) {
 async function loadFlatsByWing(wingId) {
   return loadFlats(wingId);
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+  const socInput = document.getElementById('society-select');
+  const socId = socInput ? socInput.value : '2';
+  loadBlocks(socId);
+});
 </script>
 {% endblock %}

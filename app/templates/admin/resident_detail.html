@@ -469,6 +469,7 @@
 <div class="modal fade" id="moveOutModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <form action="{{ url_for('admin.resident_move_out', id=resident.id) }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold">Record Resident Move-Out</h5>

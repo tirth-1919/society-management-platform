@@ -403,6 +403,112 @@ h1, h2, h3, h4, h5, h6 {
 .badge-warning { background: rgba(245, 158, 11, 0.15); color: #d97706; }
 .badge-danger { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
 .badge-info { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+.badge-critical { background: rgba(239, 68, 68, 0.15) !important; color: var(--danger) !important; }
+.badge-high { background: rgba(234, 88, 12, 0.15) !important; color: #ea580c !important; }
+.badge-medium { background: rgba(245, 158, 11, 0.15) !important; color: var(--warning) !important; }
+.badge-low { background: rgba(16, 185, 129, 0.15) !important; color: var(--success) !important; }
+
+/* AI Module Severity & Status Utilities */
+.border-severity-critical { border-left: 4px solid var(--danger) !important; }
+.border-severity-high { border-left: 4px solid #ea580c !important; }
+.border-severity-medium { border-left: 4px solid var(--warning) !important; }
+.border-severity-low { border-left: 4px solid var(--success) !important; }
+
+.border-left-danger { border-left: 4px solid var(--danger) !important; }
+.border-left-warning { border-left: 4px solid var(--warning) !important; }
+.border-left-success { border-left: 4px solid var(--success) !important; }
+.border-left-primary { border-left: 4px solid var(--primary) !important; }
+.border-left-high { border-left: 4px solid #ea580c !important; }
+
+.text-critical, .text-danger-color { color: var(--danger) !important; }
+.text-high-color { color: #ea580c !important; }
+.text-medium-color, .text-warning-color { color: var(--warning) !important; }
+.text-low-color, .text-success-color { color: var(--success) !important; }
+.text-secondary-color { color: var(--text-secondary) !important; }
+
+.health-circle-critical { background: rgba(239, 68, 68, 0.15) !important; color: var(--danger) !important; }
+.health-circle-high { background: rgba(234, 88, 12, 0.15) !important; color: #ea580c !important; }
+.health-circle-medium { background: rgba(245, 158, 11, 0.15) !important; color: var(--warning) !important; }
+.health-circle-low, .health-circle-success { background: rgba(16, 185, 129, 0.15) !important; color: var(--success) !important; }
+
+.progress-danger { background: var(--danger) !important; }
+.progress-warning { background: var(--warning) !important; }
+.progress-success { background: var(--success) !important; }
+
+progress.ai-progress-meter {
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    appearance: none;
+    -webkit-appearance: none;
+    border: none;
+    background: rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    display: block;
+}
+progress.ai-progress-meter::-webkit-progress-bar {
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 4px;
+}
+progress.ai-progress-meter.progress-danger::-webkit-progress-value {
+    background: var(--danger);
+    border-radius: 4px;
+}
+progress.ai-progress-meter.progress-warning::-webkit-progress-value {
+    background: var(--warning);
+    border-radius: 4px;
+}
+progress.ai-progress-meter.progress-success::-webkit-progress-value {
+    background: var(--success);
+    border-radius: 4px;
+}
+progress.ai-progress-meter.progress-danger::-moz-progress-bar {
+    background: var(--danger);
+    border-radius: 4px;
+}
+progress.ai-progress-meter.progress-warning::-moz-progress-bar {
+    background: var(--warning);
+    border-radius: 4px;
+}
+progress.ai-progress-meter.progress-success::-moz-progress-bar {
+    background: var(--success);
+    border-radius: 4px;
+}
+
+/* Flash Alerts */
+.flash-card {
+    margin-bottom: 20px;
+    padding: 14px 20px;
+    background: var(--bg-surface);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-left: 4px solid var(--info);
+}
+.flash-card.flash-danger {
+    border-left-color: var(--danger);
+}
+.flash-card.flash-danger i {
+    color: var(--danger);
+}
+.flash-card.flash-success {
+    border-left-color: var(--success);
+}
+.flash-card.flash-success i {
+    color: var(--success);
+}
+.flash-card.flash-warning {
+    border-left-color: var(--warning);
+}
+.flash-card.flash-warning i {
+    color: var(--warning);
+}
+.flash-card.flash-info {
+    border-left-color: var(--info);
+}
+.flash-card.flash-info i {
+    color: var(--info);
+}
 
 /* Floating AI Chatbot Widget */
 .ai-chatbot-widget {

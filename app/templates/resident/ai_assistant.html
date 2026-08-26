@@ -1,0 +1,451 @@
+{% extends "base.html" %}
+{% block title %}AI Society Assistant · Society SaaS{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumb-nav" aria-label="Breadcrumb">
+    <a href="{{ url_for('main.dashboard') }}"><i class="fa-solid fa-house"></i> Home</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">AI Assistant</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">Personal AI</p>
+        <h1><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--primary); margin-right:8px;" aria-hidden="true"></i>AI Society Assistant</h1>
+        <p>Ask questions about your bills, payments, complaints, or society information.</p>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px;">
+        <span class="badge {{ 'badge-success' if ai_available else 'badge-warning' }}" style="font-size:12px; padding:6px 12px; display:inline-flex; align-items:center; gap:6px;">
+            <i class="fa-solid fa-circle" style="font-size:8px;"></i> Status: {{ 'Available' if ai_available else 'Temporarily unavailable' }}
+        </span>
+    </div>
+</div>
+
+{# ── AI-disabled fallback banner ── #}
+<div id="ai-unavailable-banner" class="card" role="status" aria-live="polite" style="display:{{ 'none' if ai_available else 'flex' }}; border-left:4px solid var(--warning); margin-bottom:20px; padding:14px 20px; background:var(--bg-surface); align-items:center; gap:10px;">
+    <i class="fa-solid fa-triangle-exclamation" style="color:var(--warning);" aria-hidden="true"></i>
+    <span>AI Assistant is temporarily unavailable. Your bills, payments, and other features still work normally.</span>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr minmax(0,680px) 1fr; gap:0;">
+<div></div>
+<div>
+
+{# ── Suggested questions ── #}
+<div class="card" style="margin-bottom:18px; padding:18px 20px;">
+    <p style="font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--text-secondary); margin-bottom:12px;">
+        <i class="fa-solid fa-lightbulb" style="color:var(--warning);" aria-hidden="true"></i> Suggested questions
+    </p>
+    <div style="display:flex; flex-wrap:wrap; gap:8px;">
+        {% set suggestions = [
+            "What is my pending maintenance?",
+            "When is my next bill due?",
+            "Explain my latest bill.",
+            "Do I have any overdue bills?",
+            "Show my payment history.",
+            "Why is my payment pending?",
+            "How do I submit a complaint?",
+            "What is the status of my complaint?",
+            "How do I download my receipt?",
+            "How do I contact the society?"
+        ] %}
+        {% for s in suggestions %}
+        <button type="button"
+                class="btn btn-secondary"
+                style="font-size:12.5px; padding:6px 12px; border-radius:20px;"
+                onclick="raiChat.sendSuggestion({{ s|tojson }})">
+            {{ s }}
+        </button>
+        {% endfor %}
+    </div>
+</div>
+
+{# ── Chat interface ── #}
+<div class="card" style="padding:0; overflow:hidden; display:flex; flex-direction:column; min-height:480px; max-height:70vh;">
+    <div style="padding:14px 18px; border-bottom:1px solid var(--border-color); display:flex; align-items:center; gap:10px; background:var(--bg-surface);">
+        <div style="width:34px; height:34px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0;">
+            <i class="fa-solid fa-robot" aria-hidden="true"></i>
+        </div>
+        <div>
+            <div style="font-weight:700; font-size:14px; color:var(--text-primary);">AI Society Assistant</div>
+            <div style="font-size:11.5px; color:var(--text-secondary); display:flex; align-items:center; gap:6px; margin-top:2px;">
+                <span class="badge {{ 'badge-success' if ai_available else 'badge-warning' }}" style="font-size:10px; padding:2px 6px;"><i class="fa-solid fa-circle" style="font-size:6px;"></i> {{ 'Available' if ai_available else 'Temporarily unavailable' }}</span>
+                <span>Answers based on your account data &nbsp;·&nbsp; Advisory only</span>
+            </div>
+        </div>
+        <button type="button"
+                id="rai-clear-btn"
+                class="btn btn-secondary"
+                style="margin-left:auto; font-size:12px; padding:5px 10px;"
+                title="Clear conversation">
+            <i class="fa-solid fa-trash-can" aria-hidden="true"></i> Clear
+        </button>
+    </div>
+
+    <div id="rai-messages"
+         role="log"
+         aria-live="polite"
+         aria-label="AI conversation"
+         style="flex:1; overflow-y:auto; padding:18px 20px; display:flex; flex-direction:column; gap:14px;">
+
+        {# Welcome message from assistant #}
+        <div class="rai-msg rai-bot" role="article">
+            <div class="rai-avatar rai-avatar-bot" aria-hidden="true">
+                <i class="fa-solid fa-robot"></i>
+            </div>
+            <div class="rai-bubble rai-bubble-bot">
+                Hello, <strong>{{ resident.full_name.split()[0] if resident else 'Resident' }}</strong>! I can help you with questions about your maintenance bills, payments, complaints, and society information.<br><br>
+                <strong>Important:</strong> My answers are based on your account data only. I cannot change your bills or payments — those require action from you or the society office.
+            </div>
+        </div>
+
+    </div>
+
+    <div style="padding:14px 18px; border-top:1px solid var(--border-color); background:var(--bg-surface);">
+        <div style="display:flex; gap:8px; align-items:flex-end;">
+            <textarea id="rai-input"
+                      rows="1"
+                      placeholder="Ask me anything about your account…"
+                      aria-label="Type your question"
+                      style="flex:1; resize:none; min-height:42px; max-height:120px; padding:10px 13px; border:1px solid var(--border-color); border-radius:var(--radius-md); background:var(--bg-base); color:var(--text-primary); font-size:14px; font-family:inherit; line-height:1.4; overflow-y:auto;"></textarea>
+            <button type="button"
+                    id="rai-send-btn"
+                    class="btn btn-primary"
+                    style="padding:10px 16px; height:42px; flex-shrink:0;"
+                    title="Send">
+                <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+                <span class="sr-only">Send</span>
+            </button>
+        </div>
+        <p style="font-size:11px; color:var(--text-secondary); margin-top:7px; margin-bottom:0;">
+            <i class="fa-solid fa-shield-halved" aria-hidden="true" style="color:var(--success);"></i>
+            Your data stays private. I only access your own account information.
+        </p>
+    </div>
+</div>
+
+{# ── Disclaimer ── #}
+<div style="margin-top:14px; padding:12px 16px; background:var(--bg-surface); border-radius:var(--radius-md); border:1px solid var(--border-color);">
+    <p style="font-size:12px; color:var(--text-secondary); margin:0; line-height:1.6;">
+        <i class="fa-solid fa-circle-info" style="color:var(--primary);" aria-hidden="true"></i>
+        <strong>Advisory only.</strong> This assistant provides information based on your account data. It cannot change bills, process payments, approve registrations, or take any consequential action on your behalf. For urgent matters, contact the society office directly.
+    </p>
+</div>
+
+</div><!-- center column -->
+<div></div>
+</div><!-- grid -->
+
+<style>
+.rai-msg {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    max-width: 92%;
+}
+.rai-msg.rai-user {
+    flex-direction: row-reverse;
+    align-self: flex-end;
+}
+.rai-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+.rai-avatar-bot {
+    background: var(--primary);
+    color: #fff;
+}
+.rai-avatar-user {
+    background: var(--bg-base);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+.rai-bubble {
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13.5px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.rai-bubble-bot {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    border-top-left-radius: 2px;
+}
+.rai-bubble-user {
+    background: var(--primary);
+    color: #fff;
+    border-top-right-radius: 2px;
+}
+.rai-bubble-loading {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    padding: 10px 14px;
+}
+.rai-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--text-secondary);
+    animation: raiPulse 1.2s ease-in-out infinite;
+}
+.rai-dot:nth-child(2) { animation-delay: .2s; }
+.rai-dot:nth-child(3) { animation-delay: .4s; }
+@keyframes raiPulse {
+     0%, 100% { opacity: .3; transform: scale(.85); }
+     50%       { opacity: 1;  transform: scale(1); }
+ }
+ @media (max-width: 700px) {
+     .rai-msg { max-width: 100%; }
+     #rai-messages { padding: 14px 12px !important; }
+     #rai-input { min-width: 0; }
+     #rai-send-btn { padding: 10px 13px !important; }
+ }
+ .rai-feedback {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+    padding-left: 2px;
+}
+.rai-feedback-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 3px 9px;
+    font-size: 11.5px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: background .15s, color .15s;
+}
+.rai-feedback-btn:hover { background: var(--bg-base); color: var(--text-primary); }
+.rai-feedback-btn.active-positive { background: rgba(16,185,129,.12); color: var(--success); border-color: var(--success); }
+.rai-feedback-btn.active-negative { background: rgba(239,68,68,.1);  color: var(--danger);  border-color: var(--danger);  }
+</style>
+
+<script>
+(function () {
+    const ENDPOINT = '/api/v1/resident/ai/query';
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    const msgContainer = document.getElementById('rai-messages');
+    const inputEl = document.getElementById('rai-input');
+    const sendBtn = document.getElementById('rai-send-btn');
+    const clearBtn = document.getElementById('rai-clear-btn');
+    let _feedbackIdx = 0;
+
+    function scrollBottom() {
+        msgContainer.scrollTop = msgContainer.scrollHeight;
+    }
+
+    function appendUserMsg(text) {
+        const wrap = document.createElement('div');
+        wrap.className = 'rai-msg rai-user';
+        wrap.setAttribute('role', 'article');
+        wrap.innerHTML = `
+            <div class="rai-avatar rai-avatar-user" aria-hidden="true">
+                <i class="fa-solid fa-user"></i>
+            </div>
+            <div class="rai-bubble rai-bubble-user">${escHtml(text)}</div>
+        `;
+        msgContainer.appendChild(wrap);
+        scrollBottom();
+    }
+
+    function appendLoadingDots() {
+        const wrap = document.createElement('div');
+        wrap.className = 'rai-msg rai-bot';
+        wrap.id = 'rai-loading';
+        wrap.setAttribute('role', 'article');
+        wrap.setAttribute('aria-label', 'Loading response');
+        wrap.innerHTML = `
+            <div class="rai-avatar rai-avatar-bot" aria-hidden="true">
+                <i class="fa-solid fa-robot"></i>
+            </div>
+            <div class="rai-bubble rai-bubble-loading">
+                <span class="rai-dot"></span>
+                <span class="rai-dot"></span>
+                <span class="rai-dot"></span>
+            </div>
+        `;
+        msgContainer.appendChild(wrap);
+        scrollBottom();
+        return wrap;
+    }
+
+    function removeLoading() {
+        const el = document.getElementById('rai-loading');
+        if (el) el.remove();
+    }
+
+    function appendBotMsg(text) {
+        const idx = ++_feedbackIdx;
+        const wrap = document.createElement('div');
+        wrap.className = 'rai-msg rai-bot';
+        wrap.setAttribute('role', 'article');
+        wrap.innerHTML = `
+            <div class="rai-avatar rai-avatar-bot" aria-hidden="true">
+                <i class="fa-solid fa-robot"></i>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px; min-width:0;">
+                <div class="rai-bubble rai-bubble-bot">${escHtml(text).replace(/\n/g,'<br>')}</div>
+                <div class="rai-feedback">
+                    <button type="button" class="rai-feedback-btn" data-fb="positive" data-idx="${idx}" title="Helpful">👍 Helpful</button>
+                    <button type="button" class="rai-feedback-btn" data-fb="negative" data-idx="${idx}" title="Not helpful">👎 Not helpful</button>
+                    <button type="button" class="rai-feedback-btn" data-action="copy" title="Copy response">
+                        <i class="fa-solid fa-copy" aria-hidden="true"></i> Copy
+                    </button>
+                </div>
+            </div>
+        `;
+        // Feedback handlers
+        wrap.querySelectorAll('[data-fb]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                wrap.querySelectorAll('[data-fb]').forEach(b => b.classList.remove('active-positive','active-negative'));
+                btn.classList.add(btn.dataset.fb === 'positive' ? 'active-positive' : 'active-negative');
+                // Fire-and-forget feedback — no user data, just thumbs signal
+                fetch('/api/v1/resident/ai/feedback', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ helpful: btn.dataset.fb === 'positive', idx })
+                }).catch(() => {});
+            });
+        });
+        wrap.querySelector('[data-action="copy"]')?.addEventListener('click', function () {
+            const txt = wrap.querySelector('.rai-bubble-bot')?.textContent || '';
+            navigator.clipboard.writeText(txt).then(() => {
+                this.textContent = '✓ Copied';
+                setTimeout(() => { this.innerHTML = '<i class="fa-solid fa-copy" aria-hidden="true"></i> Copy'; }, 1500);
+            }).catch(() => {});
+        });
+        msgContainer.appendChild(wrap);
+        scrollBottom();
+    }
+
+    function appendErrorMsg(msg) {
+        const wrap = document.createElement('div');
+        wrap.className = 'rai-msg rai-bot';
+        wrap.setAttribute('role', 'alert');
+        wrap.innerHTML = `
+            <div class="rai-avatar rai-avatar-bot" aria-hidden="true">
+                <i class="fa-solid fa-robot"></i>
+            </div>
+            <div class="rai-bubble rai-bubble-bot" style="border-color:var(--danger); color:var(--danger);">
+                <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                ${escHtml(msg)}
+                <br><small>You can still use all other features normally.</small>
+            </div>
+        `;
+        msgContainer.appendChild(wrap);
+        scrollBottom();
+    }
+
+    function escHtml(s) {
+        return String(s)
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    async function sendMessage(query) {
+        if (!query) return;
+        sendBtn.disabled = true;
+        inputEl.disabled = true;
+        appendUserMsg(query);
+        const loading = appendLoadingDots();
+
+        try {
+            const res = await fetch(ENDPOINT, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ prompt: query })
+            });
+            removeLoading();
+
+            if (!res.ok) {
+                if (res.status === 401 || res.status === 403) {
+                    appendErrorMsg('Session expired. Please reload the page and log in again.');
+                } else {
+                    appendErrorMsg('AI Assistant is temporarily unavailable. Please try again in a moment.');
+                }
+                document.getElementById('ai-unavailable-banner').style.display = 'flex';
+                return;
+            }
+
+            const data = await res.json();
+            if (data.error) {
+                appendErrorMsg(data.error);
+            } else {
+                appendBotMsg(data.response || 'No response received. Please try rephrasing your question.');
+            }
+        } catch (err) {
+            removeLoading();
+            console.error('AI Assistant error:', err);
+            appendErrorMsg('AI Assistant is temporarily unavailable. Please try again in a moment.');
+            document.getElementById('ai-unavailable-banner').style.display = 'flex';
+        } finally {
+            sendBtn.disabled = false;
+            inputEl.disabled = false;
+            inputEl.focus();
+        }
+    }
+
+    // Send button
+    sendBtn.addEventListener('click', () => {
+        const q = inputEl.value.trim();
+        if (!q) return;
+        inputEl.value = '';
+        adjustTextarea();
+        sendMessage(q);
+    });
+
+    // Enter to send (Shift+Enter = newline)
+    inputEl.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendBtn.click();
+        }
+    });
+
+    // Auto-grow textarea
+    function adjustTextarea() {
+        inputEl.style.height = 'auto';
+        inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+    }
+    inputEl.addEventListener('input', adjustTextarea);
+
+    // Clear conversation
+    clearBtn.addEventListener('click', () => {
+        // Keep only the first welcome message
+        const msgs = msgContainer.querySelectorAll('.rai-msg');
+        msgs.forEach((m, i) => { if (i > 0) m.remove(); });
+        document.getElementById('ai-unavailable-banner').style.display = 'none';
+        inputEl.value = '';
+        adjustTextarea();
+        inputEl.focus();
+    });
+
+    // Public API for suggested-question buttons
+    window.raiChat = {
+        sendSuggestion(text) {
+            inputEl.value = text;
+            adjustTextarea();
+            sendBtn.click();
+        }
+    };
+})();
+</script>
+{% endblock %}

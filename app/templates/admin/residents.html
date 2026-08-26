@@ -49,8 +49,8 @@
     </form>
   </div>
 
-  <!-- Residents Table -->
-  <div class="card" style="padding:0; overflow:hidden;">
+  <!-- Residents Table (Desktop) -->
+  <div class="card desktop-only" style="padding:0; overflow:hidden;">
     <div style="overflow-x:auto;">
       <table style="width:100%; border-collapse:collapse; font-size:13px;">
         <thead>
@@ -79,7 +79,11 @@
               </span>
               {% else %}—{% endif %}
             </td>
-            <td style="padding:12px 16px; font-weight:600;">{{ r.mobile }}</td>
+            <td style="padding:12px 16px; font-weight:600;">
+              <a href="tel:{{ r.mobile }}" style="color:var(--text-primary); text-decoration:none;">
+                <i class="fa-solid fa-phone" style="color:var(--primary); font-size:11px; margin-right:4px;"></i>{{ r.mobile }}
+              </a>
+            </td>
             <td style="padding:12px 16px; color:var(--text-secondary);">{{ r.email or '—' }}</td>
             <td style="padding:12px 16px;">
               <span style="padding:3px 8px; border-radius:12px; font-size:11px; font-weight:700; background:rgba(79,70,229,0.12); color:#4338ca;">
@@ -106,6 +110,46 @@
       </table>
     </div>
   </div>
+
+  <!-- Mobile Residents Card View -->
+  <div class="mobile-only" style="display:none; flex-direction:column; gap:12px;">
+    {% for r in residents %}
+    <article class="resident-contact-card">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div>
+          <h3 style="font-size:15px; font-weight:700; margin:0 0 4px;">{{ r.full_name }}</h3>
+          <span style="font-size:12px; color:var(--text-secondary);">
+            {% if r.flat %}<i class="fa-solid fa-building"></i> {{ r.flat.property_key }}{% endif %}
+            &middot; {{ r.resident_type }}
+          </span>
+        </div>
+        <span class="badge badge-{{ 'success' if r.occupancy_status == 'Active' else 'secondary' }}" style="font-size:11px;">
+          {{ r.occupancy_status }}
+        </span>
+      </div>
+      <div class="resident-contact-actions">
+        <a href="tel:{{ r.mobile }}" class="btn btn-xs btn-outline" style="flex:1; justify-content:center;">
+          <i class="fa-solid fa-phone"></i> Call
+        </a>
+        {% if r.email %}
+        <a href="mailto:{{ r.email }}" class="btn btn-xs btn-outline" style="flex:1; justify-content:center;">
+          <i class="fa-solid fa-envelope"></i> Email
+        </a>
+        {% endif %}
+        <a href="{{ url_for('admin.resident_profile', resident_id=r.id) }}" class="btn btn-xs btn-primary" style="flex:1; justify-content:center;">
+          <i class="fa-solid fa-user"></i> Profile
+        </a>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+
+  <style>
+    @media (max-width: 768px) {
+      .desktop-only { display: none !important; }
+      .mobile-only { display: flex !important; }
+    }
+  </style>
 
 </div>
 {% endblock %}

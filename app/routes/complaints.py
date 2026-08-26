@@ -75,7 +75,7 @@ def complaint_detail(complaint_id):
     sla_breached = ComplaintService.check_sla_breach(complaint)
     staff_members = User.query.filter(
         User.society_id == complaint.society_id,
-        User.role.in_([Role.SOCIETY_ADMIN, Role.GUARD, Role.COMMITTEE_MEMBER]),
+        User.role.in_([Role.SOCIETY_ADMIN, Role.SECURITY, Role.GUARD, Role.COMMITTEE_MEMBER, Role.MAINTENANCE]),
     ).all()
 
     return render_template(
@@ -144,6 +144,8 @@ def update_status(complaint_id):
         ).first()
         if not resident or complaint.resident_id != resident.id:
             abort(403)
+    elif user.role not in [Role.SUPER_ADMIN, Role.SOCIETY_ADMIN, Role.MAINTENANCE]:
+        abort(403, description="Forbidden: You do not have permission to update complaint status")
 
     new_status = request.form.get("status")
     notes = request.form.get("resolution_notes")

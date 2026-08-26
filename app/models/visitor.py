@@ -28,6 +28,9 @@ class Visitor(db.Model):
     exit_time = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=utcnow)
 
+    flat = db.relationship("Flat", foreign_keys=[flat_id], lazy=True)
+    resident = db.relationship("Resident", foreign_keys=[resident_id], lazy=True)
+
 
 class PreApprovedPass(db.Model):
     __tablename__ = "pre_approved_passes"
@@ -47,6 +50,9 @@ class PreApprovedPass(db.Model):
     purpose = db.Column(db.String(100), default="Guest")
     is_used = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=utcnow)
+
+    flat = db.relationship("Flat", foreign_keys=[flat_id], lazy=True)
+    resident = db.relationship("Resident", foreign_keys=[resident_id], lazy=True)
 
 
 

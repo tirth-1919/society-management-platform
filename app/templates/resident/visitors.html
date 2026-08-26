@@ -72,6 +72,7 @@
                         </button>
                         <form method="post" action="{{ url_for('resident.cancel_visitor', pass_id=p.id) }}"
                               onsubmit="return confirm('Cancel invitation for {{ p.visitor_name }}?')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
                             <button type="submit" class="btn btn-danger btn-small" title="Cancel invitation">
                                 <i class="fa-solid fa-xmark"></i> Cancel
                             </button>

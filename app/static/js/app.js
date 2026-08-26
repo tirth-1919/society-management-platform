@@ -76,9 +76,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Call AI Endpoint
             try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                 const response = await fetch('/api/v1/ai/query', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
                     body: JSON.stringify({ prompt: query })
                 });
                 const data = await response.json();

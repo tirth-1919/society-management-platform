@@ -1,6 +1,6 @@
 import os
 import click
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
 from app.config import config
@@ -17,6 +17,10 @@ def create_app(config_name=None):
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(config.get(config_name, config["default"]))
 
+    # Production must never start with a predictable key or debug mode.
+    if config_name == "production" and not os.environ.get("SECRET_KEY"):
+        raise RuntimeError("SECRET_KEY must be configured in production")
+
     # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
@@ -26,6 +30,7 @@ def create_app(config_name=None):
     os.makedirs(app.config["INSTANCE_DIR"], exist_ok=True)
     os.makedirs(app.config["BACKUP_DIR"], exist_ok=True)
     os.makedirs(app.config["DOCUMENT_STORAGE_DIR"], exist_ok=True)
+    os.makedirs(app.config["EVENT_PHOTO_STORAGE_DIR"], exist_ok=True)
 
     # Register blueprints
     from app.routes import (
@@ -43,6 +48,8 @@ def create_app(config_name=None):
         reports_bp,
         api_bp,
         resident_bp,
+        ai_bp,
+        event_photos_bp,
     )
 
     app.register_blueprint(auth_bp)
@@ -59,12 +66,27 @@ def create_app(config_name=None):
     app.register_blueprint(reports_bp)
     app.register_blueprint(api_bp)
     app.register_blueprint(resident_bp)
+    app.register_blueprint(ai_bp)
+    app.register_blueprint(event_photos_bp)
 
     # Supports existing SQLite installations until Alembic migrations are run.
     from app.models.tenant import patch_sqlite_schema
 
     with app.app_context():
         patch_sqlite_schema(app)
+
+    @app.cli.command("seed-event-gallery")
+    @click.option("--society-id", type=int, required=True)
+    @click.option("--admin-user-id", type=int, required=True)
+    def seed_event_gallery_cmd(society_id, admin_user_id):
+        # Create the idempotent Navratri and Diwali starter galleries."
+        from app.models import User
+        from app.services.event_gallery_seed_service import EventGallerySeedService
+        admin_user = db.session.get(User, admin_user_id)
+        if not admin_user:
+            raise click.ClickException("Admin user not found")
+        created = EventGallerySeedService.ensure_defaults(society_id, admin_user)
+        click.echo(f"Ensured starter event gallery; created {len(created)} media item(s).")
 
     @app.cli.command("send-maintenance-notifications")
     @click.option("--society-id", type=int, default=None)
@@ -161,13 +183,39 @@ def create_app(config_name=None):
         res = AutomationService.execute_job(action_type=action_type, society_id=society_id, trigger_source="CLI")
         click.echo(f"Automation execution: {res['status']} (ID: {res.get('execution_id')})")
 
+    @app.cli.command("run-ai-operations")
+    @click.option("--society-id", type=int, default=1)
+    def run_ai_operations_cmd(society_id):
+        """Execute full multi-vector AI operations scan for a society."""
+        from app.services.ai import AIOperationsService
+        res = AIOperationsService.run_full_society_analysis(society_id=society_id)
+        click.echo(f"AI Operations scan: {res['status']} (Findings: {res.get('findings_count')}, Time: {res.get('execution_time_ms')}ms)")
+
+    @app.cli.command("run-predictive-maintenance")
+    @click.option("--society-id", type=int, default=1)
+    def run_predictive_maintenance_cmd(society_id):
+        """Execute predictive maintenance risk analysis."""
+        from app.services.ai import PredictiveMaintenanceAIService
+        res = PredictiveMaintenanceAIService.run_society_maintenance_analysis(society_id=society_id)
+        click.echo(f"Predictive maintenance scan completed. Analyzed {len(res)} asset(s).")
+
     # Security headers
     @app.after_request
     def set_security_headers(response):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "SAMEORIGIN"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["X-XSS-Protection"] = "0"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; img-src 'self' data: blob:; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self'; "
+            "object-src 'none'; base-uri 'self'; frame-ancestors 'self'"
+        )
+        if request.is_secure:
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         return response
 
     # Custom error handlers

@@ -36,7 +36,12 @@
     <a href="{{ url_for('admin.registrations') }}" class="btn btn-secondary" style="font-size: 13px;">
       <i class="fa-solid fa-arrow-left"></i> Back to Registrations
     </a>
-    <div>
+    <div style="display:flex; align-items:center; gap:8px;">
+      {% if reg.status == 'PENDING_APPROVAL' and days_pending is defined %}
+      <span style="background:rgba(245,158,11,0.12); color:{% if age_label == 'Old' %}#dc2626{% elif age_label == 'Aging' %}#d97706{% else %}#059669{% endif %}; padding:5px 12px; border-radius:20px; font-size:12px; font-weight:700; border:1px solid rgba(245,158,11,0.3);">
+        <i class="fa-solid fa-clock"></i> {{ age_label }} · {{ days_pending }} day{{ 's' if days_pending != 1 else '' }} pending
+      </span>
+      {% endif %}
       <span
         class="registration-status-badge {% if reg.status == 'PENDING_APPROVAL' %}status-pending{% elif reg.status == 'APPROVED' %}status-approved{% else %}status-rejected{% endif %}">
         {% if reg.status == 'PENDING_APPROVAL' %}<i class="fa-solid fa-hourglass-half"></i>
@@ -127,6 +132,63 @@
         </div>
       </div>
     </div>
+
+    <!-- AI Summary & Admin Recommendation Advisory -->
+    {% if advisory is defined and advisory %}
+    <div style="background:rgba(79,70,229,0.04); border:1.5px solid rgba(79,70,229,0.2); border-radius:12px; padding:18px; margin-bottom:20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="background:linear-gradient(135deg,var(--primary),#7c3aed); color:#fff; font-size:11px; font-weight:800; padding:3px 8px; border-radius:6px; letter-spacing:0.5px;">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> AI ADVISORY
+          </span>
+          <span style="font-weight:700; font-size:14px; color:var(--text-primary);">Automated Verification Summary</span>
+        </div>
+        <span style="font-size:11px; font-weight:700; padding:3px 10px; border-radius:12px;
+          {% if advisory.recommendation_status == 'READY' %}background:rgba(16,185,129,0.15); color:#059669;
+          {% elif advisory.recommendation_status == 'WARNING' %}background:rgba(245,158,11,0.15); color:#d97706;
+          {% else %}background:rgba(239,68,68,0.15); color:#dc2626;{% endif %}">
+          {{ advisory.recommendation_status }}
+        </span>
+      </div>
+
+      <div style="font-size:13.5px; color:var(--text-primary); margin-bottom:10px; line-height:1.5;">
+        <strong>AI Summary:</strong> {{ advisory.ai_summary }}
+      </div>
+
+      <div style="font-size:13px; color:var(--text-secondary); padding:10px 14px; background:var(--bg-surface); border-radius:8px; border-left:3px solid {% if advisory.recommendation_status == 'READY' %}#10b981{% elif advisory.recommendation_status == 'WARNING' %}#f59e0b{% else %}#ef4444{% endif %};">
+        <i class="fa-solid fa-lightbulb" style="color:var(--primary); margin-right:6px;"></i>
+        <strong>Admin Recommendation:</strong> {{ advisory.admin_recommendation }}
+      </div>
+
+      <!-- Duplicate Signals -->
+      {% if advisory.duplicate_detected and advisory.signals %}
+      <div style="margin-top:12px; padding:10px 14px; background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.2); border-radius:8px;">
+        <div style="font-size:12px; font-weight:700; color:#dc2626; margin-bottom:4px;">
+          <i class="fa-solid fa-triangle-exclamation"></i> Duplicate Signals Detected:
+        </div>
+        <ul style="margin:0; padding-left:20px; font-size:12px; color:#b91c1c;">
+          {% for sig in advisory.signals %}
+          <li>{{ sig }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      <!-- Missing Data Warnings -->
+      {% if advisory.has_missing_data and advisory.missing_data %}
+      <div style="margin-top:12px; padding:10px 14px; background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.2); border-radius:8px;">
+        <div style="font-size:12px; font-weight:700; color:#d97706; margin-bottom:4px;">
+          <i class="fa-solid fa-circle-exclamation"></i> Missing Data Warnings:
+        </div>
+        <ul style="margin:0; padding-left:20px; font-size:12px; color:#92400e;">
+          {% for miss in advisory.missing_data %}
+          <li>{{ miss }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
     <!-- Status Specific Information -->
     {% if reg.status == 'APPROVED' %}
     <div

@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Investigation Case {{ case.case_id }}{% endblock %}
+
+{% block content %}
+<div class="page-body">
+    {% include "admin/ai/nav_tabs.html" %}
+
+    <div style="margin-bottom: 16px;">
+        <a href="{{ url_for('admin.ai_investigations') }}" class="btn btn-sm btn-outline">
+            <i class="fa-solid fa-arrow-left"></i> Back to Investigations
+        </a>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 24px;">
+        <!-- Left: Case Overview, Timeline, Related Entities -->
+        <div>
+            <!-- Case Header Card -->
+            <div class="card"
+                style="border-radius: var(--radius-md); padding: 20px; background: var(--bg-surface); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); margin-bottom: 20px;">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                    <div>
+                        <span style="font-size: 13px; font-weight: 800; color: var(--primary);">Case {{ case.case_id
+                            }}</span>
+                        <h2 style="font-size: 20px; font-weight: 800; margin: 2px 0 6px;">{{ case.title }}</h2>
+                    </div>
+                    <span class="badge badge-{{ 'danger' if case.status == 'OPEN' else ('warning' if case.status == 'UNDER_REVIEW' else 'success') }}" style="font-size: 11px; font-weight: 700; padding: 4px 10px;">{{ case.status }}</span>
+                </div>
+                <p style="font-size: 14px; color: var(--text-primary); line-height: 1.5; margin-bottom: 12px;">{{
+                    case.summary }}</p>
+
+                <div
+                    style="display: flex; gap: 20px; font-size: 12px; color: var(--text-secondary); border-top: 1px solid var(--border-color); padding-top: 12px;">
+                    <span>Category: <strong>{{ case.category }}</strong></span>
+                    <span>Risk Score: <strong style="color: #ea580c;">{{ case.risk_score }}/100</strong></span>
+                    <span>Created: <strong>{{ case.created_at.strftime('%d %b %Y, %H:%M') if case.created_at else ''
+                            }}</strong></span>
+                </div>
+            </div>
+
+            <!-- Evidence Timeline Card -->
+            <div class="card"
+                style="border-radius: var(--radius-md); padding: 20px; background: var(--bg-surface); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); margin-bottom: 20px;">
+                <h3 style="font-size: 16px; font-weight: 800; margin: 0 0 16px;"><i class="fa-solid fa-timeline"></i>
+                    Chronological Evidence Timeline</h3>
+
+                {% set timeline = case.get_timeline() %}
+                {% if timeline %}
+                <div
+                    style="display: flex; flex-direction: column; gap: 12px; border-left: 2px solid var(--border-color); padding-left: 16px; margin-left: 8px;">
+                    {% for item in timeline %}
+                    <div style="position: relative;">
+                        <div
+                            style="position: absolute; left: -22px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--primary);">
+                        </div>
+                        <div style="font-size: 11px; color: var(--text-secondary); font-weight: 700;">{{ item.timestamp
+                            }}</div>
+                        <div style="font-size: 13px; color: var(--text-primary); margin-top: 2px;">{{ item.event }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p style="font-size: 13px; color: var(--text-secondary);">No timeline events recorded yet.</p>
+                {% endif %}
+            </div>
+
+            <!-- Admin Notes History Card -->
+            <div class="card"
+                style="border-radius: var(--radius-md); padding: 20px; background: var(--bg-surface); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+                <h3 style="font-size: 16px; font-weight: 800; margin: 0 0 12px;"><i
+                        class="fa-solid fa-notes-medical"></i> Case Notes &amp; Findings</h3>
+                {% if case.admin_notes %}
+                <pre
+                    style="background: var(--bg-primary); padding: 12px; border-radius: 6px; font-size: 12px; white-space: pre-wrap; font-family: inherit; margin: 0;">{{ case.admin_notes }}</pre>
+                {% else %}
+                <p style="font-size: 13px; color: var(--text-secondary); font-style: italic;">No admin notes entered for
+                    this case.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Right: Status Updater & Notes Form -->
+        <div>
+            <div class="card"
+                style="border-radius: var(--radius-md); padding: 20px; background: var(--bg-surface); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+                <h3 style="font-size: 15px; font-weight: 800; margin: 0 0 16px;"><i class="fa-solid fa-user-pen"></i>
+                    Update Investigation</h3>
+                <form action="{{ url_for('admin.ai_investigation_update_status', id=case.id) }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+                    <div style="margin-bottom: 14px;">
+                        <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Status
+                            Transition</label>
+                        <select name="status" class="form-control" style="font-size: 13px;">
+                            <option value="OPEN" {% if case.status=='OPEN' %}selected{% endif %}>OPEN</option>
+                            <option value="UNDER_REVIEW" {% if case.status=='UNDER_REVIEW' %}selected{% endif %}>
+                                UNDER_REVIEW</option>
+                            <option value="CONFIRMED" {% if case.status=='CONFIRMED' %}selected{% endif %}>CONFIRMED
+                            </option>
+                            <option value="DISMISSED" {% if case.status=='DISMISSED' %}selected{% endif %}>DISMISSED
+                            </option>
+                            <option value="RESOLVED" {% if case.status=='RESOLVED' %}selected{% endif %}>RESOLVED
+                            </option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom: 16px;">
+                        <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 4px;">Add
+                            Investigation Note</label>
+                        <textarea name="admin_notes" class="form-control" rows="4"
+                            placeholder="Enter findings, verification details, or action summary..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Case Update
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

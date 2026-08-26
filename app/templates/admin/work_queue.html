@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Work Queue & Focus Mode - Society SaaS{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs" style="margin-bottom: 20px;">
+    <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+    <i class="fa-solid fa-chevron-right" style="font-size: 10px; margin: 0 8px; color: var(--text-secondary);"></i>
+    <span style="color: var(--text-secondary);">Admin Work Queue</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-header"
+    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+    <div>
+        <h1 style="font-size: 24px; font-weight: 800; display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-list-check" style="color: var(--primary);"></i>
+            Admin Work Queue
+        </h1>
+        <p style="color: var(--text-secondary); margin-top: 4px; font-size: 14px;">
+            Prioritized operational queue compiled dynamically from pending registrations, cash verifications, open
+            complaints, and inventory alerts.
+        </p>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center;">
+        <button type="button" class="btn" id="btn-toggle-focus-mode" onclick="toggleFocusMode();"
+            style="border: 2px solid var(--primary); background: var(--bg-surface); color: var(--primary); font-weight: 700;">
+            <i class="fa-solid fa-bullseye"></i> <span id="focus-mode-text">Enable Focus Mode</span>
+        </button>
+        <button type="button" class="btn btn-outline" onclick="window.location.reload();">
+            <i class="fa-solid fa-arrows-rotate"></i> Refresh
+        </button>
+        <button type="button" class="btn btn-primary" onclick="window.openContextualHelp('admin_dashboard');">
+            <i class="fa-solid fa-circle-question"></i> Page Guide
+        </button>
+    </div>
+</div>
+
+<!-- Focus Mode Summary Metrics -->
+<div id="focus-mode-banner"
+    style="display: none; margin-bottom: 24px; padding: 16px 20px; background: rgba(79, 70, 229, 0.08); border-left: 4px solid var(--primary); border-radius: 6px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-bullseye" style="font-size: 20px; color: var(--primary);"></i>
+            <div>
+                <strong style="color: var(--text-primary); font-size: 15px;">Focus Mode Active</strong>
+                <div style="font-size: 13px; color: var(--text-secondary);">
+                    Showing only high-priority work items, pending approvals, and critical alerts.
+                </div>
+            </div>
+        </div>
+        <span class="badge"
+            style="background: var(--primary); color: white; padding: 6px 12px; font-size: 12px; font-weight: 700;">
+            {{ focus_data.total_action_items }} Focus Items
+        </span>
+    </div>
+</div>
+
+<!-- Work Queue Task List -->
+<div class="card" style="padding: 24px;">
+    <div
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+        <h2 style="font-size: 18px; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-layer-group" style="color: var(--primary);"></i>
+            Actionable Tasks (<span id="queue-count">{{ tasks|length }}</span>)
+        </h2>
+        <div style="display: flex; gap: 8px;">
+            <select id="queue-priority-filter" class="form-control"
+                style="font-size: 13px; padding: 6px 12px; width: auto;" onchange="filterQueueByPriority();">
+                <option value="all">All Priorities</option>
+                <option value="critical">Critical Only</option>
+                <option value="high">High Priority</option>
+                <option value="medium">Medium Priority</option>
+                <option value="low">Low Priority</option>
+            </select>
+        </div>
+    </div>
+
+    {% if tasks %}
+    <div id="work-queue-list" style="display: flex; flex-direction: column; gap: 12px;">
+        {% for task in tasks %}
+        <div class="task-card" data-priority="{{ task.priority|lower }}"
+            style="border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; background: var(--bg-surface); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; transition: transform 0.15s ease;">
+            <div style="display: flex; align-items: flex-start; gap: 14px; flex: 1; min-width: 260px;">
+                <div style="margin-top: 2px;">
+                    {% if task.priority == 'critical' %}
+                    <span class="badge"
+                        style="background: rgba(239, 68, 68, 0.15); color: var(--danger); font-weight: 800; font-size: 11px;">CRITICAL</span>
+                    {% elif task.priority == 'high' %}
+                    <span class="badge"
+                        style="background: rgba(249, 115, 22, 0.15); color: #ea580c; font-weight: 800; font-size: 11px;">HIGH</span>
+                    {% elif task.priority == 'medium' %}
+                    <span class="badge"
+                        style="background: rgba(245, 158, 11, 0.15); color: #d97706; font-weight: 700; font-size: 11px;">MEDIUM</span>
+                    {% else %}
+                    <span class="badge"
+                        style="background: rgba(100, 116, 139, 0.15); color: var(--text-secondary); font-weight: 600; font-size: 11px;">LOW</span>
+                    {% endif %}
+                </div>
+                <div>
+                    <div style="font-weight: 700; font-size: 15px; color: var(--text-primary); margin-bottom: 4px;">
+                        {{ task.title }}
+                    </div>
+                    <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.4;">
+                        {{ task.reason }}
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <a href="{{ task.url }}" class="btn btn-sm btn-primary" style="font-weight: 600;">
+                    {{ task.action_label or 'Take Action' }} <i class="fa-solid fa-arrow-right"
+                        style="font-size: 11px; margin-left: 4px;"></i>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="padding: 40px 20px; text-align: center; color: var(--text-secondary);">
+        <i class="fa-solid fa-circle-check" style="font-size: 48px; color: var(--success); margin-bottom: 16px;"></i>
+        <h3 style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">Work Queue is
+            Empty</h3>
+        <p style="font-size: 14px;">All registrations, payments, complaints, and inventory items are up to date.</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    let focusModeActive = false;
+
+    function toggleFocusMode() {
+        focusModeActive = !focusModeActive;
+        const banner = document.getElementById('focus-mode-banner');
+        const textSpan = document.getElementById('focus-mode-text');
+        const btn = document.getElementById('btn-toggle-focus-mode');
+        const cards = document.querySelectorAll('.task-card');
+
+        if (focusModeActive) {
+            banner.style.display = 'block';
+            textSpan.textContent = 'Disable Focus Mode';
+            btn.style.background = 'var(--primary)';
+            btn.style.color = 'white';
+            cards.forEach(card => {
+                const prio = card.getAttribute('data-priority');
+                if (prio === 'critical' || prio === 'high') {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        } else {
+            banner.style.display = 'none';
+            textSpan.textContent = 'Enable Focus Mode';
+            btn.style.background = 'var(--bg-surface)';
+            btn.style.color = 'var(--primary)';
+            cards.forEach(card => card.style.display = 'flex');
+        }
+    }
+
+    function filterQueueByPriority() {
+        const val = document.getElementById('queue-priority-filter').value;
+        const cards = document.querySelectorAll('.task-card');
+        cards.forEach(card => {
+            const prio = card.getAttribute('data-priority');
+            if (val === 'all' || prio === val) {
+                card.style.display = 'flex';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+</script>
+{% endblock %}

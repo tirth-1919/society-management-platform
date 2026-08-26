@@ -12,6 +12,8 @@ from app.routes.system_health import system_bp
 from app.routes.reports import reports_bp
 from app.routes.api import api_bp
 from app.routes.resident import resident_bp
+from app.routes.ai import ai_bp
+from app.routes.event_photos import event_photos_bp
 
 __all__ = [
     "auth_bp",
@@ -28,4 +30,6 @@ __all__ = [
     "reports_bp",
     "api_bp",
     "resident_bp",
+    "ai_bp",
+    "event_photos_bp",
 ]

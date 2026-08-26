@@ -111,12 +111,14 @@
               {% if p.status == 'pending' %}
               <div style="display:flex; flex-direction:column; gap:6px;">
                 <form action="{{ url_for('payments.admin_approve_cash_payment', payment_id=p.id) }}" method="POST" style="margin:0;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
                   <button type="submit" style="width:100%; padding:6px 12px; border-radius:7px; border:none; cursor:pointer; background:#10b981; color:#fff; font-size:12px; font-weight:700;"
                           onclick="return confirm('Approve cash payment of ₹{{ p.amount_paid }}?')">
                     <i class="fa-solid fa-check"></i> Approve
                   </button>
                 </form>
                 <form action="{{ url_for('payments.admin_reject_cash_payment', payment_id=p.id) }}" method="POST" style="margin:0;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
                   <button type="submit" style="width:100%; padding:6px 12px; border-radius:7px; border:none; cursor:pointer; background:#ef4444; color:#fff; font-size:12px; font-weight:700;"
                           onclick="return confirm('Reject this cash payment?')">
                     <i class="fa-solid fa-xmark"></i> Reject

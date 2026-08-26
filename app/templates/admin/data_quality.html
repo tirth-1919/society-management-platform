@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Data Quality Center - Society SaaS{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs" style="margin-bottom: 20px;">
+    <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+    <i class="fa-solid fa-chevron-right" style="font-size: 10px; margin: 0 8px; color: var(--text-secondary);"></i>
+    <span style="color: var(--text-secondary);">Data Quality Center</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+    <div>
+        <h1 style="font-size: 24px; font-weight: 800; display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-database" style="color: var(--primary);"></i>
+            Data Quality Center
+        </h1>
+        <p style="color: var(--text-secondary); margin-top: 4px; font-size: 14px;">
+            Authoritative automated audits for duplicate records, invalid formats, missing relationships, and stale entries.
+        </p>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <button type="button" class="btn btn-outline" id="btn-refresh-dq" onclick="window.location.reload();">
+            <i class="fa-solid fa-arrows-rotate"></i> Re-Scan Quality
+        </button>
+        <button type="button" class="btn btn-primary" onclick="window.openContextualHelp('data_quality');">
+            <i class="fa-solid fa-circle-question"></i> Page Guide
+        </button>
+    </div>
+</div>
+
+<!-- Health Score & Metrics Cards -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+    <div class="card" style="padding: 20px; text-align: center; border-left: 4px solid var(--primary);">
+        <div style="font-size: 12px; color: var(--text-secondary); font-weight: 700; text-transform: uppercase;">Data Health Score</div>
+        <div style="font-size: 36px; font-weight: 800; color: {{ 'var(--success)' if audit.data_health_score >= 85 else ('var(--warning)' if audit.data_health_score >= 60 else 'var(--danger)') }}; margin: 8px 0;">
+            {{ audit.data_health_score }}<span style="font-size: 18px; color: var(--text-secondary); font-weight: 500;">/100</span>
+        </div>
+        <div style="font-size: 12px; color: var(--text-secondary);">
+            {{ 'Clean records' if audit.data_health_score >= 85 else 'Action recommended' }}
+        </div>
+    </div>
+
+    <div class="card" style="padding: 20px; border-left: 4px solid var(--danger);">
+        <div style="font-size: 12px; color: var(--text-secondary); font-weight: 700; text-transform: uppercase;">Critical Issues</div>
+        <div style="font-size: 32px; font-weight: 800; color: var(--danger); margin: 8px 0;">{{ audit.critical_count }}</div>
+        <div style="font-size: 12px; color: var(--text-secondary);">Duplicate flats or keys</div>
+    </div>
+
+    <div class="card" style="padding: 20px; border-left: 4px solid var(--warning);">
+        <div style="font-size: 12px; color: var(--text-secondary); font-weight: 700; text-transform: uppercase;">High / Medium Issues</div>
+        <div style="font-size: 32px; font-weight: 800; color: var(--warning); margin: 8px 0;">{{ audit.high_count + audit.medium_count }}</div>
+        <div style="font-size: 12px; color: var(--text-secondary);">Mobiles, emails, relations</div>
+    </div>
+
+    <div class="card" style="padding: 20px; border-left: 4px solid var(--info);">
+        <div style="font-size: 12px; color: var(--text-secondary); font-weight: 700; text-transform: uppercase;">Audited Records</div>
+        <div style="font-size: 32px; font-weight: 800; color: var(--text-primary); margin: 8px 0;">
+            {{ audit.audited_records.residents_count }}
+        </div>
+        <div style="font-size: 12px; color: var(--text-secondary);">Across {{ audit.audited_records.flats_count }} flats</div>
+    </div>
+</div>
+
+
+<!-- Detected Data Quality Issues Table -->
+<div class="card" style="padding: 24px; margin-bottom: 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+        <h2 style="font-size: 18px; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-list-check" style="color: var(--primary);"></i>
+            Detected Quality Issues ({{ audit.total_issues_count }})
+        </h2>
+        <span style="font-size: 12px; color: var(--text-secondary);">
+            <i class="fa-solid fa-shield-halved"></i> Read-only diagnostic. Human confirmation required for changes.
+        </span>
+    </div>
+
+    {% if audit.issues %}
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width: 100px;">Severity</th>
+                    <th style="width: 180px;">Issue Type</th>
+                    <th style="width: 200px;">Record</th>
+                    <th>Description</th>
+                    <th>Suggested Fix</th>
+                    <th style="width: 100px; text-align: right;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in audit.issues %}
+                <tr>
+                    <td>
+                        {% if item.severity == 'critical' %}
+                        <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: var(--danger); font-weight: 700;">CRITICAL</span>
+                        {% elif item.severity == 'high' %}
+                        <span class="badge" style="background: rgba(249, 115, 22, 0.15); color: #ea580c; font-weight: 700;">HIGH</span>
+                        {% elif item.severity == 'medium' %}
+                        <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #d97706; font-weight: 600;">MEDIUM</span>
+                        {% else %}
+                        <span class="badge" style="background: rgba(100, 116, 139, 0.15); color: var(--text-secondary); font-weight: 600;">LOW</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-weight: 600; font-size: 13px;">{{ item.type.replace('_', ' ').title() }}</td>
+                    <td style="font-weight: 600;">{{ item.record_name }}</td>
+                    <td style="font-size: 13px; color: var(--text-secondary);">{{ item.description }}</td>
+                    <td style="font-size: 13px; color: var(--primary); font-weight: 500;">
+                        <i class="fa-solid fa-wand-magic-sparkles" style="font-size: 11px;"></i> {{ item.suggested_fix }}
+                    </td>
+                    <td style="text-align: right;">
+                        <a href="{{ url_for('admin.residents') }}" class="btn btn-sm btn-outline" title="Review in Directory">
+                            Review
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="padding: 40px 20px; text-align: center; color: var(--text-secondary);">
+        <i class="fa-solid fa-circle-check" style="font-size: 48px; color: var(--success); margin-bottom: 16px;"></i>
+        <h3 style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">Zero Data Quality Issues Found</h3>
+        <p style="font-size: 14px;">All resident profiles, flat mappings, phone numbers, and emails comply with society standards.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Duplicate Resident Detector Cards -->
+<div class="card" style="padding: 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+        <div>
+            <h2 style="font-size: 18px; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-user-group" style="color: var(--primary);"></i>
+                Duplicate Resident Similarity Matching ({{ duplicates|length }})
+            </h2>
+            <p style="font-size: 13px; color: var(--text-secondary); margin: 4px 0 0 0;">
+                Detects potential duplicate residents using multi-attribute similarity matching (Name, Mobile, Email, Flat).
+            </p>
+        </div>
+    </div>
+
+    {% if duplicates %}
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+        {% for dup in duplicates %}
+        <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; background: var(--bg-surface);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: var(--danger); font-weight: 800; font-size: 13px;">
+                        {{ dup.confidence }}% Match Confidence
+                    </span>
+                    <span style="font-size: 13px; color: var(--text-secondary);">
+                        Match Factors: {{ dup.reasons|join(', ') }}
+                    </span>
+                </div>
+                <a href="{{ url_for('admin.residents') }}" class="btn btn-sm btn-primary">
+                    <i class="fa-solid fa-code-compare"></i> Review Records
+                </a>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div style="padding: 12px; background: var(--bg-hover); border-radius: 6px;">
+                    <div style="font-weight: 700; font-size: 14px; margin-bottom: 6px;">
+                        Resident A: {{ dup.resident_a.name }}
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.6;">
+                        <div><strong>Flat:</strong> {{ dup.resident_a.flat }} | <strong>Type:</strong> {{ dup.resident_a.type }}</div>
+                        <div><strong>Mobile:</strong> {{ dup.resident_a.mobile }}</div>
+                        <div><strong>Email:</strong> {{ dup.resident_a.email or 'N/A' }}</div>
+                    </div>
+                </div>
+
+                <div style="padding: 12px; background: var(--bg-hover); border-radius: 6px;">
+                    <div style="font-weight: 700; font-size: 14px; margin-bottom: 6px;">
+                        Resident B: {{ dup.resident_b.name }}
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.6;">
+                        <div><strong>Flat:</strong> {{ dup.resident_b.flat }} | <strong>Type:</strong> {{ dup.resident_b.type }}</div>
+                        <div><strong>Mobile:</strong> {{ dup.resident_b.mobile }}</div>
+                        <div><strong>Email:</strong> {{ dup.resident_b.email or 'N/A' }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="padding: 24px; text-align: center; color: var(--text-secondary);">
+        <i class="fa-solid fa-user-check" style="font-size: 32px; color: var(--success); margin-bottom: 12px;"></i>
+        <p style="font-size: 14px; margin: 0;">No potential duplicate residents found across society records.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

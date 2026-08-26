@@ -153,6 +153,55 @@ def patch_sqlite_schema(app=None):
                     )
                     conn.commit()
 
+            if "automation_rules" in inspector.get_table_names():
+                cols_ar = [c["name"] for c in inspector.get_columns("automation_rules")]
+                if "event_name" not in cols_ar:
+                    conn.execute(
+                        text("ALTER TABLE automation_rules ADD COLUMN event_name VARCHAR(100)")
+                    )
+                    conn.commit()
+                if "priority" not in cols_ar:
+                    conn.execute(
+                        text("ALTER TABLE automation_rules ADD COLUMN priority INTEGER DEFAULT 1")
+                    )
+                    conn.commit()
+
+            if "automation_executions" in inspector.get_table_names():
+                cols_ae = [c["name"] for c in inspector.get_columns("automation_executions")]
+                if "retry_count" not in cols_ae:
+                    conn.execute(
+                        text("ALTER TABLE automation_executions ADD COLUMN retry_count INTEGER DEFAULT 0")
+                    )
+                    conn.commit()
+
+            # Event photo hardening fields are additive so existing SQLite deployments
+            # remain compatible before their Alembic migration is run.
+            if "events" in inspector.get_table_names():
+                cols_events = [c["name"] for c in inspector.get_columns("events")]
+                if "photo_upload_deadline" not in cols_events:
+                    conn.execute(text("ALTER TABLE events ADD COLUMN photo_upload_deadline DATETIME"))
+                    conn.commit()
+            # Vehicle directory fields are additive for existing SQLite databases
+            if "vehicles" in inspector.get_table_names():
+                cols_vehicles = [c["name"] for c in inspector.get_columns("vehicles")]
+                vehicle_cols = [
+                    ("owner_user_id", "INTEGER REFERENCES users(id)"),
+                    ("normalized_number_plate", "VARCHAR(50)"),
+                    ("make", "VARCHAR(100)"),
+                    ("model", "VARCHAR(100)"),
+                    ("parking_slot_number", "VARCHAR(50)"),
+                    ("secondary_mobile", "VARCHAR(20)"),
+                    ("email", "VARCHAR(120)"),
+                    ("status", "VARCHAR(20) DEFAULT 'ACTIVE'"),
+                    ("notes", "TEXT"),
+                    ("vehicle_photo", "VARCHAR(255)"),
+                    ("updated_at", "DATETIME"),
+                ]
+                for col_name, col_def in vehicle_cols:
+                    if col_name not in cols_vehicles:
+                        conn.execute(text(f"ALTER TABLE vehicles ADD COLUMN {col_name} {col_def}"))
+                        conn.commit()
+
     except Exception as e:
         print(f"[DB PATCH NOTE] Schema patch skipped or already applied: {e}")
 
@@ -307,7 +356,5 @@ class Flat(db.Model):
             (r for r in self.residents if r.is_primary and r.occupancy_status == "Active"),
             None,
         )
-
-
 
 

@@ -4,6 +4,7 @@
 <div class="page-heading"><div><p class="eyebrow">Settings</p><h1>Notification Preferences</h1><p>Choose which optional updates you receive. Account and payment-confirmation records are always kept regardless of these settings.</p></div></div>
 <section class="card" style="max-width:520px;">
   <form method="post" class="stack-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
     <div class="pref-row">
       <div><strong>Maintenance reminders</strong><br><small class="muted">Upcoming and overdue maintenance due dates.</small></div>
       <label class="switch"><input type="checkbox" name="maintenance_reminders" {{ 'checked' if pref.maintenance_reminders }}><span class="switch-track" aria-hidden="true"></span><span class="sr-only">Maintenance reminders</span></label>

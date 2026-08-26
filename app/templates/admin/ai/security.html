@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}AI Security Command Center{% endblock %}
+
+{% block content %}
+<div class="page-body">
+    {% include "admin/ai/nav_tabs.html" %}
+
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 24px;">
+        <!-- Security Anomaly Feed -->
+        <div class="card"
+            style="border-radius: var(--radius-md); padding: 20px; background: var(--bg-surface); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2 style="font-size: 16px; font-weight: 800; margin: 0;">Security Access Anomaly Detection</h2>
+                <span style="font-size: 12px; color: var(--text-secondary);">Objective pattern analysis across gates and
+                    access logs</span>
+            </div>
+
+            {% if anomalies %}
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+                {% for item in anomalies %}
+                <div style="padding: 14px; border-radius: 8px; background: var(--bg-primary);" class="border-severity-{{ 'critical' if item.severity == 'CRITICAL' else ('high' if item.severity == 'HIGH' else ('medium' if item.severity == 'MEDIUM' else 'low')) }}">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span class="badge" style="font-size: 10px; font-weight: 700;">{{ item.type }}</span>
+                        <span style="font-size: 12px; font-weight: 700; color: var(--text-secondary);">{{ item.severity
+                            }} ({{ (item.confidence * 100)|round|int }}% Confidence)</span>
+                    </div>
+                    <h3 style="font-size: 14px; font-weight: 700; margin: 0 0 4px;">{{ item.title }}</h3>
+                    <p style="font-size: 13px; color: var(--text-secondary); margin: 0 0 8px;">{{ item.summary }}</p>
+                    <div style="font-size: 12px; color: var(--primary); font-weight: 600;">
+                        <i class="fa-solid fa-shield-halved"></i> Action: {{ item.recommended_action }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 32px 16px; color: var(--text-secondary);">
+                <i class="fa-solid fa-shield-check"
+                    style="font-size: 36px; color: var(--success); margin-bottom: 12px; display: block;"></i>
+                <p style="font-size: 14px; font-weight: 600;">Gate and visitor telemetry within normal security
+                    parameters.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- CCTV & Hardware Adapter Status -->
+        <div class="card"
+            style="border-radius: var(--radius-md); padding: 20px; background: var(--bg-surface); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+            <h3 style="font-size: 15px; font-weight: 800; margin: 0 0 12px;"><i class="fa-solid fa-video"></i> CCTV
+                Stream Adapter</h3>
+            <div
+                style="background: var(--bg-primary); padding: 14px; border-radius: 8px; margin-bottom: 12px; font-size: 13px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="color: var(--text-secondary);">Adapter:</span>
+                    <strong>{{ cctv_status.adapter }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="color: var(--text-secondary);">Camera ID:</span>
+                    <strong>{{ cctv_status.camera_id }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="color: var(--text-secondary);">Stream Status:</span>
+                    <span class="badge"
+                        style="background: rgba(16,185,129,0.15); color: var(--success); font-weight: 700;">{{
+                        cctv_status.status }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--text-secondary);">Hardware Ready:</span>
+                    <strong style="color: var(--success);">Yes</strong>
+                </div>
+            </div>
+            <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.4;">
+                CCTV Adapter Interface ready for future edge RTSP / ONVIF IP camera streaming and automated motion
+                pattern ingestion.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

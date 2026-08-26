@@ -12,6 +12,7 @@
         </div>
         <div class="d-flex gap-2">
             <form action="{{ url_for('admin.run_automation_action', action_name='RECONCILE_PAYMENTS') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
                 <button type="submit" class="btn btn-primary shadow-sm">
                     <i class="bi bi-arrow-repeat me-1"></i> Run Reconciliation Audit
                 </button>
@@ -103,11 +104,13 @@
                             <td class="text-end">
                                 <div class="btn-group btn-group-sm">
                                     <form action="{{ url_for('admin.resolve_reconciliation', id=issue.id) }}" method="POST" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
                                         <button type="submit" class="btn btn-success btn-sm">
                                             <i class="bi bi-check-circle me-1"></i> Resolve & Fix
                                         </button>
                                     </form>
                                     <form action="{{ url_for('admin.dismiss_reconciliation', id=issue.id) }}" method="POST" class="d-inline ms-1">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
                                         <button type="submit" class="btn btn-outline-secondary btn-sm">
                                             <i class="bi bi-x-circle me-1"></i> Dismiss
                                         </button>

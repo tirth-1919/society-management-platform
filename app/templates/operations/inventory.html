@@ -9,6 +9,7 @@
     <div class="card">
         <h3>Process Stock Transaction</h3>
         <form action="{{ url_for('operations.inventory') }}" method="POST" style="margin-top: 16px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
             <div style="margin-bottom: 16px;">
                 <label style="font-weight: 600;">Select Item</label>
                 <select name="item_id" required style="width: 100%; padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary);">

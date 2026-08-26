@@ -88,6 +88,12 @@
             <i class="fa-solid fa-bolt" style="color: var(--warning);"></i> ERP Quick Actions
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a href="{{ url_for('admin.work_queue_dashboard') }}" class="btn btn-small btn-primary">
+                <i class="fa-solid fa-list-check"></i> Work Queue
+            </a>
+            <a href="{{ url_for('admin.data_quality_center') }}" class="btn btn-small btn-secondary">
+                <i class="fa-solid fa-database"></i> Data Quality
+            </a>
             <a href="{{ url_for('admin.reconciliation') }}" class="btn btn-small btn-secondary">
                 <i class="fa-solid fa-scale-balanced"></i> Reconcile Payments
             </a>
@@ -420,7 +426,76 @@ document.addEventListener('DOMContentLoaded', () => {
    ================================================================ #}
 {% elif role == 'Resident' %}
 
-{# ---- FEATURE 1: Personalized Resident Header ---- #}
+{# ---- FEATURE 1: Smart Resident Status & Next-Actions Engine ---- #}
+<div id="smart-resident-status-container" class="card" style="margin-bottom: 20px; border-left: 4px solid var(--primary); display: none;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div id="smart-status-icon" style="width: 36px; height: 36px; border-radius: 50%; background: rgba(79, 70, 229, 0.12); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 16px;">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 800; font-size: 15px; color: var(--text-primary);">Resident Status:</span>
+                    <span id="smart-status-badge" class="badge" style="font-size: 12px; font-weight: 700;">Loading...</span>
+                </div>
+                <div id="smart-status-summary" style="font-size: 13px; color: var(--text-secondary); margin-top: 2px;">Checking account status...</div>
+            </div>
+        </div>
+        <button type="button" class="btn btn-xs btn-outline" onclick="window.openContextualHelp('resident_dashboard');">
+            <i class="fa-solid fa-circle-question"></i> Help Guide
+        </button>
+    </div>
+
+    <!-- Recommended Next Actions List -->
+    <div id="smart-next-actions-box" style="display: none; border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 8px;">
+        <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 8px;">
+            <i class="fa-solid fa-bolt" style="color: var(--warning);"></i> Recommended Next Actions
+        </div>
+        <div id="smart-actions-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+    </div>
+</div>
+
+<script>
+(function loadResidentSmartStatus() {
+    fetch('/api/v1/ai/resident/status')
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+            if (!data) return;
+            const container = document.getElementById('smart-resident-status-container');
+            const badge = document.getElementById('smart-status-badge');
+            const summary = document.getElementById('smart-status-summary');
+            if (!container || !badge) return;
+
+            badge.textContent = data.status;
+            badge.className = 'badge ' + (data.badge_class || 'badge-primary');
+            summary.textContent = data.summary;
+            container.style.display = 'block';
+
+            // Load next actions
+            fetch('/api/v1/ai/resident/next-actions')
+                .then(r => r.ok ? r.json() : null)
+                .then(actionData => {
+                    if (!actionData || !actionData.actions || actionData.actions.length === 0) return;
+                    const box = document.getElementById('smart-next-actions-box');
+                    const list = document.getElementById('smart-actions-list');
+                    if (!box || !list) return;
+
+                    list.innerHTML = actionData.actions.map(act => `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--bg-hover); border-radius: 6px; font-size: 13px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid ${act.icon || 'fa-circle-arrow-right'}" style="color: var(--primary);"></i>
+                                <span><strong>${act.title}</strong> — <span style="color: var(--text-secondary);">${act.reason}</span></span>
+                            </div>
+                            <a href="${act.url}" class="btn btn-xs btn-primary">${act.btn_text || 'Take Action'}</a>
+                        </div>
+                    `).join('');
+                    box.style.display = 'block';
+                })
+                .catch(() => {});
+        })
+        .catch(() => {});
+})();
+</script>
 <div class="card" style="background: linear-gradient(135deg, #1e1b4b, var(--primary)); color: white; margin-bottom: 20px; border: none; box-shadow: var(--shadow-md);">
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
         <div>
@@ -486,6 +561,75 @@ document.addEventListener('DOMContentLoaded', () => {
 </div>
 {% endfor %}
 {% endif %}
+
+{# ---- PHASE 1: AI Personal Account Summary Widget ---- #}
+<div id="resident-ai-summary-widget" class="card"
+     style="margin-bottom:16px; border-left:3px solid var(--primary); display:none;">
+  <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+    <div style="width:32px; height:32px; border-radius:50%; background:rgba(79,70,229,0.12); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0;">
+      <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+    </div>
+    <div style="font-weight:700; font-size:14px; color:var(--text-primary);">Your Society Summary</div>
+  </div>
+  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin-bottom:10px;">
+    <div style="background:var(--bg-base); border-radius:var(--radius-md); padding:10px 13px; border:1px solid var(--border-color);">
+      <div style="font-size:11px; color:var(--text-secondary); font-weight:700; text-transform:uppercase; margin-bottom:2px;">Maintenance</div>
+      <div id="rai-sum-maintenance" style="font-size:18px; font-weight:800; color:var(--text-primary);">—</div>
+    </div>
+    <div style="background:var(--bg-base); border-radius:var(--radius-md); padding:10px 13px; border:1px solid var(--border-color);">
+      <div style="font-size:11px; color:var(--text-secondary); font-weight:700; text-transform:uppercase; margin-bottom:2px;">Outstanding</div>
+      <div id="rai-sum-outstanding" style="font-size:18px; font-weight:800;">—</div>
+    </div>
+    <div style="background:var(--bg-base); border-radius:var(--radius-md); padding:10px 13px; border:1px solid var(--border-color);">
+      <div style="font-size:11px; color:var(--text-secondary); font-weight:700; text-transform:uppercase; margin-bottom:2px;">Last Payment</div>
+      <div id="rai-sum-lastpay" style="font-size:13.5px; font-weight:700; color:var(--text-primary);">—</div>
+    </div>
+    <div style="background:var(--bg-base); border-radius:var(--radius-md); padding:10px 13px; border:1px solid var(--border-color);">
+      <div style="font-size:11px; color:var(--text-secondary); font-weight:700; text-transform:uppercase; margin-bottom:2px;">Next Due</div>
+      <div id="rai-sum-nextdue" style="font-size:13.5px; font-weight:700; color:var(--text-primary);">—</div>
+    </div>
+  </div>
+  <div id="rai-sum-message" style="font-size:13.5px; color:var(--text-secondary); font-style:italic; min-height:20px; padding:4px 0;"></div>
+  <a href="{{ url_for('resident.ai_assistant') }}"
+     style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:var(--primary); text-decoration:none; margin-top:6px; font-weight:600;">
+    <i class="fa-solid fa-comments" aria-hidden="true"></i> Ask AI about your account
+  </a>
+</div>
+<script>
+(function(){
+  fetch('/api/v1/resident/ai/dashboard-summary')
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (!data) return;
+      const widget = document.getElementById('resident-ai-summary-widget');
+      if (!widget) return;
+
+      const fmt = v => v != null ? '₹' + Number(v).toLocaleString('en-IN') : '—';
+
+      document.getElementById('rai-sum-maintenance').textContent =
+        fmt(data.total_outstanding > 0 ? data.total_outstanding : 0);
+      const outstandingEl = document.getElementById('rai-sum-outstanding');
+      outstandingEl.textContent = fmt(data.total_outstanding);
+      outstandingEl.style.color = data.total_outstanding > 0 ? 'var(--danger)' : 'var(--success)';
+
+      document.getElementById('rai-sum-lastpay').textContent =
+        data.last_payment_date
+          ? (data.last_payment_amount ? fmt(data.last_payment_amount) + '\n' : '') + data.last_payment_date
+          : 'None recorded';
+
+      document.getElementById('rai-sum-nextdue').textContent =
+        data.next_due_date
+          ? (data.next_due_amount ? fmt(data.next_due_amount) + ' · ' : '') + data.next_due_date
+          : 'None pending';
+
+      document.getElementById('rai-sum-message').textContent =
+        data.summary_text || data.ai_message || '';
+
+      widget.style.display = 'block';
+    })
+    .catch(() => { /* silent — dashboard works without AI summary */ });
+})();
+</script>
 
 {# ---- FEATURE 1+3: Summary Metrics Row ---- #}
 <div class="metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); margin-bottom: 20px;">

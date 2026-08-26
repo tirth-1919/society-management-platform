@@ -9,60 +9,70 @@
     </div>
 </div>
 
-<div class="facility-booking-layout" style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
-    <div class="card">
+<div class="facility-booking-layout">
+    <div class="card facility-form-card">
         <h3><i class="fa-solid fa-calendar-plus" style="color: var(--primary);"></i> Book Facility</h3>
         <form action="{{ url_for('facilities.book') }}" method="POST" style="margin-top: 16px;">
-            <div style="margin-bottom: 16px;">
-                <label for="facility_id" style="font-weight: 600; display: block; margin-bottom: 6px;">Select Facility</label>
-                <select name="facility_id" id="facility_id" required class="facility-dropdown" style="width: 100%; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); font-size: 14px; min-height: 44px; cursor: pointer;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+
+            <div class="form-group-facility">
+                <label for="facility_id" style="font-weight: 600; display: block; margin-bottom: 6px;">Select Facility <span style="color:var(--danger);">*</span></label>
+                <select name="facility_id" id="facility_id" required class="facility-dropdown" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); font-size: 14px; min-height: 44px; cursor: pointer;">
                     <option value="" disabled selected>Select a facility</option>
                     {% for f in facilities %}
-                    <option value="{{ f.id }}">{{ f.name }}</option>
+                    <option value="{{ f.id }}">{{ f.name }} (Cap: {{ f.capacity }})</option>
                     {% endfor %}
                 </select>
             </div>
-            <div style="margin-bottom: 16px;">
-                <label for="booking_date" style="font-weight: 600; display: block; margin-bottom: 6px;">Booking Date</label>
-                <input type="date" name="booking_date" id="booking_date" required min="{{ today_date }}" style="width: 100%; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); font-size: 14px; min-height: 44px;">
+
+            <div class="form-group-facility">
+                <label for="booking_date" style="font-weight: 600; display: block; margin-bottom: 6px;">Booking Date <span style="color:var(--danger);">*</span></label>
+                <input type="date" name="booking_date" id="booking_date" required min="{{ today_date }}" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); font-size: 14px; min-height: 44px;">
             </div>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 16px;">
+
+            <div class="facility-time-grid">
                 <div>
-                    <label for="start_time" style="font-weight: 600; display: block; margin-bottom: 6px;">Start Time</label>
-                    <input type="time" name="start_time" id="start_time" required value="10:00" style="width: 100%; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); font-size: 14px; min-height: 44px;">
+                    <label for="start_time" style="font-weight: 600; display: block; margin-bottom: 6px;">Start Time <span style="color:var(--danger);">*</span></label>
+                    <input type="time" name="start_time" id="start_time" required value="10:00" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); font-size: 14px; min-height: 44px;">
                 </div>
                 <div>
-                    <label for="end_time" style="font-weight: 600; display: block; margin-bottom: 6px;">End Time</label>
-                    <input type="time" name="end_time" id="end_time" required value="12:00" style="width: 100%; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); font-size: 14px; min-height: 44px;">
+                    <label for="end_time" style="font-weight: 600; display: block; margin-bottom: 6px;">End Time <span style="color:var(--danger);">*</span></label>
+                    <input type="time" name="end_time" id="end_time" required value="12:00" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); font-size: 14px; min-height: 44px;">
                 </div>
             </div>
-            <div style="margin-bottom: 16px;">
-                <label for="purpose" style="font-weight: 600; display: block; margin-bottom: 6px;">Purpose / Reason</label>
-                <input type="text" name="purpose" id="purpose" placeholder="e.g. Birthday Party, Sports Practice" style="width: 100%; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); font-size: 14px; min-height: 44px;">
+
+            <div class="form-group-facility">
+                <label for="purpose" style="font-weight: 600; display: block; margin-bottom: 6px;">Purpose / Event Type</label>
+                <input type="text" name="purpose" id="purpose" placeholder="e.g. Birthday Party, Sports Practice" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); font-size: 14px; min-height: 44px;">
             </div>
-            <div style="margin-bottom: 16px;">
-                <label for="notes" style="font-weight: 600; display: block; margin-bottom: 6px;">Optional Notes</label>
-                <textarea name="notes" id="notes" rows="2" placeholder="Any special requests or notes..." style="width: 100%; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); font-size: 14px; font-family: inherit; resize: vertical;"></textarea>
+
+            <div class="form-group-facility">
+                <label for="notes" style="font-weight: 600; display: block; margin-bottom: 6px;">Optional Notes / Requests</label>
+                <textarea name="notes" id="notes" rows="2" placeholder="Any special requests or details..." style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); font-size: 14px; font-family: inherit; resize: vertical; min-height: 60px;"></textarea>
             </div>
+
             <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; min-height: 44px; margin-top: 8px;">
                 <i class="fa-solid fa-calendar-check"></i> Book Facility
             </button>
         </form>
     </div>
 
-    <div class="card">
+    <div class="card facility-bookings-card">
         <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
             <span><i class="fa-solid fa-list-check" style="color: var(--secondary);"></i> Confirmed Bookings</span>
             <span class="badge badge-info">{{ bookings|length }} active</span>
         </div>
-        <div class="table-responsive" style="margin-top: 16px;">
-            <table class="data-table">
+
+        {# Desktop / Tablet Table View #}
+        <div class="table-responsive facility-table-view" style="margin-top: 16px;">
+            <table class="data-table" style="width: 100%;">
                 <thead>
                     <tr>
                         <th>Facility</th>
                         <th>Date</th>
                         <th>Time Slot</th>
                         <th>Status</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -78,26 +88,91 @@
                         <td>{{ b.start_time }} – {{ b.end_time }}</td>
                         <td>
                             {% if b.status == 'Confirmed' %}
-                            <span class="badge badge-success">Status: Confirmed</span>
+                            <span class="badge badge-success">Confirmed</span>
                             {% elif b.status == 'Pending' %}
-                            <span class="badge badge-warning">Status: Pending</span>
+                            <span class="badge badge-warning">Pending</span>
                             {% elif b.status == 'Cancelled' %}
-                            <span class="badge badge-danger">Status: Cancelled</span>
+                            <span class="badge badge-danger">Cancelled</span>
                             {% else %}
-                            <span class="badge badge-info">Status: {{ b.status }}</span>
+                            <span class="badge badge-info">{{ b.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if b.status != 'Cancelled' %}
+                            <form action="{{ url_for('facilities.cancel_booking', booking_id=b.id) }}" method="POST" style="margin:0;" onsubmit="return confirm('Are you sure you want to cancel this booking?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+                                <button type="submit" class="btn btn-danger btn-sm" style="padding: 4px 8px; font-size: 11px;">Cancel</button>
+                            </form>
+                            {% else %}
+                            <span style="font-size: 12px; color: var(--text-secondary);">—</span>
                             {% endif %}
                         </td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">No active facility bookings.</td></tr>
+                    <tr><td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 24px;">No active facility bookings found.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+
+        {# Mobile Card View for Small Screens #}
+        <div class="facility-mobile-cards" style="display: none; flex-direction: column; gap: 12px; margin-top: 16px;">
+            {% for b in bookings %}
+            <div style="padding: 14px 16px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-surface);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px;">
+                    <div>
+                        <strong style="font-size: 14px;">{{ b.facility.name if b.facility else 'N/A' }}</strong>
+                        {% if b.purpose %}
+                        <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">{{ b.purpose }}</div>
+                        {% endif %}
+                    </div>
+                    {% if b.status == 'Confirmed' %}
+                    <span class="badge badge-success">Confirmed</span>
+                    {% elif b.status == 'Pending' %}
+                    <span class="badge badge-warning">Pending</span>
+                    {% elif b.status == 'Cancelled' %}
+                    <span class="badge badge-danger">Cancelled</span>
+                    {% else %}
+                    <span class="badge badge-info">{{ b.status }}</span>
+                    {% endif %}
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-secondary); margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border-color);">
+                    <span><i class="fa-solid fa-calendar"></i> {{ b.booking_date.strftime('%d %b %Y') if b.booking_date and b.booking_date.strftime else b.booking_date }} ({{ b.start_time }}–{{ b.end_time }})</span>
+                    {% if b.status != 'Cancelled' %}
+                    <form action="{{ url_for('facilities.cancel_booking', booking_id=b.id) }}" method="POST" style="margin:0;" onsubmit="return confirm('Cancel this booking?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+                        <button type="submit" class="btn btn-danger btn-sm" style="padding: 3px 8px; font-size: 11px;">Cancel</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div style="text-align: center; color: var(--text-secondary); padding: 24px;">No active facility bookings found.</div>
+            {% endfor %}
         </div>
     </div>
 </div>
 
 <style>
+.facility-booking-layout {
+    display: grid;
+    grid-template-columns: minmax(280px, 1fr) minmax(320px, 2fr);
+    gap: 24px;
+    align-items: start;
+    width: 100%;
+    max-width: 100%;
+}
+.form-group-facility {
+    margin-bottom: 16px;
+    width: 100%;
+}
+.facility-time-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+    width: 100%;
+}
 .facility-dropdown:hover, .facility-dropdown:focus {
     border-color: var(--primary, #3b82f6) !important;
     outline: none;
@@ -105,7 +180,19 @@
 @media (max-width: 900px) {
     .facility-booking-layout {
         grid-template-columns: 1fr !important;
-        gap: 16px !important;
+        gap: 20px !important;
+    }
+}
+@media (max-width: 600px) {
+    .facility-time-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+    .facility-table-view {
+        display: none !important;
+    }
+    .facility-mobile-cards {
+        display: flex !important;
     }
 }
 </style>

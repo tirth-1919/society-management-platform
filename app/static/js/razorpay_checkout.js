@@ -45,10 +45,15 @@ function initRazorpayCheckout(opts) {
     ? JSON.stringify({ bill_ids: opts.billIds })
     : JSON.stringify({ bill_id: opts.billId });
 
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
   // Step 1: Create order on server
   fetch(orderUrl, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrfToken
+    },
     credentials: 'same-origin',
     body: body,
   })
@@ -125,9 +130,14 @@ function _verifyPayment(response, orderData, opts) {
   if (opts.processingEl) opts.processingEl.style.display = 'block';
   if (opts.payBtn) opts.payBtn.style.display = 'none';
 
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
   fetch(opts.verifyUrl, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrfToken
+    },
     credentials: 'same-origin',
     body: JSON.stringify({
       razorpay_order_id: response.razorpay_order_id,

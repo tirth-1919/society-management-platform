@@ -60,13 +60,14 @@
             <th style="padding:14px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:12px; text-transform:uppercase; letter-spacing:0.5px; border-bottom:2px solid var(--border-color);">Block</th>
             <th style="padding:14px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:12px; text-transform:uppercase; letter-spacing:0.5px; border-bottom:2px solid var(--border-color);">Flat</th>
             <th style="padding:14px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:12px; text-transform:uppercase; letter-spacing:0.5px; border-bottom:2px solid var(--border-color);">Occupancy</th>
-            <th style="padding:14px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:12px; text-transform:uppercase; letter-spacing:0.5px; border-bottom:2px solid var(--border-color);">Submitted</th>
+            <th style="padding:14px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:12px; text-transform:uppercase; letter-spacing:0.5px; border-bottom:2px solid var(--border-color);">Submitted / Aging</th>
             <th style="padding:14px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:12px; text-transform:uppercase; letter-spacing:0.5px; border-bottom:2px solid var(--border-color);">Status</th>
             <th style="padding:14px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:12px; text-transform:uppercase; letter-spacing:0.5px; border-bottom:2px solid var(--border-color);">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {% for reg in registrations %}
+          {% for row in registration_rows %}
+          {% set reg = row.registration %}
           <tr id="reg-row-{{ reg.id }}" style="border-bottom:1px solid var(--border-color); transition:background 0.15s;"
             onmouseover="this.style.background='var(--bg-primary)'" onmouseout="this.style.background='transparent'">
 
@@ -111,12 +112,64 @@
 
             <!-- Submitted Date -->
             <td style="padding:14px 16px; color:var(--text-secondary); font-size:12px;">
-              {{ reg.created_at.strftime('%d %b %Y') }}<br>
-              <span style="font-size:11px;">{{ reg.created_at.strftime('%H:%M') }}</span>
+              {{ reg.created_at.strftime('%d %b %Y') if reg.created_at else '—' }}<br>
+              <span style="font-size:11px;">{{ reg.created_at.strftime('%H:%M') if reg.created_at else '' }}</span>
+              {% if reg.status == 'PENDING_APPROVAL' %}
+              <br>
+              <span style="font-size:11px; font-weight:700;
+                color:{% if row.age_label == 'Old' %}#dc2626{% elif row.age_label == 'Aging' %}#d97706{% else %}#059669{% endif %};">
+                {{ row.age_label }} · {{ row.days_pending }} day{{ 's' if row.days_pending != 1 else '' }}{% if row.days_pending >= 8 %} (8+ days){% endif %}
+              </span>
+              {% endif %}
             </td>
 
             <!-- Status -->
             <td style="padding:14px 16px;">
+              {% if reg.status == 'PENDING_APPROVAL' %}
+                {% if row.advisory.duplicate_detected %}
+                <div style="margin-bottom:6px;">
+                  {% for signal in row.advisory.signals %}
+                    {% if 'mobile' in signal.lower() %}
+                    <div style="color:#b45309; font-size:11px; font-weight:700; margin-bottom:2px;">
+                      <i class="fa-solid fa-triangle-exclamation"></i> ⚠ Duplicate mobile detected
+                    </div>
+                    {% elif 'email' in signal.lower() %}
+                    <div style="color:#b45309; font-size:11px; font-weight:700; margin-bottom:2px;">
+                      <i class="fa-solid fa-triangle-exclamation"></i> ⚠ Duplicate email detected
+                    </div>
+                    {% elif 'flat' in signal.lower() and 'resident' in signal.lower() %}
+                    <div style="color:#dc2626; font-size:11px; font-weight:700; margin-bottom:2px;">
+                      <i class="fa-solid fa-triangle-exclamation"></i> ⚠ Flat already associated with another resident
+                    </div>
+                    {% elif 'pending' in signal.lower() and 'flat' in signal.lower() %}
+                    <div style="color:#7c3aed; font-size:11px; font-weight:700; margin-bottom:2px;">
+                      <i class="fa-solid fa-triangle-exclamation"></i> ⚠ Another pending registration for this flat
+                    </div>
+                    {% else %}
+                    <div style="color:#b45309; font-size:11px; font-weight:700; margin-bottom:2px;" title="{{ signal }}">
+                      <i class="fa-solid fa-triangle-exclamation"></i> ⚠ {{ signal }}
+                    </div>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if row.advisory.has_missing_data %}
+                <div style="margin-bottom:6px;">
+                  {% for miss in row.advisory.missing_data %}
+                  <div style="color:#d97706; font-size:11px; font-weight:600; margin-bottom:2px;">
+                    <i class="fa-solid fa-circle-exclamation"></i> {{ miss }}
+                  </div>
+                  {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if row.advisory.admin_recommendation %}
+                <div style="font-size:11px; color:var(--text-secondary); margin-bottom:6px; font-style:italic;" title="{{ row.advisory.ai_summary }}">
+                  <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--primary);"></i> {{ row.advisory.admin_recommendation }}
+                </div>
+                {% endif %}
+              {% endif %}
               <span style="padding:5px 10px; border-radius:20px; font-size:11px; font-weight:700;
                 {% if reg.status == 'PENDING_APPROVAL' %}background:rgba(245,158,11,0.15); color:#d97706;
                 {% elif reg.status == 'APPROVED' %}background:rgba(16,185,129,0.15); color:#059669;

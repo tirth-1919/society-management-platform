@@ -74,11 +74,16 @@
     {% if complaints %}
     <div style="display: flex; flex-direction: column; gap: 12px;">
         {% for complaint in complaints %}
-        <div style="border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; background: var(--bg-surface);">
+        <div style="border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; background: var(--bg-surface);"
+             data-complaint-created="{{ complaint.created_at.isoformat() if complaint.created_at else '' }}"
+             data-complaint-priority="{{ complaint.priority }}"
+             data-complaint-status="{{ complaint.status }}">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap;">
                 <div style="flex: 1; min-width: 0;">
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap;">
-                        <span style="font-family: monospace; font-size: 12px; background: var(--bg-primary); padding: 2px 8px; border-radius: 4px; color: var(--text-secondary);">{{ complaint.ticket_number }}</span>
+                        <button type="button" class="btn btn-xs btn-outline" onclick="window.copyTicketNumber('{{ complaint.ticket_number }}')" title="Click to copy ticket number" style="font-family: monospace; font-size: 11.5px; padding: 2px 6px;">
+                            <i class="fa-regular fa-copy"></i> {{ complaint.ticket_number }}
+                        </button>
                         <span class="badge badge-{{
                             'danger' if complaint.priority == 'High' or complaint.priority == 'Emergency' else
                             ('warning' if complaint.priority == 'Medium' else 'info')

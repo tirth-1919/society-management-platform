@@ -4,6 +4,7 @@
 <div class="page-heading"><div><p class="eyebrow">Contact support</p><h1>Create Support Request</h1></div></div>
 <section class="card" style="max-width:560px;">
   <form method="post" class="stack-form" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
     <label for="subject">Subject
       <input id="subject" name="subject" value="{{ form.subject or '' }}" required maxlength="150" aria-required="true">
     </label>

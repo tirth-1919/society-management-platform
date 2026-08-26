@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block title %}Events | Sunrise Heights Community{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/event-photos.js') }}"></script>{% endblock %}
+
+{% block content %}
+<div class="page-header events-page-header">
+    <div>
+        <h1><i class="fa-solid fa-calendar-days"></i> Events</h1>
+        <p>Discover what's happening in your community at Sunrise Heights.</p>
+    </div>
+    <div class="events-summary-stats">
+        <span class="stat-pill"><i class="fa-solid fa-layer-group"></i> {{ total_count }} Total Events</span>
+        <span class="stat-pill stat-pill-upcoming"><i class="fa-solid fa-clock"></i> {{ upcoming_count }} Upcoming</span>
+    </div>
+</div>
+
+<!-- Search & View Filters Toolbar -->
+<div class="card events-toolbar-card">
+    <form class="event-search-form" method="get" role="search">
+        <div class="search-input-wrap">
+            <i class="fa-solid fa-magnifying-glass search-icon" aria-hidden="true"></i>
+            <input id="event-search" name="q" value="{{ event_search or '' }}" placeholder="Search events by name, description, venue..." autocomplete="off">
+            {% if event_search %}
+            <a href="?filter={{ event_filter }}" class="search-clear-btn" title="Clear search"><i class="fa-solid fa-xmark"></i></a>
+            {% endif %}
+        </div>
+        <input type="hidden" name="filter" value="{{ event_filter }}">
+        <button class="btn btn-primary search-submit-btn" type="submit"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
+    </form>
+
+    <div class="events-toolbar-controls">
+        <nav class="event-filter-tabs" aria-label="Event status filters">
+            <a class="filter-tab-btn {{ 'active' if event_filter == 'upcoming' else '' }}" href="?filter=upcoming{% if event_search %}&q={{ event_search|urlencode }}{% endif %}">
+                <i class="fa-regular fa-clock"></i> Upcoming <span class="tab-count">{{ upcoming_count }}</span>
+            </a>
+            <a class="filter-tab-btn {{ 'active' if event_filter == 'ongoing' else '' }}" href="?filter=ongoing{% if event_search %}&q={{ event_search|urlencode }}{% endif %}">
+                <i class="fa-solid fa-bolt"></i> Ongoing <span class="tab-count">{{ ongoing_count }}</span>
+            </a>
+            <a class="filter-tab-btn {{ 'active' if event_filter == 'past' else '' }}" href="?filter=past{% if event_search %}&q={{ event_search|urlencode }}{% endif %}">
+                <i class="fa-solid fa-check-double"></i> Past <span class="tab-count">{{ past_count }}</span>
+            </a>
+        </nav>
+
+        <div class="view-toggle-group" role="group" aria-label="Event view">
+            <button type="button" class="view-toggle-btn active" data-event-view="list" title="List View"><i class="fa-solid fa-grip"></i> List</button>
+            <button type="button" class="view-toggle-btn" data-event-view="calendar" title="Calendar View"><i class="fa-solid fa-calendar"></i> Calendar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Jump to Event Card -->
+<div class="card event-jump-card">
+    <div class="event-jump-content">
+        <div class="event-jump-text">
+            <h3><i class="fa-solid fa-location-arrow"></i> Jump to an event</h3>
+            <p>Quickly open an event and view its details and gallery.</p>
+        </div>
+        <div class="event-jump-action">
+            <select id="event-select" class="event-select-dropdown" onchange="if(this.value) location.href=this.value" aria-label="Select an event">
+                <option value="">Select Event ▼</option>
+                {% for ev in all_society_events %}
+                <option value="{{ url_for('event_photos.event_detail', event_id=ev.id) }}" {{ 'selected' if selected_event_id == ev.id else '' }}>
+                    {{ ev.title }} ({{ ev.start_date.strftime('%d %b %Y') if ev.start_date else 'TBA' }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    <small class="event-jump-hint">Choose an event to view its details and community gallery.</small>
+</div>
+
+<!-- Event List Grid -->
+<div class="event-grid" data-events-list>
+    {% for event in events %}
+    {% set is_past = (event.end_date and event.end_date < now) or (not event.end_date and event.start_date and event.start_date < now) %}
+    {% set is_upcoming = event.start_date and event.start_date > now %}
+    {% set is_ongoing = not is_past and not is_upcoming %}
+    <article class="card event-card" data-event-id="{{ event.id }}" data-event-date="{{ event.start_date.strftime('%Y-%m-%d') if event.start_date else '' }}" data-event-title="{{ event.title }}" data-event-url="{{ url_for('event_photos.event_detail', event_id=event.id) }}">
+        <div class="event-card-media">
+            {% set approved_preview = event.photos|selectattr('status', 'equalto', 'APPROVED')|list %}
+            {% if approved_preview %}
+                {% set main_photo = approved_preview[0] %}
+                {% if main_photo.media_type == 'VIDEO' %}
+                <video src="{{ url_for('event_photos.media', photo_id=main_photo.id) }}" muted preload="metadata" aria-label="{{ event.title }} video"></video>
+                {% else %}
+                <img src="{{ url_for('event_photos.media', photo_id=main_photo.id) }}" alt="{{ event.title }} Cover" loading="lazy" data-image-fallback>
+                {% endif %}
+            {% else %}
+                <div class="event-placeholder-banner">
+                    <i class="fa-solid fa-calendar-star"></i>
+                    <span>Sunrise Heights Event</span>
+                </div>
+            {% endif %}
+
+            <div class="event-card-badges">
+                {% if is_upcoming %}
+                <span class="badge-status badge-status-upcoming"><i class="fa-regular fa-clock"></i> UPCOMING</span>
+                {% elif is_ongoing %}
+                <span class="badge-status badge-status-ongoing"><i class="fa-solid fa-bolt"></i> ONGOING</span>
+                {% else %}
+                <span class="badge-status badge-status-past"><i class="fa-solid fa-circle-check"></i> PAST</span>
+                {% endif %}
+
+                {% if is_upcoming and event.start_date %}
+                <span class="event-countdown-chip" data-countdown="{{ event.start_date.isoformat() }}">
+                    <i class="fa-solid fa-stopwatch"></i> <span data-countdown-text>Starts in...</span>
+                </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="event-card-body">
+            <h2 class="event-card-title"><a href="{{ url_for('event_photos.event_detail', event_id=event.id) }}">{{ event.title }}</a></h2>
+            <p class="event-card-desc">{{ event.description or 'Join the Sunrise Heights community for this special event.' }}</p>
+
+            <div class="event-meta-list">
+                <div class="event-meta-item">
+                    <i class="fa-regular fa-calendar"></i>
+                    <span>{{ event.start_date.strftime('%a, %d %b %Y') if event.start_date else 'Date TBA' }}</span>
+                </div>
+                {% if event.start_date %}
+                <div class="event-meta-item">
+                    <i class="fa-regular fa-clock"></i>
+                    <span>{{ event.start_date.strftime('%I:%M %p') }}</span>
+                </div>
+                {% endif %}
+                <div class="event-meta-item">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <span>{{ event.location or 'Sunrise Heights Grounds' }}</span>
+                </div>
+            </div>
+
+            <div class="event-card-footer">
+                <span class="event-media-count">
+                    <i class="fa-regular fa-images"></i> {{ event.approved_photos_count }} approved media
+                </span>
+                <a class="btn btn-primary btn-sm view-event-btn" href="{{ url_for('event_photos.event_detail', event_id=event.id) }}">
+                    View Event <i class="fa-solid fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </article>
+    {% else %}
+    <!-- Clear Search / Empty State -->
+    <div class="card empty-search-state">
+        <div class="empty-state-icon">
+            <i class="fa-solid fa-magnifying-glass"></i>
+        </div>
+        <h2>No events found</h2>
+        <p>Try another search or change the event filter.</p>
+        <div class="empty-state-actions">
+            {% if event_search %}
+            <a href="?filter={{ event_filter }}" class="btn btn-primary"><i class="fa-solid fa-rotate-left"></i> Clear Search</a>
+            {% else %}
+            <a href="?filter=all" class="btn btn-primary"><i class="fa-solid fa-calendar-days"></i> View All Events</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Calendar View Container -->
+<div class="card event-calendar-container" data-event-calendar hidden aria-live="polite">
+    <div class="calendar-header">
+        <h2><i class="fa-solid fa-calendar-week"></i> Event Calendar</h2>
+        <p>Schedule of all events for Sunrise Heights.</p>
+    </div>
+    <div class="calendar-event-stream" id="calendar-stream">
+        {% for ev in all_society_events %}
+        {% set ev_past = (ev.end_date and ev.end_date < now) or (not ev.end_date and ev.start_date and ev.start_date < now) %}
+        {% set ev_upcoming = ev.start_date and ev.start_date > now %}
+        <div class="calendar-event-row">
+            <div class="calendar-date-badge">
+                <span class="cal-month">{{ ev.start_date.strftime('%b') if ev.start_date else 'TBA' }}</span>
+                <span class="cal-day">{{ ev.start_date.strftime('%d') if ev.start_date else '--' }}</span>
+            </div>
+            <div class="calendar-event-info">
+                <h4><a href="{{ url_for('event_photos.event_detail', event_id=ev.id) }}">{{ ev.title }}</a></h4>
+                <p><i class="fa-solid fa-location-dot"></i> {{ ev.location or 'Sunrise Heights' }} &nbsp;•&nbsp; <i class="fa-regular fa-clock"></i> {{ ev.start_date.strftime('%I:%M %p') if ev.start_date else '' }}</p>
+            </div>
+            <div class="calendar-event-status">
+                {% if ev_upcoming %}
+                <span class="badge-status badge-status-upcoming">Upcoming</span>
+                {% elif not ev_past %}
+                <span class="badge-status badge-status-ongoing">Ongoing</span>
+                {% else %}
+                <span class="badge-status badge-status-past">Past</span>
+                {% endif %}
+                <a href="{{ url_for('event_photos.event_detail', event_id=ev.id) }}" class="btn btn-secondary btn-xs">Details</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

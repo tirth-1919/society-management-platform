@@ -154,7 +154,7 @@ def cancel_pass(pass_id):
 @visitors_bp.route("/checkin-adhoc", methods=["POST"])
 def checkin_adhoc():
     user = _get_current_user()
-    if not user or user.role not in [Role.SUPER_ADMIN, Role.SOCIETY_ADMIN, Role.GUARD]:
+    if not user or user.role not in [Role.SUPER_ADMIN, Role.SOCIETY_ADMIN, Role.SECURITY, Role.GUARD]:
         abort(403)
 
     society_id = session.get("society_id") or user.society_id

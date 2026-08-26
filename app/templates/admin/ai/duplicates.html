@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}AI Duplicate &amp; Identity Resolution{% endblock %}
+
+{% block content %}
+<div class="page-body">
+    {% include "admin/ai/nav_tabs.html" %}
+
+    <div class="card"
+        style="border-radius: var(--radius-md); padding: 20px; background: var(--bg-surface); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+            <div>
+                <h2 style="font-size: 18px; font-weight: 800; margin: 0;">Duplicate Identity Resolution Workspace</h2>
+                <span style="font-size: 13px; color: var(--text-secondary);">Non-destructive identity candidate matching
+                    with admin confirmation</span>
+            </div>
+        </div>
+
+        {% if candidates %}
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            {% for c in candidates %}
+            {% set reasons = c.get_reasons() %}
+            <div style="padding: 18px; border-radius: 8px; background: var(--bg-primary); border: 1px solid var(--border-color);" class="{{ 'border-left-high' if c.status == 'CONFIRMED_DUPLICATE' else ('border-left-success' if c.status == 'NOT_DUPLICATE' else 'border-left-primary') }}">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 280px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <span class="badge" style="font-size: 10px; font-weight: 700;">{{ c.entity_type }}</span>
+                            <span class="badge" style="font-size: 10px; background: var(--bg-surface);">Status: {{
+                                c.status }}</span>
+                            <span style="font-size: 13px; font-weight: 700; color: var(--primary);">Match Confidence: {{
+                                (c.match_confidence * 100)|round|int }}%</span>
+                        </div>
+
+                        <div
+                            style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: var(--bg-surface); padding: 12px; border-radius: 6px; margin-bottom: 10px; font-size: 13px;">
+                            <div>
+                                <span
+                                    style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">Record
+                                    A (ID #{{ c.primary_entity_id }})</span>
+                                <div style="font-weight: 700; margin-top: 2px;">Primary Entity</div>
+                            </div>
+                            <div>
+                                <span
+                                    style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">Record
+                                    B (ID #{{ c.duplicate_entity_id }})</span>
+                                <div style="font-weight: 700; margin-top: 2px;">Candidate Duplicate</div>
+                            </div>
+                        </div>
+
+                        <div style="font-size: 12px; color: var(--text-secondary);">
+                            <strong style="color: var(--text-primary);">Matching Evidence:</strong>
+                            <ul style="margin: 4px 0 0; padding-left: 18px;">
+                                {% for r in reasons %}
+                                <li>{{ r }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Resolution Actions -->
+                    {% if c.status == 'PENDING' %}
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <form action="{{ url_for('admin.ai_duplicate_resolve', candidate_id=c.id) }}" method="POST"
+                            style="margin:0;">
+                            <input type="hidden" name="csrf_token"
+                                value="{{ csrf_token() if csrf_token is defined else '' }}">
+                            <input type="hidden" name="action" value="CONFIRMED_DUPLICATE">
+                            <button type="submit" class="btn btn-sm btn-primary"
+                                style="font-size: 11px; padding: 5px 10px;">Confirm Duplicate</button>
+                        </form>
+                        <form action="{{ url_for('admin.ai_duplicate_resolve', candidate_id=c.id) }}" method="POST"
+                            style="margin:0;">
+                            <input type="hidden" name="csrf_token"
+                                value="{{ csrf_token() if csrf_token is defined else '' }}">
+                            <input type="hidden" name="action" value="NOT_DUPLICATE">
+                            <button type="submit" class="btn btn-sm btn-outline"
+                                style="font-size: 11px; padding: 5px 10px;">Not a Duplicate</button>
+                        </form>
+                    </div>
+                    {% else %}
+                    <div style="font-size: 12px; color: var(--text-secondary); font-style: italic;">
+                        Resolved as {{ c.status }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 32px 16px; color: var(--text-secondary);">
+            <i class="fa-solid fa-users-viewfinder"
+                style="font-size: 36px; color: var(--success); margin-bottom: 12px; display: block;"></i>
+            <p style="font-size: 14px; font-weight: 600;">No duplicate resident or vehicle identity records found.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

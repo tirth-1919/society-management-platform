@@ -15,7 +15,8 @@ def test_admin_login_success(client):
     )
     assert res.status_code == 302
     assert res.headers["Location"].endswith("/dashboard")
-
+    with client.session_transaction() as sess:
+        assert sess["society_id"] == 1
 
 def test_authenticated_admin_login_redirects_to_admin_dashboard(client, app):
     with app.app_context():

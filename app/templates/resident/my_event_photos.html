@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}My Uploaded Photos & Videos | Sunrise Heights{% endblock %}
+
+{% block content %}
+<div class="page-header my-photos-header">
+    <div>
+        <h1><i class="fa-solid fa-cloud-arrow-up"></i> My Uploaded Photos & Videos</h1>
+        <p>Track all your submitted photos and videos and monitor admin review decisions.</p>
+    </div>
+    <a class="btn btn-primary" href="{{ url_for('event_photos.resident_events') }}">
+        <i class="fa-solid fa-calendar-days"></i> Browse Events
+    </a>
+</div>
+
+<div class="card my-photos-filter-card">
+    <nav class="photo-filter-tabs" aria-label="Photo status filters">
+        <a class="filter-tab-btn {{ 'active' if not selected_status else '' }}" href="{{ url_for('event_photos.resident_my_photos_page') }}">
+            <i class="fa-solid fa-layer-group"></i> All Submissions
+        </a>
+        <a class="filter-tab-btn {{ 'active' if selected_status == 'PENDING' else '' }}" href="?status=PENDING">
+            🟡 Pending Review
+        </a>
+        <a class="filter-tab-btn {{ 'active' if selected_status == 'APPROVED' else '' }}" href="?status=APPROVED">
+            🟢 Approved
+        </a>
+        <a class="filter-tab-btn {{ 'active' if selected_status == 'REJECTED' else '' }}" href="?status=REJECTED">
+            🔴 Rejected
+        </a>
+    </nav>
+</div>
+
+<div class="card photo-submissions-list">
+    {% for photo in pagination.items %}
+    <article class="photo-submission-card">
+        <div class="photo-submission-thumb">
+            {% if photo.media_type == 'VIDEO' %}
+            <video src="{{ url_for('event_photos.media', photo_id=photo.id) }}" controls preload="metadata" aria-label="Your video"></video>
+            {% else %}
+            <img loading="lazy" src="{{ url_for('event_photos.media', photo_id=photo.id) }}" alt="{{ photo.caption or 'Photo from ' ~ photo.event.title }}" data-image-fallback>
+            {% endif %}
+        </div>
+
+        <div class="photo-submission-info">
+            <div class="submission-title-row">
+                <h3><a href="{{ url_for('event_photos.event_detail', event_id=photo.event_id) }}">{{ photo.event.title }}</a></h3>
+                <span class="status-badge status-{{ photo.status|lower }}">
+                    {% if photo.status == 'PENDING' %}
+                    🟡 Pending Review
+                    {% elif photo.status == 'APPROVED' %}
+                    🟢 Approved
+                    {% else %}
+                    🔴 Rejected
+                    {% endif %}
+                </span>
+            </div>
+
+            <p class="submission-caption">{{ photo.caption or 'No caption provided' }}</p>
+
+            <div class="submission-meta-row">
+                <span><i class="fa-regular fa-calendar"></i> Uploaded {{ photo.created_at.strftime('%d %b %Y, %I:%M %p') if photo.created_at else '' }}</span>
+                <span><i class="fa-solid fa-file"></i> {{ photo.media_type }} ({{ (photo.file_size / 1024)|round(1) if photo.file_size else 0 }} KB)</span>
+            </div>
+
+            {% if photo.status == 'REJECTED' %}
+            <div class="rejection-reason-box">
+                <strong><i class="fa-solid fa-circle-exclamation"></i> Reason for Rejection:</strong>
+                <span>{{ photo.rejection_reason or 'This submission did not meet the community guidelines.' }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="photo-submission-actions">
+            <a class="btn btn-secondary btn-sm" href="{{ url_for('event_photos.event_detail', event_id=photo.event_id) }}">
+                View Event
+            </a>
+            {% if photo.status == 'REJECTED' %}
+            <a class="btn btn-primary btn-sm" href="{{ url_for('event_photos.event_detail', event_id=photo.event_id) }}#upload" data-replacement-id="{{ photo.id }}">
+                <i class="fa-solid fa-rotate"></i> Replace
+            </a>
+            {% endif %}
+        </div>
+    </article>
+    {% else %}
+    <div class="empty-search-state">
+        <div class="empty-state-icon">
+            <i class="fa-regular fa-images"></i>
+        </div>
+        <h2>{% if selected_status %}No {{ selected_status|lower }} submissions found{% else %}You haven't uploaded any photos or videos yet{% endif %}</h2>
+        <p>Participate in society events and share memories with your community.</p>
+        <div class="empty-state-actions">
+            <a class="btn btn-primary" href="{{ url_for('event_photos.resident_events') }}"><i class="fa-solid fa-calendar-days"></i> Browse Events</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if pagination.pages > 1 %}
+<nav class="pagination" aria-label="My photos pages">
+    {% for p in pagination.iter_pages() %}
+    {% if p %}
+    <a class="{{ 'active' if p == pagination.page else '' }}" href="?page={{ p }}&status={{ selected_status }}">{{ p }}</a>
+    {% endif %}
+    {% endfor %}
+</nav>
+{% endif %}
+{% endblock %}

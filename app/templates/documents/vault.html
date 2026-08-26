@@ -9,6 +9,7 @@
     <div class="card">
         <h3>Upload Document</h3>
         <form action="{{ url_for('documents.upload') }}" method="POST" enctype="multipart/form-data" style="margin-top: 16px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
             <div style="margin-bottom: 16px;">
                 <label style="font-weight: 600;">Title</label>
                 <input type="text" name="title" required placeholder="e.g. Society Bye-Laws PDF" style="width: 100%; padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary);">

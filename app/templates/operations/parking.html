@@ -52,6 +52,7 @@
         Parking Slot</div>
     <form method="POST" action="{{ url_for('operations.allocate_parking') }}"
         style="display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
         <div class="form-group" style="margin-bottom: 0; min-width: 200px;">
             <label for="slot_id" class="form-label">Select Slot</label>
             <select name="slot_id" id="slot_id" class="form-control" required>

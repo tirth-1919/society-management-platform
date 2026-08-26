@@ -19,6 +19,7 @@
     </div>
     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
         <form action="{{ url_for('admin.run_automation_action', action_name='SEND_DUE_REMINDERS') }}" method="POST" style="margin: 0; display: inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
             <button type="submit" class="btn btn-primary">
                 <i class="fa-solid fa-paper-plane"></i> Send Automated Reminders
             </button>

@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}AI Invoice Processing System{% endblock %}
+
+{% block content %}
+<div class="page-body">
+    {% include "admin/ai/nav_tabs.html" %}
+
+    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; margin-bottom: 24px;">
+        <!-- Process New Invoice Form -->
+        <div class="card"
+            style="border-radius: var(--radius-md); padding: 20px; background: var(--bg-surface); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+            <h2 style="font-size: 16px; font-weight: 800; margin: 0 0 12px;"><i class="fa-solid fa-file-arrow-up"></i>
+                Process Invoice Document</h2>
+            <form action="{{ url_for('admin.ai_invoices') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+                <div style="margin-bottom: 12px;">
+                    <label style="font-size: 12px; font-weight: 700; margin-bottom: 4px; display: block;">Document
+                        Title</label>
+                    <input type="text" name="doc_title" class="form-control" placeholder="e.g. Elevator AMC Q1 Invoice"
+                        required>
+                </div>
+                <div style="margin-bottom: 14px;">
+                    <label style="font-size: 12px; font-weight: 700; margin-bottom: 4px; display: block;">Invoice OCR
+                        Text / Content</label>
+                    <textarea name="invoice_text" class="form-control" rows="6"
+                        placeholder="Paste invoice text content or OCR stream (e.g. Vendor: Otis Elevator Ltd, Invoice #INV-2026-901, Date: 2026-03-01, Total: 45000)..."
+                        required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Run AI Extraction &amp; Verification
+                </button>
+            </form>
+        </div>
+
+        <!-- Analyzed Invoices List -->
+        <div class="card"
+            style="border-radius: var(--radius-md); padding: 20px; background: var(--bg-surface); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+            <h2 style="font-size: 16px; font-weight: 800; margin: 0 0 16px;">Analyzed Invoices &amp; Verification Queue
+            </h2>
+
+            {% if analyses %}
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                {% for item in analyses %}
+                {% set fields = item.get_extracted_fields() %}
+                {% set issues = item.get_potential_issues() %}
+                <div
+                    style="padding: 16px; border-radius: 8px; background: var(--bg-primary); border: 1px solid var(--border-color);">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                        <div>
+                            <span class="badge" style="font-size: 10px; font-weight: 700;">{{ item.detected_category
+                                }}</span>
+                            <span class="badge" style="font-size: 10px; background: var(--bg-surface);">Status: {{
+                                item.verification_status }}</span>
+                            <span
+                                style="font-size: 12px; font-weight: 700; color: var(--primary); margin-left: 8px;">Confidence:
+                                {{ (item.confidence_score * 100)|round|int }}%</span>
+                        </div>
+                        <span style="font-size: 11px; color: var(--text-secondary);">{{ item.created_at.strftime('%d %b
+                            %Y') if item.created_at else '' }}</span>
+                    </div>
+
+                    <!-- Extracted Fields Grid -->
+                    <div
+                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; background: var(--bg-surface); padding: 10px; border-radius: 6px; margin: 10px 0; font-size: 12px;">
+                        <div>
+                            <span
+                                style="color: var(--text-secondary); display: block; font-size: 10px; text-transform: uppercase;">Vendor</span>
+                            <strong>{{ fields.get('vendor_name', 'N/A') }}</strong>
+                        </div>
+                        <div>
+                            <span
+                                style="color: var(--text-secondary); display: block; font-size: 10px; text-transform: uppercase;">Invoice
+                                #</span>
+                            <strong>{{ fields.get('invoice_number', 'N/A') }}</strong>
+                        </div>
+                        <div>
+                            <span
+                                style="color: var(--text-secondary); display: block; font-size: 10px; text-transform: uppercase;">Date</span>
+                            <strong>{{ fields.get('invoice_date', 'N/A') }}</strong>
+                        </div>
+                        <div>
+                            <span
+                                style="color: var(--text-secondary); display: block; font-size: 10px; text-transform: uppercase;">Total
+                                Amount</span>
+                            <strong style="color: var(--primary);">₹{{ "{:,.2f}".format(fields.get('total', 0.0)|float)
+                                }}</strong>
+                        </div>
+                    </div>
+
+                    {% if issues %}
+                    <div
+                        style="background: rgba(239, 68, 68, 0.1); border-left: 3px solid var(--danger); padding: 8px 10px; border-radius: 4px; font-size: 12px; color: var(--danger); margin-bottom: 10px;">
+                        <i class="fa-solid fa-triangle-exclamation"></i> <strong>Potential Issues Detected:</strong>
+                        <ul style="margin: 4px 0 0; padding-left: 18px;">
+                            {% for issue in issues %}
+                            <li>{{ issue }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    {% if item.verification_status != 'VERIFIED' %}
+                    <form action="{{ url_for('admin.ai_invoice_approve', analysis_id=item.id) }}" method="POST"
+                        style="margin-top: 10px;">
+                        <input type="hidden" name="csrf_token"
+                            value="{{ csrf_token() if csrf_token is defined else '' }}">
+                        <input type="hidden" name="vendor_name" value="{{ fields.get('vendor_name', '') }}">
+                        <input type="hidden" name="invoice_number" value="{{ fields.get('invoice_number', '') }}">
+                        <input type="hidden" name="total" value="{{ fields.get('total', 0.0) }}">
+                        <button type="submit" class="btn btn-sm btn-primary" style="font-size: 11px;">
+                            <i class="fa-solid fa-check"></i> Approve &amp; Create Expense Voucher
+                        </button>
+                    </form>
+                    {% else %}
+                    <div style="font-size: 11px; color: var(--success); font-weight: 700; margin-top: 8px;">
+                        <i class="fa-solid fa-circle-check"></i> Verified and posted to accounting ledger.
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 32px 16px; color: var(--text-secondary);">
+                <p>No invoices currently in processing queue.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

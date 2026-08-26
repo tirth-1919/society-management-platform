@@ -5,6 +5,7 @@
     <div class="card">
         <h2>Lodge a Complaint</h2>
         <form action="{{ url_for('complaints.create_complaint') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
             <div style="margin-bottom: 16px;">
                 <label style="font-weight: 600; display: block; margin-bottom: 6px;">Category</label>
                 <select name="category" required style="width: 100%; padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary);">

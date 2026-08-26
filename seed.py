@@ -26,6 +26,8 @@ from app.models.complaint import ComplaintCategory, Complaint
 from app.models.facility import Facility
 from app.models.operations import Staff
 from app.models.communication import Notice
+from app.models.parking import ParkingSlot, Vehicle
+from app.services.parking_vehicle_service import ParkingVehicleService
 from app.services.tenant_service import TenantService
 from app.utils import utcnow
 
@@ -1114,6 +1116,140 @@ with app.app_context():
             "[SAFE] Existing password "
             "was NOT changed."
         )
+
+    # ==================================================
+    # PARKING SLOTS & RESIDENT VEHICLES (SUNRISE HEIGHTS)
+    # ==================================================
+
+    print()
+    print("-" * 70)
+    print("PARKING SLOTS & VEHICLES")
+    print("-" * 70)
+
+    # 1. Ensure Parking Slots
+    sample_slots = [
+        ("B1-04", "Basement 1", "Car", all_flats[0].id if len(all_flats) > 0 else None),
+        ("B1-05", "Basement 1", "Car", all_flats[1].id if len(all_flats) > 1 else None),
+        ("B1-06", "Basement 1", "Car", all_flats[2].id if len(all_flats) > 2 else None),
+        ("B2-01", "Basement 2", "Visitor", None),
+        ("B2-02", "Basement 2", "Visitor", None),
+    ]
+
+    for slot_no, loc, s_type, f_id in sample_slots:
+        existing_slot = ParkingSlot.query.filter_by(
+            society_id=society.id, slot_number=slot_no
+        ).first()
+        if not existing_slot:
+            new_slot = ParkingSlot(
+                society_id=society.id,
+                slot_number=slot_no,
+                location_block=loc,
+                slot_type=s_type,
+                flat_id=f_id,
+                status="Allocated" if f_id else "Available",
+            )
+            db.session.add(new_slot)
+            print(f"[CREATED] Parking Slot {slot_no} ({loc})")
+        else:
+            print(f"[EXISTS] Parking Slot {slot_no}")
+
+    db.session.commit()
+
+    # 2. Ensure Resident Vehicles
+    # Retrieve Amit Verma and Priya Mehta
+    user_amit = User.query.filter_by(mobile="9800000001").first()
+    res_amit = Resident.query.filter_by(user_id=user_amit.id).first() if user_amit else None
+
+    user_priya = User.query.filter_by(mobile="9800000002").first()
+    res_priya = Resident.query.filter_by(user_id=user_priya.id).first() if user_priya else None
+
+    user_suresh = User.query.filter_by(mobile="9800000003").first()
+    res_suresh = Resident.query.filter_by(user_id=user_suresh.id).first() if user_suresh else None
+
+    vehicle_seeds = [
+        {
+            "user": user_amit,
+            "res": res_amit,
+            "flat": res_amit.flat if res_amit else (all_flats[0] if len(all_flats) > 0 else None),
+            "plate": "GJ01PL5595",
+            "type": "Scooter",
+            "make": "Honda",
+            "model": "Activa",
+            "color": "Silver",
+            "slot": "B1-04",
+            "phone": "9800000001",
+        },
+        {
+            "user": user_priya,
+            "res": res_priya,
+            "flat": res_priya.flat if res_priya else (all_flats[1] if len(all_flats) > 1 else None),
+            "plate": "GJ02XX1234",
+            "type": "Car",
+            "make": "Honda",
+            "model": "City",
+            "color": "White",
+            "slot": "B1-05",
+            "phone": "9800000002",
+        },
+        {
+            "user": user_suresh,
+            "res": res_suresh,
+            "flat": res_suresh.flat if res_suresh else (all_flats[2] if len(all_flats) > 2 else None),
+            "plate": "GJ03AB4567",
+            "type": "Car",
+            "make": "Maruti Suzuki",
+            "model": "Swift",
+            "color": "Red",
+            "slot": "B1-06",
+            "phone": "9800000003",
+        },
+    ]
+
+    for v_info in vehicle_seeds:
+        if not v_info["flat"]:
+            continue
+        existing_veh = Vehicle.query.filter_by(
+            society_id=society.id,
+            normalized_number_plate=ParkingVehicleService.normalize_plate(v_info["plate"]),
+        ).first()
+
+        if not existing_veh:
+            try:
+                ParkingVehicleService.register_vehicle(
+                    society_id=society.id,
+                    owner_user_id=v_info["user"].id if v_info["user"] else None,
+                    resident_id=v_info["res"].id if v_info["res"] else None,
+                    flat_id=v_info["flat"].id,
+                    vehicle_number=v_info["plate"],
+                    vehicle_type=v_info["type"],
+                    make=v_info["make"],
+                    model=v_info["model"],
+                    color=v_info["color"],
+                    parking_slot_number=v_info["slot"],
+                    status="ACTIVE",
+                )
+                print(f"[CREATED] Vehicle {v_info['plate']} ({v_info['make']} {v_info['model']}) for {v_info['user'].full_name if v_info['user'] else 'Flat ' + str(v_info['flat'].flat_number)}")
+            except Exception as exc:
+                print(f"[WARN] Could not seed vehicle {v_info['plate']}: {exc}")
+        else:
+            print(f"[EXISTS] Vehicle {v_info['plate']}")
+
+    # ==================================================
+    # COMMUNITY EVENTS (SUNRISE HEIGHTS)
+    # ==================================================
+
+    print()
+    print("-" * 70)
+    print("COMMUNITY EVENTS (SUNRISE HEIGHTS)")
+    print("-" * 70)
+
+    try:
+        from app.services.event_gallery_seed_service import EventGallerySeedService
+        if admin_user:
+            created_media = EventGallerySeedService.ensure_defaults(society_id=2, admin_user=admin_user)
+            print(f"[OK] Sunrise Heights events and galleries verified ({len(created_media)} new media items created).")
+    except Exception as exc:
+        print(f"[WARN] Could not seed event gallery: {exc}")
 
     # ==================================================
     # FINAL SUMMARY

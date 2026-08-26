@@ -1,0 +1,514 @@
+{% extends "base.html" %}
+
+{% block title %}Parking &amp; Vehicles · Resident Portal{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Parking &amp; Vehicles</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+    <div>
+        <h1 style="font-size: 24px; font-weight: 800; color: var(--text-primary); margin: 0 0 6px 0;">
+            <i class="fa-solid fa-square-parking" style="color: var(--primary); margin-right: 8px;"></i>Parking &amp; Vehicles
+        </h1>
+        <p style="font-size: 14px; color: var(--text-secondary); margin: 0;">
+            Search society vehicles, contact owners, and manage your registered vehicles.
+        </p>
+    </div>
+    <div>
+        <a href="{{ url_for('resident.add_vehicle') }}" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; font-weight: 600; border-radius: 8px; text-decoration: none;">
+            <i class="fa-solid fa-plus"></i> Add Vehicle
+        </a>
+    </div>
+</div>
+
+<!-- Search Section -->
+<div class="card" style="margin-bottom: 30px; padding: 24px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.05));">
+    <div style="max-width: 680px; margin: 0 auto; text-align: center;">
+        <h2 style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0 0 8px 0;">
+            <i class="fa-solid fa-magnifying-glass" style="color: var(--primary); margin-right: 6px;"></i>Search Society Vehicles
+        </h2>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 18px;">
+            Find a vehicle or vehicle owner in your society by plate number, flat, owner, or model.
+        </p>
+
+        <form method="GET" action="{{ url_for('resident.vehicles') }}" style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 16px;">
+            <input type="hidden" name="type" value="{{ type_filter or '' }}">
+            <div style="flex: 1; min-width: 260px; position: relative;">
+                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);"></i>
+                <input type="text" name="q" value="{{ search_query or '' }}" placeholder="Search vehicle number, owner, flat..."
+                       style="width: 100%; padding: 12px 14px 12px 40px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-main, #fff); color: var(--text-primary); font-size: 14px; font-weight: 600;"
+                       autocomplete="off">
+            </div>
+            <button type="submit" class="btn btn-primary" style="padding: 12px 22px; font-weight: 600; border-radius: 8px; cursor: pointer;">
+                <i class="fa-solid fa-search"></i> Search
+            </button>
+            {% if search_query or (type_filter and type_filter != 'All') %}
+            <a href="{{ url_for('resident.vehicles') }}" class="btn btn-secondary" style="padding: 12px 18px; font-weight: 600; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center;">
+                Clear
+            </a>
+            {% endif %}
+        </form>
+
+        <!-- Vehicle Type Filter Tabs -->
+        <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 12px;">
+            <a href="{{ url_for('resident.vehicles', q=search_query or None, type='All') }}"
+               class="btn btn-sm {% if not type_filter or type_filter == 'All' %}btn-primary{% else %}btn-secondary{% endif %}"
+               style="border-radius: 20px; padding: 6px 16px; font-size: 12px; font-weight: 600; text-decoration: none;">
+                All
+            </a>
+            <a href="{{ url_for('resident.vehicles', q=search_query or None, type='Cars') }}"
+               class="btn btn-sm {% if type_filter == 'Cars' %}btn-primary{% else %}btn-secondary{% endif %}"
+               style="border-radius: 20px; padding: 6px 16px; font-size: 12px; font-weight: 600; text-decoration: none;">
+                <i class="fa-solid fa-car" style="margin-right: 4px;"></i> Cars
+            </a>
+            <a href="{{ url_for('resident.vehicles', q=search_query or None, type='Bikes') }}"
+               class="btn btn-sm {% if type_filter == 'Bikes' %}btn-primary{% else %}btn-secondary{% endif %}"
+               style="border-radius: 20px; padding: 6px 16px; font-size: 12px; font-weight: 600; text-decoration: none;">
+                <i class="fa-solid fa-motorcycle" style="margin-right: 4px;"></i> Bikes
+            </a>
+            <a href="{{ url_for('resident.vehicles', q=search_query or None, type='Other') }}"
+               class="btn btn-sm {% if type_filter == 'Other' %}btn-primary{% else %}btn-secondary{% endif %}"
+               style="border-radius: 20px; padding: 6px 16px; font-size: 12px; font-weight: 600; text-decoration: none;">
+                <i class="fa-solid fa-ellipsis" style="margin-right: 4px;"></i> Other
+            </a>
+        </div>
+    </div>
+
+    <!-- Search Results / Society Directory Area -->
+    {% if search_performed %}
+    <div style="margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--border-color);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0;">
+                Search Results {% if search_query %}for "{{ search_query }}"{% endif %} {% if type_filter and type_filter != 'All' %}(Type: {{ type_filter }}){% endif %}
+            </h3>
+            <span style="font-size: 12px; color: var(--text-secondary); font-weight: 600;">
+                {{ search_results|length }} found
+            </span>
+        </div>
+
+        {% if search_results and search_results|length > 0 %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
+            {% for v in search_results %}
+            <div class="card" style="padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-surface); position: relative; border-left: 4px solid var(--primary); display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
+                        <div>
+                            <span class="badge" style="background: rgba(79, 70, 229, 0.1); color: var(--primary); font-weight: 700; font-size: 11px; padding: 4px 8px; border-radius: 6px; text-transform: uppercase;">
+                                {{ v.vehicle_type }}
+                            </span>
+                            <h4 style="font-size: 17px; font-weight: 800; margin: 8px 0 2px 0; color: var(--text-primary);">
+                                {{ v.brand_model }}
+                            </h4>
+                            <div style="font-size: 15px; font-family: monospace; font-weight: 700; color: var(--primary); letter-spacing: 0.5px;">
+                                🚗 {{ v.vehicle_number }}
+                            </div>
+                        </div>
+                        <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(79,70,229,0.08); display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 20px;">
+                            {% if v.vehicle_type in ['Bike', 'Scooter', 'Electric Bike'] %}
+                                <i class="fa-solid fa-motorcycle"></i>
+                            {% elif v.vehicle_type == 'Cycle' %}
+                                <i class="fa-solid fa-bicycle"></i>
+                            {% else %}
+                                <i class="fa-solid fa-car"></i>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px; margin-bottom: 18px; background: var(--bg-alt, rgba(0,0,0,0.02)); padding: 12px; border-radius: 8px;">
+                        <div>
+                            <span style="color: var(--text-secondary); display: block; font-size: 11px; text-transform: uppercase; font-weight: 600;">Owner</span>
+                            <strong style="color: var(--text-primary);">{{ v.owner_name }}</strong>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-secondary); display: block; font-size: 11px; text-transform: uppercase; font-weight: 600;">Flat</span>
+                            <strong style="color: var(--text-primary);"><i class="fa-solid fa-door-closed" style="color: var(--primary); margin-right: 4px;"></i>{{ v.flat_number }}</strong>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-secondary); display: block; font-size: 11px; text-transform: uppercase; font-weight: 600;">Parking Slot</span>
+                            <span style="color: var(--text-primary); font-weight: 600;">{{ v.parking_slot }}</span>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-secondary); display: block; font-size: 11px; text-transform: uppercase; font-weight: 600;">Color</span>
+                            <span style="color: var(--text-primary);">{{ v.color }}</span>
+                        </div>
+                        <div style="grid-column: 1 / -1;">
+                            <span style="color: var(--text-secondary); display: block; font-size: 11px; text-transform: uppercase; font-weight: 600;">Contact Phone</span>
+                            {% if v.phone %}
+                                <span style="color: var(--text-primary); font-weight: 600;"><i class="fa-solid fa-phone" style="color: #10b981; margin-right: 4px;"></i>{{ v.phone }}</span>
+                                {% if v.secondary_phone %}
+                                    <span style="color: var(--text-secondary); margin-left: 8px; font-size: 12px;">(Alt: {{ v.secondary_phone }})</span>
+                                {% endif %}
+                            {% else %}
+                                <span style="color: var(--text-muted, #9ca3af); font-style: italic;">Phone number not available</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Call & Action Buttons -->
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; border-top: 1px solid var(--border-color); padding-top: 14px;">
+                    {% if v.phone %}
+                    <a href="tel:{{ v.phone }}" class="btn btn-success btn-sm" style="flex: 1; min-width: 90px; padding: 8px 12px; font-weight: 600; font-size: 12px; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: #10b981; color: #fff;">
+                        <i class="fa-solid fa-phone"></i> Call
+                    </a>
+                    {% endif %}
+                    {% if v.secondary_phone %}
+                    <a href="tel:{{ v.secondary_phone }}" class="btn btn-secondary btn-sm" style="flex: 1; min-width: 110px; padding: 8px 12px; font-weight: 600; font-size: 12px; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                        <i class="fa-solid fa-phone-volume"></i> Call Alt
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('resident.vehicle_detail', vehicle_id=v.id) }}" class="btn btn-secondary btn-sm" style="flex: 1; min-width: 100px; padding: 8px 12px; font-weight: 600; font-size: 12px; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                        <i class="fa-solid fa-circle-info"></i> View Details
+                    </a>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="openContactModal('{{ v.id }}', '{{ v.vehicle_number }}', '{{ v.flat_number }}')" style="padding: 8px 10px; font-size: 12px; border-radius: 6px; cursor: pointer;" title="Send in-app message">
+                        <i class="fa-solid fa-envelope"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="openIssueModal('{{ v.id }}', '{{ v.vehicle_number }}', '{{ v.parking_slot }}')" style="padding: 8px 10px; font-size: 12px; border-radius: 6px; cursor: pointer; color: var(--danger);" title="Report parking issue">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 36px 20px; background: var(--bg-alt, rgba(0,0,0,0.02)); border-radius: 12px;">
+            <div style="font-size: 36px; margin-bottom: 12px; color: var(--text-secondary);">🔍</div>
+            <h4 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0 0 6px 0;">No vehicle found</h4>
+            <p style="font-size: 13px; color: var(--text-secondary); margin: 0 0 16px 0;">Try another vehicle number, owner name, or flat.</p>
+            <a href="{{ url_for('resident.vehicles') }}" class="btn btn-secondary" style="padding: 8px 16px; font-weight: 600; font-size: 13px; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-rotate-left"></i> Clear Search
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <!-- Default Society Vehicle Directory (No Search Query) -->
+    <div style="margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--border-color);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div>
+                <h3 style="font-size: 18px; font-weight: 800; color: var(--text-primary); margin: 0;">
+                    <i class="fa-solid fa-id-card-clip" style="color: var(--primary); margin-right: 6px;"></i>Society Vehicle Directory
+                </h3>
+                <p style="font-size: 12px; color: var(--text-secondary); margin: 2px 0 0 0;">
+                    Registered community vehicles in your society
+                </p>
+            </div>
+            <span class="badge" style="background: rgba(79, 70, 229, 0.1); color: var(--primary); font-weight: 700; font-size: 12px; padding: 5px 10px; border-radius: 6px;">
+                Registered Vehicles: {{ total_society_vehicles }}
+            </span>
+        </div>
+
+        {% if society_vehicles and society_vehicles|length > 0 %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
+            {% for v in society_vehicles %}
+            <div class="card" style="padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-surface); position: relative; border-left: 4px solid var(--primary); display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
+                        <div>
+                            <span class="badge" style="background: rgba(79, 70, 229, 0.1); color: var(--primary); font-weight: 700; font-size: 11px; padding: 4px 8px; border-radius: 6px; text-transform: uppercase;">
+                                {{ v.vehicle_type }}
+                            </span>
+                            <h4 style="font-size: 17px; font-weight: 800; margin: 8px 0 2px 0; color: var(--text-primary);">
+                                {{ v.brand_model }}
+                            </h4>
+                            <div style="font-size: 15px; font-family: monospace; font-weight: 700; color: var(--primary); letter-spacing: 0.5px;">
+                                🚗 {{ v.vehicle_number }}
+                            </div>
+                        </div>
+                        <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(79,70,229,0.08); display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 20px;">
+                            {% if v.vehicle_type in ['Bike', 'Scooter', 'Electric Bike'] %}
+                                <i class="fa-solid fa-motorcycle"></i>
+                            {% elif v.vehicle_type == 'Cycle' %}
+                                <i class="fa-solid fa-bicycle"></i>
+                            {% else %}
+                                <i class="fa-solid fa-car"></i>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px; margin-bottom: 18px; background: var(--bg-alt, rgba(0,0,0,0.02)); padding: 12px; border-radius: 8px;">
+                        <div>
+                            <span style="color: var(--text-secondary); display: block; font-size: 11px; text-transform: uppercase; font-weight: 600;">Owner</span>
+                            <strong style="color: var(--text-primary);">{{ v.owner_name }}</strong>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-secondary); display: block; font-size: 11px; text-transform: uppercase; font-weight: 600;">Flat Number</span>
+                            <strong style="color: var(--text-primary);"><i class="fa-solid fa-door-closed" style="color: var(--primary); margin-right: 4px;"></i>{{ v.flat_number }}</strong>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-secondary); display: block; font-size: 11px; text-transform: uppercase; font-weight: 600;">Parking Slot</span>
+                            <span style="color: var(--text-primary); font-weight: 600;">{{ v.parking_slot }}</span>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-secondary); display: block; font-size: 11px; text-transform: uppercase; font-weight: 600;">Color</span>
+                            <span style="color: var(--text-primary);">{{ v.color }}</span>
+                        </div>
+                        <div style="grid-column: 1 / -1;">
+                            <span style="color: var(--text-secondary); display: block; font-size: 11px; text-transform: uppercase; font-weight: 600;">Contact Phone</span>
+                            {% if v.phone %}
+                                <span style="color: var(--text-primary); font-weight: 600;"><i class="fa-solid fa-phone" style="color: #10b981; margin-right: 4px;"></i>{{ v.phone }}</span>
+                                {% if v.secondary_phone %}
+                                    <span style="color: var(--text-secondary); margin-left: 8px; font-size: 12px;">(Alt: {{ v.secondary_phone }})</span>
+                                {% endif %}
+                            {% else %}
+                                <span style="color: var(--text-muted, #9ca3af); font-style: italic;">Phone number not available</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Call & Action Buttons -->
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; border-top: 1px solid var(--border-color); padding-top: 14px;">
+                    {% if v.phone %}
+                    <a href="tel:{{ v.phone }}" class="btn btn-success btn-sm" style="flex: 1; min-width: 90px; padding: 8px 12px; font-weight: 600; font-size: 12px; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: #10b981; color: #fff;">
+                        <i class="fa-solid fa-phone"></i> Call
+                    </a>
+                    {% endif %}
+                    {% if v.secondary_phone %}
+                    <a href="tel:{{ v.secondary_phone }}" class="btn btn-secondary btn-sm" style="flex: 1; min-width: 110px; padding: 8px 12px; font-weight: 600; font-size: 12px; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                        <i class="fa-solid fa-phone-volume"></i> Call Alt
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('resident.vehicle_detail', vehicle_id=v.id) }}" class="btn btn-secondary btn-sm" style="flex: 1; min-width: 100px; padding: 8px 12px; font-weight: 600; font-size: 12px; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                        <i class="fa-solid fa-circle-info"></i> View Details
+                    </a>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="openContactModal('{{ v.id }}', '{{ v.vehicle_number }}', '{{ v.flat_number }}')" style="padding: 8px 10px; font-size: 12px; border-radius: 6px; cursor: pointer;" title="Send in-app message">
+                        <i class="fa-solid fa-envelope"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="openIssueModal('{{ v.id }}', '{{ v.vehicle_number }}', '{{ v.parking_slot }}')" style="padding: 8px 10px; font-size: 12px; border-radius: 6px; cursor: pointer; color: var(--danger);" title="Report parking issue">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="card" style="text-align: center; padding: 36px 20px; background: var(--bg-alt, rgba(0,0,0,0.02)); border: 1px dashed var(--border-color); border-radius: 12px;">
+            <div style="font-size: 36px; margin-bottom: 12px; color: var(--text-secondary);">🚗</div>
+            <h4 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0 0 6px 0;">No vehicles registered yet.</h4>
+            <p style="font-size: 13px; color: var(--text-secondary); margin: 0 0 16px 0;">Be the first to register a vehicle in your society.</p>
+            <a href="{{ url_for('resident.add_vehicle') }}" class="btn btn-primary" style="padding: 9px 18px; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-plus"></i> Add Vehicle
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- My Vehicles Section -->
+<div style="margin-top: 10px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+        <h2 style="font-size: 20px; font-weight: 800; color: var(--text-primary); margin: 0;">
+            <i class="fa-solid fa-car-rear" style="color: var(--primary); margin-right: 8px;"></i>My Vehicles
+        </h2>
+        <span style="font-size: 13px; color: var(--text-secondary); font-weight: 600;">
+            Total: {{ my_vehicles|length }}
+        </span>
+    </div>
+
+    {% if my_vehicles and my_vehicles|length > 0 %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
+        {% for v in my_vehicles %}
+        <div class="card" style="padding: 22px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-surface); box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.05)); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
+                    <div>
+                        <span class="badge {{ 'badge-success' if v.status == 'ACTIVE' else 'badge-danger' }}" style="font-weight: 700; font-size: 11px; padding: 4px 8px; border-radius: 6px; text-transform: uppercase;">
+                            {{ v.status }}
+                        </span>
+                        <h3 style="font-size: 18px; font-weight: 800; margin: 8px 0 2px 0; color: var(--text-primary);">
+                            {{ v.brand_model or v.vehicle_number }}
+                        </h3>
+                        <div style="font-size: 15px; font-family: monospace; font-weight: 700; color: var(--primary);">
+                            {{ v.vehicle_number }}
+                        </div>
+                    </div>
+                    <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(79,70,229,0.08); display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 20px;">
+                        {% if v.vehicle_type in ['Bike', 'Scooter', 'Electric Bike'] %}
+                            <i class="fa-solid fa-motorcycle"></i>
+                        {% elif v.vehicle_type == 'Cycle' %}
+                            <i class="fa-solid fa-bicycle"></i>
+                        {% else %}
+                            <i class="fa-solid fa-car"></i>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px; margin-bottom: 18px; background: var(--bg-alt, rgba(0,0,0,0.02)); padding: 12px; border-radius: 8px;">
+                    <div>
+                        <span style="color: var(--text-secondary); display: block; font-size: 11px; text-transform: uppercase; font-weight: 600;">Type</span>
+                        <strong style="color: var(--text-primary);">{{ v.vehicle_type }}</strong>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-secondary); display: block; font-size: 11px; text-transform: uppercase; font-weight: 600;">Color</span>
+                        <strong style="color: var(--text-primary);">{{ v.color or '-' }}</strong>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-secondary); display: block; font-size: 11px; text-transform: uppercase; font-weight: 600;">Parking Slot</span>
+                        <span style="color: var(--text-primary); font-weight: 600;">{{ v.parking_slot_display }}</span>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-secondary); display: block; font-size: 11px; text-transform: uppercase; font-weight: 600;">Flat</span>
+                        <span style="color: var(--text-primary); font-weight: 600;">{{ v.flat.property_key if v.flat else '-' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 8px; border-top: 1px solid var(--border-color); padding-top: 14px;">
+                <a href="{{ url_for('resident.vehicle_detail', vehicle_id=v.id) }}" class="btn btn-secondary btn-sm" style="flex: 1; text-align: center; text-decoration: none; padding: 7px 10px; border-radius: 6px; font-weight: 600; font-size: 12px;">
+                    <i class="fa-solid fa-eye"></i> View
+                </a>
+                <a href="{{ url_for('resident.edit_vehicle', vehicle_id=v.id) }}" class="btn btn-primary btn-sm" style="flex: 1; text-align: center; text-decoration: none; padding: 7px 10px; border-radius: 6px; font-weight: 600; font-size: 12px;">
+                    <i class="fa-solid fa-pen"></i> Edit
+                </a>
+                {% if v.status == 'ACTIVE' %}
+                <form method="POST" action="{{ url_for('resident.deactivate_vehicle', vehicle_id=v.id) }}" onsubmit="return confirm('Are you sure you want to deactivate this vehicle?');" style="margin: 0;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger btn-sm" style="padding: 7px 12px; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer;" title="Deactivate vehicle">
+                        <i class="fa-solid fa-power-off"></i>
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card" style="text-align: center; padding: 40px 20px; background: var(--bg-surface); border: 1px dashed var(--border-color); border-radius: 12px;">
+        <div style="font-size: 40px; color: var(--text-secondary); margin-bottom: 12px;">🚗</div>
+        <h3 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0 0 6px 0;">No vehicles added yet</h3>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 18px;">Register your car, bike, or scooter to allocate society parking spaces.</p>
+        <a href="{{ url_for('resident.add_vehicle') }}" class="btn btn-primary" style="padding: 9px 18px; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+            <i class="fa-solid fa-plus"></i> Add Vehicle
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal 1: Privacy-Safe Contact Resident -->
+<div id="contactModal" class="modal" style="display: none; position: fixed; z-index: 1050; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); align-items: center; justify-content: center;">
+    <div class="modal-dialog" style="background: var(--bg-surface, #fff); width: 90%; max-width: 480px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; border: 1px solid var(--border-color);">
+        <div style="padding: 18px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-size: 16px; font-weight: 700; margin: 0; color: var(--text-primary);">
+                <i class="fa-solid fa-paper-plane" style="color: var(--primary); margin-right: 6px;"></i>Send Notice to Vehicle Owner
+            </h3>
+            <button type="button" onclick="closeContactModal()" style="background: transparent; border: none; font-size: 18px; color: var(--text-secondary); cursor: pointer;">&times;</button>
+        </div>
+        <form id="contactForm" method="POST" action="" style="padding: 24px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <p style="font-size: 13px; color: var(--text-secondary); margin-top: 0; margin-bottom: 16px;">
+                Send an in-app community notification regarding vehicle <strong id="modalVehiclePlate" style="color: var(--primary);"></strong> (Flat <span id="modalFlatNo"></span>).
+            </p>
+
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px;">Message Reason</label>
+                <select name="message_type" class="form-control" style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-main, #fff); color: var(--text-primary); font-size: 13px;" required>
+                    <option value="BLOCKING_VEHICLE">Vehicle is blocking my parking / driveway</option>
+                    <option value="LIGHTS_ON">Lights or windows left open/on</option>
+                    <option value="REQUEST_CONTACT">Please contact me regarding your parking spot</option>
+                    <option value="PARKING_ISSUE">General parking space query</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px;">Additional Note (Optional)</label>
+                <textarea name="custom_note" rows="3" class="form-control" placeholder="Add a polite note (max 200 characters)..." maxlength="200" style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-main, #fff); color: var(--text-primary); font-size: 13px; resize: vertical;"></textarea>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="btn btn-secondary" onclick="closeContactModal()" style="padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="padding: 9px 18px; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    <i class="fa-solid fa-paper-plane"></i> Send Notice
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal 2: Report Parking Issue Complaint -->
+<div id="issueModal" class="modal" style="display: none; position: fixed; z-index: 1050; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); align-items: center; justify-content: center;">
+    <div class="modal-dialog" style="background: var(--bg-surface, #fff); width: 90%; max-width: 480px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; border: 1px solid var(--border-color);">
+        <div style="padding: 18px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-size: 16px; font-weight: 700; margin: 0; color: var(--danger);">
+                <i class="fa-solid fa-triangle-exclamation" style="margin-right: 6px;"></i>Report Parking Issue
+            </h3>
+            <button type="button" onclick="closeIssueModal()" style="background: transparent; border: none; font-size: 18px; color: var(--text-secondary); cursor: pointer;">&times;</button>
+        </div>
+        <form id="issueForm" method="POST" action="" style="padding: 24px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <p style="font-size: 13px; color: var(--text-secondary); margin-top: 0; margin-bottom: 16px;">
+                Log a formal parking complaint with society management regarding vehicle <strong id="issueVehiclePlate" style="color: var(--text-primary);"></strong> (Slot: <span id="issueSlotNo"></span>).
+            </p>
+
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px;">Issue Type</label>
+                <select name="issue_type" class="form-control" style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-main, #fff); color: var(--text-primary); font-size: 13px;" required>
+                    <option value="Unauthorized Parking">Parked in My Allocated Slot</option>
+                    <option value="Driveway Obstruction">Blocking Driveway / Ramp</option>
+                    <option value="No Parking Zone">Parked in Visitor / Fire Zone</option>
+                    <option value="Other Parking Dispute">Other Parking Violation</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px;">Description</label>
+                <textarea name="description" rows="3" class="form-control" placeholder="Provide details for society facility management..." required style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-main, #fff); color: var(--text-primary); font-size: 13px; resize: vertical;"></textarea>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="btn btn-secondary" onclick="closeIssueModal()" style="padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancel</button>
+                <button type="submit" class="btn btn-danger" style="padding: 9px 18px; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Log Complaint
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openContactModal(vehicleId, plateNumber, flatNumber) {
+    document.getElementById('modalVehiclePlate').textContent = plateNumber;
+    document.getElementById('modalFlatNo').textContent = flatNumber;
+    document.getElementById('contactForm').action = '/resident/vehicles/' + vehicleId + '/contact';
+    var modal = document.getElementById('contactModal');
+    modal.style.display = 'flex';
+}
+
+function closeContactModal() {
+    var modal = document.getElementById('contactModal');
+    modal.style.display = 'none';
+}
+
+function openIssueModal(vehicleId, plateNumber, slotNumber) {
+    document.getElementById('issueVehiclePlate').textContent = plateNumber;
+    document.getElementById('issueSlotNo').textContent = slotNumber;
+    document.getElementById('issueForm').action = '/resident/vehicles/' + vehicleId + '/report-issue';
+    var modal = document.getElementById('issueModal');
+    modal.style.display = 'flex';
+}
+
+function closeIssueModal() {
+    var modal = document.getElementById('issueModal');
+    modal.style.display = 'none';
+}
+
+// Close modals when clicking outside
+window.onclick = function(event) {
+    var contactModal = document.getElementById('contactModal');
+    var issueModal = document.getElementById('issueModal');
+    if (event.target == contactModal) {
+        contactModal.style.display = 'none';
+    }
+    if (event.target == issueModal) {
+        issueModal.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

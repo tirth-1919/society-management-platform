@@ -24,6 +24,14 @@ from app.services.registration_service import (
 auth_bp = Blueprint("auth", __name__)
 
 
+def _single_society_options():
+    # Return only the configured society for user-facing selection.
+    from app.services.single_society_service import SingleSocietyService
+    society = db.session.get(Society, SingleSocietyService.get_id())
+    return [society] if society else []
+
+
+
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -121,26 +129,40 @@ def login():
 
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
+    from app.services.single_society_service import SingleSocietyService
+    configured_soc_id = SingleSocietyService.get_id()
+    selected_society = db.session.get(Society, configured_soc_id)
+
     if request.method == "POST":
         full_name = request.form.get("full_name", "").strip()
         mobile = AuthService.normalize_mobile(request.form.get("mobile", ""))
         email = request.form.get("email", "").strip() or None
         society_id_raw = (request.form.get("society_id") or "").strip()
         flat_id_raw = (request.form.get("flat_id") or "").strip()
-        if not society_id_raw or not flat_id_raw:
-            flash("Please select a society and flat number.", "danger")
-            societies = Society.query.order_by(Society.name.asc()).all()
-            return render_template("auth/register.html", societies=societies), 400
+
+        if society_id_raw:
+            try:
+                society_id = int(society_id_raw)
+            except (TypeError, ValueError):
+                flash("Invalid society selection.", "danger")
+                return render_template("auth/register.html", society=selected_society, societies=[selected_society] if selected_society else []), 400
+            if society_id != configured_soc_id:
+                abort(403, description="Only the configured society may be selected")
+        else:
+            society_id = configured_soc_id
+
+        if not flat_id_raw:
+            flash("Please select a block and flat number.", "danger")
+            return render_template("auth/register.html", society=selected_society, societies=[selected_society] if selected_society else []), 400
+
         try:
-            society_id = int(society_id_raw)
             flat_id = int(flat_id_raw)
         except (TypeError, ValueError):
-            flash("Invalid society or flat selection.", "danger")
-            societies = Society.query.order_by(Society.name.asc()).all()
-            return render_template("auth/register.html", societies=societies), 400
-        selected_society = db.session.get(Society, society_id)
+            flash("Invalid flat selection.", "danger")
+            return render_template("auth/register.html", society=selected_society, societies=[selected_society] if selected_society else []), 400
+
         if not selected_society:
-            abort(403, description="Selected society does not exist")
+            abort(403, description="Configured society does not exist")
 
         # Load by ID first so an existing flat from another society is treated
         # as a tampered hierarchy (403), while a genuinely missing flat keeps
@@ -177,7 +199,7 @@ def register():
                 abort(403, description="Selected block does not belong to the selected society or wing")
         if not flat_obj:
             flash("The selected flat does not belong to the selected society.", "danger")
-            societies = Society.query.order_by(Society.name.asc()).all()
+            societies = _single_society_options()
             return render_template("auth/register.html", societies=societies), 400
 
         building_id = selected_building_id or (flat_obj.building_id if flat_obj else None)
@@ -189,7 +211,7 @@ def register():
         # legacy/API submissions that predate the confirmation field.
         if confirm_password and password != confirm_password:
             flash("Password and Confirm Password must match.", "danger")
-            societies = Society.query.order_by(Society.name.asc()).all()
+            societies = _single_society_options()
             return render_template("auth/register.html", societies=societies), 400
         # ── FLAT AVAILABILITY PRE-CHECK (server-side, user-friendly) ──
         try:
@@ -202,7 +224,7 @@ def register():
                     "Please contact the society administrator.",
                     "danger",
                 )
-                societies = Society.query.order_by(Society.name.asc()).all()
+                societies = _single_society_options()
                 return render_template("auth/register.html", societies=societies)
         except Exception:
             pass  # Let register_resident() handle validation errors
@@ -232,14 +254,14 @@ def register():
         except Exception as e:
             flash(f"Registration failed: {str(e)}", "danger")
 
-    societies = Society.query.order_by(Society.name.asc()).all()
+    societies = _single_society_options()
     for soc in societies:
         try:
             from app.services.tenant_service import TenantService
             TenantService.ensure_default_blocks_and_flats(soc.id)
         except Exception:
             pass
-    return render_template("auth/register.html", societies=societies)
+    return render_template("auth/register.html", society=selected_society, societies=societies)
 
 
 @auth_bp.route("/registration-status/<int:registration_id>")

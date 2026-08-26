@@ -51,6 +51,7 @@ class Payment(db.Model):
     refund_requests = db.relationship(
         "RefundRequest", backref="payment", lazy=True
     )
+    resident = db.relationship("Resident", foreign_keys=[resident_id], lazy=True)
 
     def __init__(self, **kwargs):
         for key, value in kwargs.items():

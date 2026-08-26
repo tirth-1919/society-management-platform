@@ -1,0 +1,73 @@
+<div class="ai-navigation-wrapper" style="margin-bottom: 24px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; box-shadow: var(--shadow-sm);">
+                <i class="fa-solid fa-brain"></i>
+            </div>
+            <div>
+                <h1 style="font-size: 22px; font-weight: 800; margin: 0; line-height: 1.2;">Society Operations Intelligence Platform</h1>
+                <span style="font-size: 13px; color: var(--text-secondary);">Autonomous detection, predictive analytics, verification &amp; operational control</span>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <form action="{{ url_for('admin.ai_run_analysis') }}" method="POST" style="margin: 0;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+                <button type="submit" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 600;">
+                    <i class="fa-solid fa-arrows-rotate"></i> <span>Run Full Society Scan</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scrollable Sub-Navigation Tabs -->
+    <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; border-bottom: 1px solid var(--border-color); -webkit-overflow-scrolling: touch;">
+        <a href="{{ url_for('admin.ai_operations') }}" class="btn btn-sm {% if active_tab == 'operations' %}btn-primary{% else %}btn-outline{% endif %}" style="white-space: nowrap;">
+            <i class="fa-solid fa-gauge-high"></i> Overview
+        </a>
+        <a href="{{ url_for('admin.ai_findings') }}" class="btn btn-sm {% if active_tab == 'findings' %}btn-primary{% else %}btn-outline{% endif %}" style="white-space: nowrap;">
+            <i class="fa-solid fa-list-check"></i> Findings
+        </a>
+        <a href="{{ url_for('admin.ai_maintenance') }}" class="btn btn-sm {% if active_tab == 'maintenance' %}btn-primary{% else %}btn-outline{% endif %}" style="white-space: nowrap;">
+            <i class="fa-solid fa-screwdriver-wrench"></i> Maintenance AI
+        </a>
+        <a href="{{ url_for('admin.ai_security') }}" class="btn btn-sm {% if active_tab == 'security' %}btn-primary{% else %}btn-outline{% endif %}" style="white-space: nowrap;">
+            <i class="fa-solid fa-shield-halved"></i> Security AI
+        </a>
+        <a href="{{ url_for('admin.ai_finance') }}" class="btn btn-sm {% if active_tab == 'finance' %}btn-primary{% else %}btn-outline{% endif %}" style="white-space: nowrap;">
+            <i class="fa-solid fa-file-invoice-dollar"></i> Finance AI
+        </a>
+        <a href="{{ url_for('admin.ai_invoices') }}" class="btn btn-sm {% if active_tab == 'invoices' %}btn-primary{% else %}btn-outline{% endif %}" style="white-space: nowrap;">
+            <i class="fa-solid fa-receipt"></i> Invoices
+        </a>
+        <a href="{{ url_for('admin.ai_incidents') }}" class="btn btn-sm {% if active_tab == 'incidents' %}btn-primary{% else %}btn-outline{% endif %}" style="white-space: nowrap;">
+            <i class="fa-solid fa-triangle-exclamation"></i> Incidents
+        </a>
+        <a href="{{ url_for('admin.ai_energy') }}" class="btn btn-sm {% if active_tab == 'energy' %}btn-primary{% else %}btn-outline{% endif %}" style="white-space: nowrap;">
+            <i class="fa-solid fa-bolt"></i> Energy AI
+        </a>
+        <a href="{{ url_for('admin.ai_parking') }}" class="btn btn-sm {% if active_tab == 'parking' %}btn-primary{% else %}btn-outline{% endif %}" style="white-space: nowrap;">
+            <i class="fa-solid fa-car"></i> Parking AI
+        </a>
+        <a href="{{ url_for('admin.ai_complaints') }}" class="btn btn-sm {% if active_tab == 'complaints' %}btn-primary{% else %}btn-outline{% endif %}" style="white-space: nowrap;">
+            <i class="fa-solid fa-headset"></i> Complaints AI
+        </a>
+        <a href="{{ url_for('admin.ai_documents') }}" class="btn btn-sm {% if active_tab == 'documents' %}btn-primary{% else %}btn-outline{% endif %}" style="white-space: nowrap;">
+            <i class="fa-solid fa-file-shield"></i> Documents AI
+        </a>
+        <a href="{{ url_for('admin.ai_duplicates') }}" class="btn btn-sm {% if active_tab == 'duplicates' %}btn-primary{% else %}btn-outline{% endif %}" style="white-space: nowrap;">
+            <i class="fa-solid fa-user-group"></i> Duplicate Resolution
+        </a>
+        <a href="{{ url_for('admin.ai_investigations') }}" class="btn btn-sm {% if active_tab == 'investigations' %}btn-primary{% else %}btn-outline{% endif %}" style="white-space: nowrap;">
+            <i class="fa-solid fa-user-secret"></i> Fraud Investigations
+        </a>
+        <a href="{{ url_for('admin.ai_digital_twin') }}" class="btn btn-sm {% if active_tab == 'digital-twin' %}btn-primary{% else %}btn-outline{% endif %}" style="white-space: nowrap;">
+            <i class="fa-solid fa-diagram-project"></i> Digital Twin
+        </a>
+        <a href="{{ url_for('admin.ai_models') }}" class="btn btn-sm {% if active_tab == 'models' %}btn-primary{% else %}btn-outline{% endif %}" style="white-space: nowrap;">
+            <i class="fa-solid fa-microchip"></i> AI Models
+        </a>
+        <a href="{{ url_for('admin.ai_audit') }}" class="btn btn-sm {% if active_tab == 'audit' %}btn-primary{% else %}btn-outline{% endif %}" style="white-space: nowrap;">
+            <i class="fa-solid fa-clock-rotate-left"></i> AI Audit
+        </a>
+    </div>
+</div>

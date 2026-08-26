@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+{% block title %}Quick Actions · Society SaaS{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="breadcrumb-nav" aria-label="Breadcrumb">
+    <a href="{{ url_for('main.dashboard') }}"><i class="fa-solid fa-house"></i> Home</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Quick Actions</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">Resident Portal</p>
+        <h1><i class="fa-solid fa-bolt" style="color:var(--warning);" aria-hidden="true"></i> Quick Actions</h1>
+        <p style="color:var(--text-secondary);">Everything you need in one place.</p>
+    </div>
+</div>
+
+{# ── Outstanding alert ── #}
+{% if outstanding_amount > 0 %}
+<div class="card" role="alert"
+     style="border-left:4px solid var(--danger); margin-bottom:20px; padding:14px 18px;
+            display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+    <i class="fa-solid fa-triangle-exclamation" style="color:var(--danger); font-size:20px;" aria-hidden="true"></i>
+    <div style="flex:1; min-width:0;">
+        <strong>Outstanding Balance: ₹{{ '{:,.2f}'.format(outstanding_amount) }}</strong>
+        <div style="font-size:13px; color:var(--text-secondary);">
+            {{ pending_bills_count }} bill(s) require payment.
+        </div>
+    </div>
+    {% if next_bill %}
+    <a href="{{ url_for('payments.pay_bill', bill_id=next_bill.id) }}"
+       class="btn btn-danger" style="flex-shrink:0;">
+        <i class="fa-solid fa-credit-card" aria-hidden="true"></i>
+        Pay ₹{{ '{:,.2f}'.format(next_bill.remaining_amount) }} Now
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+{# ── Actions grid ── #}
+<div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; margin-bottom:24px;">
+
+    {# Pay Maintenance #}
+    <a href="{{ url_for('payments.pay_bill') }}" style="text-decoration:none;">
+        <div class="card" style="cursor:pointer; padding:20px; transition:box-shadow .18s, border-color .18s;
+                                  border:1.5px solid {{ 'var(--danger)' if outstanding_amount > 0 else 'var(--border-color)' }};"
+             onmouseover="this.style.boxShadow='var(--shadow-md)'"
+             onmouseout="this.style.boxShadow=''">
+            <div style="width:44px; height:44px; border-radius:12px; background:rgba(239,68,68,0.1); color:var(--danger);
+                        display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:12px;">
+                <i class="fa-solid fa-credit-card" aria-hidden="true"></i>
+            </div>
+            <div style="font-weight:700; font-size:15px; color:var(--text-primary); margin-bottom:4px;">
+                Pay Maintenance
+                {% if outstanding_amount > 0 %}
+                <span class="badge badge-danger" style="font-size:11px; margin-left:6px;">Due</span>
+                {% endif %}
+            </div>
+            <div style="font-size:13px; color:var(--text-secondary);">Pay your current maintenance bill online.</div>
+        </div>
+    </a>
+
+    {# View Bills #}
+    <a href="{{ url_for('resident.bills') }}" style="text-decoration:none;">
+        <div class="card" style="cursor:pointer; padding:20px; border:1.5px solid var(--border-color); transition:box-shadow .18s;"
+             onmouseover="this.style.boxShadow='var(--shadow-md)'"
+             onmouseout="this.style.boxShadow=''">
+            <div style="width:44px; height:44px; border-radius:12px; background:rgba(79,70,229,0.1); color:var(--primary);
+                        display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:12px;">
+                <i class="fa-solid fa-file-invoice" aria-hidden="true"></i>
+            </div>
+            <div style="font-weight:700; font-size:15px; color:var(--text-primary); margin-bottom:4px;">
+                View Bills
+                {% if pending_bills_count > 0 %}
+                <span class="badge badge-warning" style="font-size:11px; margin-left:6px;">{{ pending_bills_count }}</span>
+                {% endif %}
+            </div>
+            <div style="font-size:13px; color:var(--text-secondary);">See all maintenance bills and history.</div>
+        </div>
+    </a>
+
+    {# View Receipts #}
+    <a href="{{ url_for('resident.receipts') }}" style="text-decoration:none;">
+        <div class="card" style="cursor:pointer; padding:20px; border:1.5px solid var(--border-color); transition:box-shadow .18s;"
+             onmouseover="this.style.boxShadow='var(--shadow-md)'"
+             onmouseout="this.style.boxShadow=''">
+            <div style="width:44px; height:44px; border-radius:12px; background:rgba(16,185,129,0.1); color:var(--success);
+                        display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:12px;">
+                <i class="fa-solid fa-receipt" aria-hidden="true"></i>
+            </div>
+            <div style="font-weight:700; font-size:15px; color:var(--text-primary); margin-bottom:4px;">View Receipts</div>
+            <div style="font-size:13px; color:var(--text-secondary);">Download payment receipts and invoices.</div>
+        </div>
+    </a>
+
+    {# Submit Complaint #}
+    <a href="{{ url_for('complaints.create_complaint') }}" style="text-decoration:none;">
+        <div class="card" style="cursor:pointer; padding:20px; border:1.5px solid var(--border-color); transition:box-shadow .18s;"
+             onmouseover="this.style.boxShadow='var(--shadow-md)'"
+             onmouseout="this.style.boxShadow=''">
+            <div style="width:44px; height:44px; border-radius:12px; background:rgba(245,158,11,0.1); color:var(--warning);
+                        display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:12px;">
+                <i class="fa-solid fa-headset" aria-hidden="true"></i>
+            </div>
+            <div style="font-weight:700; font-size:15px; color:var(--text-primary); margin-bottom:4px;">Submit Complaint</div>
+            <div style="font-size:13px; color:var(--text-secondary);">Report an issue to the society office.</div>
+        </div>
+    </a>
+
+    {# Track Complaints #}
+    <a href="{{ url_for('resident.resident_complaints') }}" style="text-decoration:none;">
+        <div class="card" style="cursor:pointer; padding:20px; border:1.5px solid var(--border-color); transition:box-shadow .18s;"
+             onmouseover="this.style.boxShadow='var(--shadow-md)'"
+             onmouseout="this.style.boxShadow=''">
+            <div style="width:44px; height:44px; border-radius:12px; background:rgba(139,92,246,0.1); color:#8b5cf6;
+                        display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:12px;">
+                <i class="fa-solid fa-list-check" aria-hidden="true"></i>
+            </div>
+            <div style="font-weight:700; font-size:15px; color:var(--text-primary); margin-bottom:4px;">
+                Track Complaints
+                {% if open_complaints_count > 0 %}
+                <span class="badge badge-info" style="font-size:11px; margin-left:6px;">{{ open_complaints_count }}</span>
+                {% endif %}
+            </div>
+            <div style="font-size:13px; color:var(--text-secondary);">See status of your submitted complaints.</div>
+        </div>
+    </a>
+
+    {# View Notices #}
+    <a href="{{ url_for('resident.announcements') }}" style="text-decoration:none;">
+        <div class="card" style="cursor:pointer; padding:20px; border:1.5px solid var(--border-color); transition:box-shadow .18s;"
+             onmouseover="this.style.boxShadow='var(--shadow-md)'"
+             onmouseout="this.style.boxShadow=''">
+            <div style="width:44px; height:44px; border-radius:12px; background:rgba(6,182,212,0.1); color:var(--secondary);
+                        display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:12px;">
+                <i class="fa-solid fa-bullhorn" aria-hidden="true"></i>
+            </div>
+            <div style="font-weight:700; font-size:15px; color:var(--text-primary); margin-bottom:4px;">Society Notices</div>
+            <div style="font-size:13px; color:var(--text-secondary);">Read latest announcements and updates.</div>
+        </div>
+    </a>
+
+    {# Update Profile #}
+    <a href="{{ url_for('resident.profile') }}" style="text-decoration:none;">
+        <div class="card" style="cursor:pointer; padding:20px; border:1.5px solid var(--border-color); transition:box-shadow .18s;"
+             onmouseover="this.style.boxShadow='var(--shadow-md)'"
+             onmouseout="this.style.boxShadow=''">
+            <div style="width:44px; height:44px; border-radius:12px; background:rgba(20,184,166,0.1); color:#14b8a6;
+                        display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:12px;">
+                <i class="fa-solid fa-user-pen" aria-hidden="true"></i>
+            </div>
+            <div style="font-weight:700; font-size:15px; color:var(--text-primary); margin-bottom:4px;">Update Profile</div>
+            <div style="font-size:13px; color:var(--text-secondary);">Edit your name, email, and contact info.</div>
+        </div>
+    </a>
+
+    {# Notifications #}
+    <a href="{{ url_for('resident.notifications') }}" style="text-decoration:none;">
+        <div class="card" style="cursor:pointer; padding:20px; border:1.5px solid var(--border-color); transition:box-shadow .18s;"
+             onmouseover="this.style.boxShadow='var(--shadow-md)'"
+             onmouseout="this.style.boxShadow=''">
+            <div style="width:44px; height:44px; border-radius:12px; background:rgba(245,158,11,0.1); color:var(--warning);
+                        display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:12px;">
+                <i class="fa-solid fa-bell" aria-hidden="true"></i>
+            </div>
+            <div style="font-weight:700; font-size:15px; color:var(--text-primary); margin-bottom:4px;">
+                Notifications
+                {% if unread_count > 0 %}
+                <span class="badge badge-danger" style="font-size:11px; margin-left:6px;">{{ unread_count }}</span>
+                {% endif %}
+            </div>
+            <div style="font-size:13px; color:var(--text-secondary);">View billing, payment, and account updates.</div>
+        </div>
+    </a>
+
+    {# Help & Support #}
+    <a href="{{ url_for('resident.help_center') }}" style="text-decoration:none;">
+        <div class="card" style="cursor:pointer; padding:20px; border:1.5px solid var(--border-color); transition:box-shadow .18s;"
+             onmouseover="this.style.boxShadow='var(--shadow-md)'"
+             onmouseout="this.style.boxShadow=''">
+            <div style="width:44px; height:44px; border-radius:12px; background:rgba(239,68,68,0.1); color:var(--danger);
+                        display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:12px;">
+                <i class="fa-solid fa-circle-question" aria-hidden="true"></i>
+            </div>
+            <div style="font-weight:700; font-size:15px; color:var(--text-primary); margin-bottom:4px;">Help &amp; Support</div>
+            <div style="font-size:13px; color:var(--text-secondary);">Contact the society office or raise a support ticket.</div>
+        </div>
+    </a>
+
+    {# Ask AI #}
+    <a href="{{ url_for('resident.ai_assistant') }}" style="text-decoration:none;">
+        <div class="card" style="cursor:pointer; padding:20px; border:1.5px solid var(--primary); transition:box-shadow .18s;
+                                  background:linear-gradient(135deg,rgba(79,70,229,.05),rgba(79,70,229,.02));"
+             onmouseover="this.style.boxShadow='var(--shadow-md)'"
+             onmouseout="this.style.boxShadow=''">
+            <div style="width:44px; height:44px; border-radius:12px; background:rgba(79,70,229,0.12); color:var(--primary);
+                        display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:12px;">
+                <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+            </div>
+            <div style="font-weight:700; font-size:15px; color:var(--primary); margin-bottom:4px;">Ask AI</div>
+            <div style="font-size:13px; color:var(--text-secondary);">
+                Get instant answers about your bills, payments, and account.
+            </div>
+        </div>
+    </a>
+</div>
+
+{# ── Payment history shortcut ── #}
+<div style="text-align:center; margin-top:4px;">
+    <a href="{{ url_for('payments.payment_history') }}" class="btn btn-secondary">
+        <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> Full Payment History
+    </a>
+    <a href="{{ url_for('resident.yearly_summary') }}" class="btn btn-secondary" style="margin-left:8px;">
+        <i class="fa-solid fa-chart-bar" aria-hidden="true"></i> Yearly Summary
+    </a>
+</div>
+{% endblock %}

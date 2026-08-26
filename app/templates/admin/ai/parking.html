@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}AI Parking Intelligence{% endblock %}
+
+{% block content %}
+<div class="page-body">
+    {% include "admin/ai/nav_tabs.html" %}
+
+    <!-- Parking Overview Cards -->
+    <div
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <div class="card"
+            style="padding: 16px; border-radius: 8px; background: var(--bg-surface); border: 1px solid var(--border-color);">
+            <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 700;">
+                Total Slots</div>
+            <div style="font-size: 22px; font-weight: 800; color: var(--text-primary); margin-top: 4px;">{{
+                overview.total_slots }}</div>
+        </div>
+        <div class="card"
+            style="padding: 16px; border-radius: 8px; background: var(--bg-surface); border: 1px solid var(--border-color);">
+            <div style="font-size: 11px; color: var(--primary); text-transform: uppercase; font-weight: 700;">Allocated
+                Slots</div>
+            <div style="font-size: 22px; font-weight: 800; color: var(--primary); margin-top: 4px;">{{
+                overview.allocated_slots }}</div>
+        </div>
+        <div class="card"
+            style="padding: 16px; border-radius: 8px; background: var(--bg-surface); border: 1px solid var(--border-color);">
+            <div style="font-size: 11px; color: var(--success); text-transform: uppercase; font-weight: 700;">Occupancy
+                Rate</div>
+            <div style="font-size: 22px; font-weight: 800; color: var(--success); margin-top: 4px;">{{
+                overview.occupancy_rate_pct }}%</div>
+        </div>
+        <div class="card"
+            style="padding: 16px; border-radius: 8px; background: var(--bg-surface); border: 1px solid var(--border-color);">
+            <div style="font-size: 11px; color: var(--warning); text-transform: uppercase; font-weight: 700;">Peak Hours
+            </div>
+            <div style="font-size: 18px; font-weight: 800; color: var(--warning); margin-top: 4px;">{{
+                overview.peak_parking_hours }}</div>
+        </div>
+    </div>
+
+    <!-- Parking Anomalies List -->
+    <div class="card"
+        style="border-radius: var(--radius-md); padding: 20px; background: var(--bg-surface); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+        <h2 style="font-size: 16px; font-weight: 800; margin: 0 0 16px;">Parking Anomalies &amp; Repeated Violations
+        </h2>
+
+        {% if anomalies %}
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+            {% for item in anomalies %}
+            <div style="padding: 16px; border-radius: 8px; background: var(--bg-primary);" class="border-severity-{{ 'critical' if item.severity == 'CRITICAL' else ('high' if item.severity == 'HIGH' else ('medium' if item.severity == 'MEDIUM' else 'low')) }}">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <span class="badge" style="font-size: 10px; font-weight: 700;">{{ item.type }}</span>
+                    <span style="font-size: 12px; font-weight: 700; color: var(--text-secondary);">{{ item.severity }}
+                        ({{ (item.confidence * 100)|round|int }}% Confidence)</span>
+                </div>
+                <h3 style="font-size: 15px; font-weight: 700; margin: 0 0 4px;">{{ item.title }}</h3>
+                <p style="font-size: 13px; color: var(--text-secondary); margin: 0 0 8px;">{{ item.summary }}</p>
+                <div style="font-size: 12px; color: var(--primary); font-weight: 600;">
+                    <i class="fa-solid fa-car-side"></i> Action: {{ item.recommended_action }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 32px 16px; color: var(--text-secondary);">
+            <i class="fa-solid fa-square-parking"
+                style="font-size: 36px; color: var(--success); margin-bottom: 12px; display: block;"></i>
+            <p style="font-size: 14px; font-weight: 600;">No duplicate vehicle plates or repeated unauthorized parking
+                patterns detected.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

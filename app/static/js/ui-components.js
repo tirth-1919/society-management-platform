@@ -133,7 +133,15 @@ class GlobalSearchCommandCenter {
                 { id: 'gen-bills', title: 'Generate Maintenance Bills', subtitle: 'Issue monthly billing for all flats', category: 'Quick Actions', type: 'Action', icon: 'fa-file-invoice-dollar', url: '/payments/bills', keywords: ['create bill', 'generate bill', 'issue bill', 'monthly billing', 'billing', 'bill', 'invoice'] },
                 { id: 'record-pay', title: 'Record Payment', subtitle: 'Record cash, cheque or offline dues', category: 'Quick Actions', type: 'Action', icon: 'fa-hand-holding-dollar', url: '/payments/bills', keywords: ['record payment', 'collect payment', 'payment', 'pay', 'dues', 'collect', 'cash', 'cheque', 'offline payment'] },
                 { id: 'page-complaints-action', title: 'Complaints Desk', subtitle: 'Assign and resolve resident tickets', category: 'Quick Actions', type: 'Action', icon: 'fa-headset', url: '/complaints/', keywords: ['complaints', 'tickets', 'issues', 'view complaints', 'support', 'problem', 'grievance'] },
-                { id: 'add-visitor', title: 'Visitor Security Desk', subtitle: 'Log visitor entry at security gate', category: 'Quick Actions', type: 'Action', icon: 'fa-id-badge', url: '/visitors/', keywords: ['add visitor', 'new visitor', 'visitor pass', 'gate pass', 'guest', 'visitor', 'visitors', 'visitor security desk'] },
+                { id: 'add-visitor', title: 'Add Visitor', subtitle: 'Log visitor entry at security gate', category: 'Quick Actions', type: 'Action', icon: 'fa-id-badge', url: '/visitors/', keywords: ['add visitor', 'new visitor', 'visitor pass', 'gate pass', 'guest', 'visitor', 'visitors'] },
+                { id: 'add-flat', title: 'Add Flat', subtitle: 'Create a flat in the configured society', category: 'Quick Actions', type: 'Action', icon: 'fa-building', url: '/admin/flats', keywords: ['add flat', 'new flat', 'create flat', 'unit'] },
+                { id: 'add-expense', title: 'Add Expense', subtitle: 'Create an expense voucher', category: 'Quick Actions', type: 'Action', icon: 'fa-money-bill-transfer', url: '/accounting/vouchers', keywords: ['add expense', 'new expense', 'expense voucher'] },
+                { id: 'create-notice', title: 'Create Notice', subtitle: 'Publish a society announcement', category: 'Quick Actions', type: 'Action', icon: 'fa-bullhorn', url: '/resident/announcements', keywords: ['create notice', 'new notice', 'announcement'] },
+                { id: 'create-complaint', title: 'Create Complaint', subtitle: 'Open the complaints desk', category: 'Quick Actions', type: 'Action', icon: 'fa-headset', url: '/complaints/create', keywords: ['create complaint', 'new complaint', 'complaint'] },
+                { id: 'upload-document', title: 'Upload Document', subtitle: 'Add a file to the document vault', category: 'Quick Actions', type: 'Action', icon: 'fa-upload', url: '/documents/vault', keywords: ['upload document', 'add document', 'document'] },
+                { id: 'add-inventory', title: 'Add Inventory Item', subtitle: 'Add stock to inventory', category: 'Quick Actions', type: 'Action', icon: 'fa-boxes-stacked', url: '/operations/inventory', keywords: ['add inventory', 'new inventory', 'stock'] },
+                { id: 'add-asset', title: 'Add Asset', subtitle: 'Register a society asset', category: 'Quick Actions', type: 'Action', icon: 'fa-cube', url: '/operations/assets', keywords: ['add asset', 'new asset'] },
+                { id: 'export-report', title: 'Export Report', subtitle: 'Open reports and export options', category: 'Quick Actions', type: 'Action', icon: 'fa-file-export', url: '/reports/financial', keywords: ['export report', 'download report', 'report'] },
 
                 // Recent
                 { id: 'page-dashboard', title: 'Dashboard', subtitle: 'Executive overview & statistics', category: 'Recent', type: 'Page', icon: 'fa-chart-line', url: '/dashboard', keywords: ['dashboard', 'home', 'overview', 'analytics'] },
@@ -464,6 +472,8 @@ class GlobalSearchCommandCenter {
             category_staff: { label: 'Staff Members', type: 'Staff', icon: 'fa-user-gear' },
             category_expenses: { label: 'Expenses & Vouchers', type: 'Expense', icon: 'fa-file-invoice-dollar' },
             category_documents: { label: 'Documents', type: 'Document', icon: 'fa-folder-open' },
+            category_assets: { label: 'Assets', type: 'Asset', icon: 'fa-boxes-stacked' },
+            category_inventory: { label: 'Inventory', type: 'Inventory', icon: 'fa-boxes-stacked' },
             category_notices: { label: 'Notices & Announcements', type: 'Notice', icon: 'fa-bullhorn' },
             category_audit: { label: 'Audit Logs', type: 'Audit', icon: 'fa-clock-rotate-left' }
         };
@@ -1258,7 +1268,57 @@ function initSavedFilterPresets() {
     };
 }
 
-// Expose Unified Global Search Functions and Aliases
+// --------------------------------------------------------------------------
+// 12. Unsaved Changes Guard
+// --------------------------------------------------------------------------
+function initUnsavedChangesWarning() {
+    let isDirty = false;
+    document.querySelectorAll('form:not([data-no-dirty-guard])').forEach(form => {
+        form.querySelectorAll('input:not([type="hidden"]), select, textarea').forEach(input => {
+            input.addEventListener('change', () => { isDirty = true; });
+            input.addEventListener('input', () => { isDirty = true; });
+        });
+        form.addEventListener('submit', () => { isDirty = false; });
+    });
+
+    window.addEventListener('beforeunload', (e) => {
+        if (isDirty) {
+            e.preventDefault();
+            e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+            return e.returnValue;
+        }
+    });
+}
+
+// --------------------------------------------------------------------------
+// 13. Network Status Indicator (Offline / Online)
+// --------------------------------------------------------------------------
+function initNetworkStatusWatcher() {
+    let banner = document.getElementById('network-status-banner');
+    if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'network-status-banner';
+        banner.className = 'network-status-banner';
+        banner.setAttribute('role', 'status');
+        banner.setAttribute('aria-live', 'polite');
+        document.body.appendChild(banner);
+    }
+
+    const showBanner = (isOnline) => {
+        banner.className = `network-status-banner visible ${isOnline ? 'online' : 'offline'}`;
+        banner.innerHTML = isOnline
+            ? '<i class="fa-solid fa-wifi"></i> Back Online'
+            : '<i class="fa-solid fa-triangle-exclamation"></i> Offline Mode — Cached data active';
+        if (isOnline) {
+            setTimeout(() => { banner.classList.remove('visible'); }, 3000);
+        }
+    };
+
+    window.addEventListener('offline', () => showBanner(false));
+    window.addEventListener('online', () => showBanner(true));
+    if (!navigator.onLine) showBanner(false);
+}
+
 window.GlobalSearchCommandCenter = GlobalSearchCommandCenter;
 window.CommandPalette = GlobalSearchCommandCenter;
 
@@ -1299,6 +1359,239 @@ try {
     });
 } catch (e) { }
 
+// --------------------------------------------------------------------------
+// 14. Mobile Pull-to-Refresh & Touch Gestures
+// --------------------------------------------------------------------------
+function initPullToRefresh() {
+    if (window.innerWidth > 768) return;
+    let startY = 0;
+    let currentY = 0;
+    let isPulling = false;
+    let indicator = document.querySelector('.pull-to-refresh-indicator');
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.className = 'pull-to-refresh-indicator';
+        indicator.innerHTML = '<i class="fa-solid fa-rotate"></i>';
+        document.body.appendChild(indicator);
+    }
+
+    window.addEventListener('touchstart', (e) => {
+        if (window.scrollY === 0) {
+            startY = e.touches[0].pageY;
+            isPulling = true;
+        }
+    }, { passive: true });
+
+    window.addEventListener('touchmove', (e) => {
+        if (!isPulling) return;
+        currentY = e.touches[0].pageY;
+        const diff = currentY - startY;
+        if (diff > 40 && window.scrollY === 0) {
+            indicator.classList.add('active');
+        }
+    }, { passive: true });
+
+    window.addEventListener('touchend', () => {
+        if (!isPulling) return;
+        const diff = currentY - startY;
+        if (diff > 90 && window.scrollY === 0) {
+            indicator.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            setTimeout(() => { window.location.reload(); }, 300);
+        } else {
+            indicator.classList.remove('active');
+        }
+        isPulling = false;
+    }, { passive: true });
+}
+
+// --------------------------------------------------------------------------
+// 15. Mobile Floating Action Button (FAB)
+// --------------------------------------------------------------------------
+function initMobileFAB() {
+    if (document.getElementById('mobile-quick-fab') || window.innerWidth > 768) return;
+    const fab = document.createElement('button');
+    fab.id = 'mobile-quick-fab';
+    fab.type = 'button';
+    fab.className = 'mobile-fab-btn';
+    fab.setAttribute('aria-label', 'Quick Actions');
+    fab.innerHTML = '<i class="fa-solid fa-bolt"></i>';
+    fab.addEventListener('click', () => {
+        if (window.openGlobalSearch) {
+            window.openGlobalSearch();
+        }
+    });
+    document.body.appendChild(fab);
+}
+
+// --------------------------------------------------------------------------
+// 16. Accessibility: Font-Size & High Contrast Controls
+// --------------------------------------------------------------------------
+function initAccessibilityControls() {
+    const savedFontSize = localStorage.getItem('accessibility_font_size') || 'normal';
+    document.documentElement.setAttribute('data-font-size', savedFontSize);
+
+    window.setFontSize = function(size) {
+        if (['small', 'normal', 'large', 'xlarge'].includes(size)) {
+            document.documentElement.setAttribute('data-font-size', size);
+            localStorage.setItem('accessibility_font_size', size);
+            if (window.toast) window.toast(`Font size set to ${size}`, 'info');
+        }
+    };
+
+    window.toggleHighContrast = function() {
+        const isContrast = document.documentElement.getAttribute('data-contrast') === 'high';
+        const next = isContrast ? 'normal' : 'high';
+        document.documentElement.setAttribute('data-contrast', next);
+        localStorage.setItem('accessibility_contrast', next);
+        if (window.toast) window.toast(`High contrast mode ${next === 'high' ? 'enabled' : 'disabled'}`, 'info');
+    };
+
+    const savedContrast = localStorage.getItem('accessibility_contrast') || 'normal';
+    if (savedContrast === 'high') {
+        document.documentElement.setAttribute('data-contrast', 'high');
+    }
+}
+
+// --------------------------------------------------------------------------
+// 17. Event RSVP, Reactions, Sharing & Calendar Reminder
+// --------------------------------------------------------------------------
+function initEventInteractions() {
+    // RSVP Buttons
+    document.querySelectorAll('.event-rsvp-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const group = this.closest('.event-rsvp-group');
+            const status = this.getAttribute('data-rsvp-status');
+            const eventId = this.getAttribute('data-event-id');
+            if (group) {
+                group.querySelectorAll('.event-rsvp-btn').forEach(b => b.classList.remove('selected'));
+                this.classList.add('selected');
+            }
+            if (eventId) {
+                localStorage.setItem(`event_rsvp_${eventId}`, status);
+                if (window.toast) window.toast(`RSVP updated: ${status}`, 'success');
+            }
+        });
+    });
+
+    // Event Reactions
+    document.querySelectorAll('.reaction-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            this.classList.toggle('active');
+            const countEl = this.querySelector('.reaction-count');
+            if (countEl) {
+                let cnt = parseInt(countEl.textContent || '0', 10);
+                countEl.textContent = this.classList.contains('active') ? cnt + 1 : Math.max(0, cnt - 1);
+            }
+        });
+    });
+
+    // Event Share Button
+    window.shareEvent = function(title, url) {
+        url = url || window.location.href;
+        if (navigator.share) {
+            navigator.share({ title: title || document.title, url: url }).catch(() => {});
+        } else {
+            navigator.clipboard.writeText(url).then(() => {
+                if (window.toast) window.toast('Event link copied to clipboard!', 'success');
+            });
+        }
+    };
+
+    // Event Calendar Reminder (.ics download)
+    window.downloadEventCalendar = function(title, startDateStr, locationStr) {
+        const icsData = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//Society SaaS//Events//EN',
+            'BEGIN:VEVENT',
+            `SUMMARY:${title || 'Society Event'}`,
+            `LOCATION:${locationStr || 'Sunrise Heights'}`,
+            `DESCRIPTION:Event hosted at Sunrise Heights`,
+            'END:VEVENT',
+            'END:VCALENDAR'
+        ].join('\r\n');
+
+        const blob = new Blob([icsData], { type: 'text/calendar;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.setAttribute('download', `${(title || 'event').toLowerCase().replace(/\s+/g, '_')}.ics`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        if (window.toast) window.toast('Calendar invite downloaded!', 'success');
+    };
+}
+
+// --------------------------------------------------------------------------
+// 18. Complaint SLA Timers & Action Shortcuts
+// --------------------------------------------------------------------------
+function initComplaintSLA() {
+    document.querySelectorAll('[data-complaint-created]').forEach(el => {
+        const createdStr = el.getAttribute('data-complaint-created');
+        const priority = (el.getAttribute('data-complaint-priority') || 'Normal').toLowerCase();
+        const status = (el.getAttribute('data-complaint-status') || '').toLowerCase();
+        if (status === 'resolved' || status === 'closed') return;
+
+        const createdDate = new Date(createdStr);
+        if (isNaN(createdDate.getTime())) return;
+
+        let maxHours = 72;
+        if (priority.includes('emergency')) maxHours = 24;
+        else if (priority.includes('high')) maxHours = 48;
+
+        const slaDeadline = new Date(createdDate.getTime() + maxHours * 60 * 60 * 1000);
+        const now = new Date();
+        const diffMs = slaDeadline - now;
+        const hoursLeft = Math.round(diffMs / (1000 * 60 * 60));
+
+        let badge = el.querySelector('.sla-badge');
+        if (!badge) {
+            badge = document.createElement('span');
+            el.appendChild(badge);
+        }
+
+        if (diffMs < 0) {
+            badge.className = 'sla-badge sla-breached';
+            badge.innerHTML = `<i class="fa-solid fa-clock"></i> SLA Breached (${Math.abs(hoursLeft)}h ago)`;
+        } else if (hoursLeft < 12) {
+            badge.className = 'sla-badge sla-warning';
+            badge.innerHTML = `<i class="fa-solid fa-clock"></i> SLA: ${hoursLeft}h left`;
+        } else {
+            badge.className = 'sla-badge sla-ok';
+            badge.innerHTML = `<i class="fa-solid fa-shield-halved"></i> SLA: ${hoursLeft}h`;
+        }
+    });
+
+    // Copy Ticket Number shortcut
+    window.copyTicketNumber = function(ticketNo) {
+        if (!ticketNo) return;
+        navigator.clipboard.writeText(ticketNo).then(() => {
+            if (window.toast) window.toast(`Copied ticket #${ticketNo}`, 'success');
+        });
+    };
+}
+
+// --------------------------------------------------------------------------
+// 19. Notification Snooze & Grouping
+// --------------------------------------------------------------------------
+function initNotificationSnoozeAndDigest() {
+    document.querySelectorAll('[data-snooze-notification]').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const id = this.getAttribute('data-snooze-notification');
+            const item = this.closest('.notification-item');
+            if (item) {
+                item.style.transition = 'opacity 0.25s ease, height 0.25s ease';
+                item.style.opacity = '0';
+                setTimeout(() => { item.style.display = 'none'; }, 250);
+            }
+            if (window.toast) window.toast('Notification snoozed for this session', 'info');
+        });
+    });
+}
+
 // Auto-run on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
     window.globalSearchCommandCenter = new GlobalSearchCommandCenter();
@@ -1315,4 +1608,13 @@ document.addEventListener('DOMContentLoaded', () => {
     initFormLoadingStates();
     initDashboardWidgetManager();
     initSavedFilterPresets();
+    initUnsavedChangesWarning();
+    initNetworkStatusWatcher();
+    initPullToRefresh();
+    initMobileFAB();
+    initAccessibilityControls();
+    initEventInteractions();
+    initComplaintSLA();
+    initNotificationSnoozeAndDigest();
 });
+

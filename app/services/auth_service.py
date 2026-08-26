@@ -155,3 +155,39 @@ class AuthService:
         )
         db.session.commit()
 
+    @staticmethod
+    def get_active_society_admin(society_id=None):
+        """Returns the single active operational Society Admin for the society."""
+        if society_id is None:
+            from app.services.single_society_service import SingleSocietyService
+            society_id = SingleSocietyService.get_id()
+        from app.models import User, Role
+        return User.query.filter_by(
+            society_id=society_id,
+            role=Role.SOCIETY_ADMIN,
+            account_status="ACTIVE",
+            is_active=True,
+        ).first()
+
+    @staticmethod
+    def validate_admin_creation(society_id=None, exclude_user_id=None):
+        """
+        Enforces that only one active operational Society Admin can exist for the society.
+        Raises ValueError if an active admin already exists.
+        """
+        if society_id is None:
+            from app.services.single_society_service import SingleSocietyService
+            society_id = SingleSocietyService.get_id()
+        from app.models import User, Role
+        q = User.query.filter_by(
+            society_id=society_id,
+            role=Role.SOCIETY_ADMIN,
+            account_status="ACTIVE",
+        ).filter(User.is_active.is_(True))
+        if exclude_user_id:
+            q = q.filter(User.id != exclude_user_id)
+        existing = q.first()
+        if existing:
+            raise ValueError("An active society administrator already exists.")
+        return True
+

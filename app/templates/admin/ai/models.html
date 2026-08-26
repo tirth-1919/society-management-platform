@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}AI Models &amp; Version Registry{% endblock %}
+
+{% block content %}
+<div class="page-body">
+    {% include "admin/ai/nav_tabs.html" %}
+
+    <div class="card"
+        style="border-radius: var(--radius-md); padding: 20px; background: var(--bg-surface); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+        <div style="margin-bottom: 16px;">
+            <h2 style="font-size: 18px; font-weight: 800; margin: 0;">AI Model Registry &amp; Benchmark Metrics</h2>
+            <span style="font-size: 13px; color: var(--text-secondary);">Model versioning, accuracy evaluation metrics,
+                and active runtime statuses</span>
+        </div>
+
+        <div style="overflow-x: auto;">
+            <table class="table" style="width: 100%; font-size: 13px;">
+                <thead>
+                    <tr style="border-bottom: 2px solid var(--border-color); text-align: left;">
+                        <th style="padding: 10px;">AI Subsystem</th>
+                        <th style="padding: 10px;">Model Name</th>
+                        <th style="padding: 10px;">Version</th>
+                        <th style="padding: 10px;">Evaluation Window</th>
+                        <th style="padding: 10px;">Measured Accuracy</th>
+                        <th style="padding: 10px;">Runtime Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in models_list %}
+                    <tr style="border-bottom: 1px solid var(--border-color);">
+                        <td style="padding: 12px 10px;">
+                            <span class="badge" style="font-size: 10px; font-weight: 700;">{{ m.ai_system }}</span>
+                        </td>
+                        <td style="padding: 12px 10px; font-weight: 700;">{{ m.model_name }}</td>
+                        <td style="padding: 12px 10px; font-family: monospace; color: var(--primary);">{{
+                            m.model_version }}</td>
+                        <td style="padding: 12px 10px; color: var(--text-secondary);">{{ m.data_period or 'N/A' }}</td>
+                        <td style="padding: 12px 10px;">
+                            {% if m.accuracy_metric %}
+                            <strong style="color: var(--success);">{{ (m.accuracy_metric * 100)|round|int }}%</strong>
+                            {% else %}
+                            <span style="color: var(--text-secondary);">Baseline</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px 10px;">
+                            <span class="badge"
+                                style="background: rgba(16,185,129,0.15); color: var(--success); font-weight: 700;">{{
+                                m.status }}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

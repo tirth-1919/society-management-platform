@@ -4,6 +4,7 @@
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
     <h2>System Health & Disaster Recovery</h2>
     <form action="{{ url_for('system.backups') }}" method="POST" style="margin:0;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
         <button type="submit" class="btn btn-primary"><i class="fa-solid fa-database"></i> Trigger DB Backup Now</button>
     </form>
 </div>

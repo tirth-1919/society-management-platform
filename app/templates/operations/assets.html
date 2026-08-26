@@ -22,6 +22,7 @@
 <div class="card" style="margin-bottom: 24px;">
     <div class="card-title"><i class="fa-solid fa-plus" style="color: var(--primary);"></i> Add New Asset</div>
     <form method="POST" action="{{ url_for('operations.create_asset') }}" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: flex-end;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
         <div class="form-group" style="margin-bottom: 0;">
             <label for="asset_name" class="form-label">Asset Name</label>
             <input type="text" name="asset_name" id="asset_name" class="form-control" placeholder="e.g. Passenger Lift 1" required>

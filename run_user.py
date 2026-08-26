@@ -138,4 +138,4 @@ if __name__ == "__main__":
     debug = os.environ.get("FLASK_ENV", "development") == "development"
     print(f"[RUNNING] User Portal running on http://127.0.0.1:{port}")
     # Bind all local interfaces so an ngrok tunnel can forward to this portal.
-    app.run(host="0.0.0.0", port=port, debug=debug)
+    app.run(host="0.0.0.0", port=port, debug=debug) 

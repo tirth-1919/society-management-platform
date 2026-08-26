@@ -1,6 +1,7 @@
 from app.utils import utcnow
 from datetime import datetime
 from flask import abort
+from sqlalchemy import func
 from app.models import (
     db,
     User,
@@ -99,6 +100,135 @@ def check_flat_availability(society_id, flat_id):
         return False, pending_req.full_name
 
     return True, None
+
+
+def get_registration_advisory(registration):
+    """
+    Returns non-blocking duplicate signals for the admin review screen.
+    Each signal is a distinct, specific string so the template can render
+    targeted warnings (duplicate mobile, duplicate email, duplicate flat).
+    """
+    society_id = registration.society_id
+    mobile = (registration.mobile or "").strip()
+    email = (registration.email or "").strip().lower()
+
+    signals = []
+    unique_matches = []
+    seen = set()
+
+    # --- mobile duplicate check ---
+    if mobile:
+        mobile_matches = Resident.query.filter(
+            Resident.society_id == society_id,
+            Resident.mobile == mobile,
+            Resident.id != getattr(registration, "resident_id", None),
+        ).all()
+        for r in mobile_matches:
+            if r.id not in seen:
+                unique_matches.append(r)
+                seen.add(r.id)
+        if mobile_matches:
+            signals.append("Duplicate mobile detected")
+
+        # also check other pending registrations with same mobile
+        mobile_regs = RegistrationRequest.query.filter(
+            RegistrationRequest.society_id == society_id,
+            RegistrationRequest.mobile == mobile,
+            RegistrationRequest.status == "PENDING_APPROVAL",
+            RegistrationRequest.id != registration.id,
+        ).all()
+        if mobile_regs and "Duplicate mobile detected" not in signals:
+            signals.append("Duplicate mobile detected")
+
+    # --- email duplicate check ---
+    if email:
+        email_matches = Resident.query.filter(
+            Resident.society_id == society_id,
+            func.lower(Resident.email) == email,
+        ).all()
+        new_email_matches = [r for r in email_matches if r.id not in seen]
+        for r in new_email_matches:
+            unique_matches.append(r)
+            seen.add(r.id)
+        if email_matches:
+            signals.append("Duplicate email detected")
+
+        email_regs = RegistrationRequest.query.filter(
+            RegistrationRequest.society_id == society_id,
+            func.lower(RegistrationRequest.email) == email,
+            RegistrationRequest.status == "PENDING_APPROVAL",
+            RegistrationRequest.id != registration.id,
+        ).all()
+        if email_regs and "Duplicate email detected" not in signals:
+            signals.append("Duplicate email detected")
+
+    # --- flat duplicate check ---
+    flat_resident = Resident.query.filter_by(
+        society_id=society_id,
+        flat_id=registration.flat_id,
+        occupancy_status="Active",
+    ).first()
+    if flat_resident:
+        if flat_resident.id not in seen:
+            unique_matches.append(flat_resident)
+            seen.add(flat_resident.id)
+        signals.append("Flat already associated with another resident")
+
+    pending = RegistrationRequest.query.filter(
+        RegistrationRequest.society_id == society_id,
+        RegistrationRequest.flat_id == registration.flat_id,
+        RegistrationRequest.status == "PENDING_APPROVAL",
+        RegistrationRequest.id != registration.id,
+    ).all()
+    if pending:
+        signals.append("Another pending registration for this flat")
+
+    # --- missing data check ---
+    missing_data = []
+    if not email:
+        missing_data.append("Email address not provided")
+    if not mobile or len(mobile) < 10:
+        missing_data.append("Incomplete mobile number")
+    if not registration.full_name or len(registration.full_name.strip()) < 2:
+        missing_data.append("Full name incomplete")
+    if not registration.flat_id:
+        missing_data.append("No flat assigned")
+    if not registration.occupancy_type:
+        missing_data.append("Occupancy type not specified")
+
+    # --- AI Summary & Admin Recommendation ---
+    flat = getattr(registration, "flat", None) or (db.session.get(Flat, registration.flat_id) if registration.flat_id else None)
+    flat_prop = get_flat_property_key(flat) if flat else "Unknown Flat"
+    submitted_date = registration.created_at.strftime('%d %b %Y') if registration.created_at else "Recently"
+
+    if flat_resident:
+        admin_rec = "CAUTION: Flat currently assigned to active resident. Verify ownership/tenancy transition before approving."
+        rec_status = "WARNING"
+        ai_summary = f"Registration for {registration.full_name} ({registration.occupancy_type or 'Resident'}) on Flat {flat_prop}. Warning: Occupied by {flat_resident.full_name}."
+    elif signals:
+        admin_rec = "MANUAL REVIEW RECOMMENDED: Potential duplicate contact details or concurrent requests detected."
+        rec_status = "WARNING"
+        ai_summary = f"Registration for {registration.full_name} on Flat {flat_prop}. Signals: {', '.join(signals)}."
+    elif missing_data:
+        admin_rec = "DATA INCOMPLETE: Missing key information. Request complete details before approving."
+        rec_status = "ACTION_REQUIRED"
+        ai_summary = f"Registration for {registration.full_name} on Flat {flat_prop}. Missing: {', '.join(missing_data)}."
+    else:
+        admin_rec = "READY FOR APPROVAL: All checks passed, flat is vacant, no duplicate records detected."
+        rec_status = "READY"
+        ai_summary = f"Valid {registration.occupancy_type or 'Owner'} application for Flat {flat_prop} submitted on {submitted_date}. Zero conflicts detected."
+
+    return {
+        "duplicate_detected": bool(signals),
+        "signals": signals,
+        "missing_data": missing_data,
+        "has_missing_data": bool(missing_data),
+        "ai_summary": ai_summary,
+        "admin_recommendation": admin_rec,
+        "recommendation_status": rec_status,
+        "residents": unique_matches,
+        "registrations": pending,
+    }
 
 
 def get_flat_property_key(flat):
@@ -316,6 +446,14 @@ class RegistrationService:
             )
         )
         db.session.commit()
+
+        # Trigger Resident Automation (Features 1, 2)
+        try:
+            from app.services.resident_automation_service import ResidentAutomationService
+            ResidentAutomationService.on_resident_registered(req)
+        except Exception:
+            pass  # Non-blocking
+
         return req
 
     @staticmethod
@@ -485,6 +623,13 @@ class RegistrationService:
             )
             db.session.add(audit)
             db.session.commit()
+
+            # Trigger Automated Resident Onboarding Sequence (Features 11–18)
+            try:
+                from app.services.resident_automation_service import ResidentAutomationService
+                ResidentAutomationService.on_resident_approved(req, admin_user)
+            except Exception:
+                pass  # Onboarding communications should not fail atomic approval commit
 
         except Exception:
             db.session.rollback()

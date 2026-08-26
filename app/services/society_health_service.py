@@ -459,3 +459,103 @@ class SocietyHealthService:
             "records_scanned": rec_res.get("records_scanned", 100) + dq_res.get("scanned", 100),
             "records_updated": rec_res.get("records_created", 0),
         }
+
+    @staticmethod
+    def get_ai_daily_brief_insights(society_id=None):
+        """
+        Generate AI-enhanced daily brief with insights and recommendations.
+        Extends get_admin_daily_brief with AI analysis.
+        """
+        from app.services.ai_service import AIService
+        
+        # Get base daily brief
+        daily_brief = SocietyHealthService.get_admin_daily_brief(society_id)
+        
+        # AI Insights - Collection Prediction
+        collection_forecast = AIService.generate_collection_prediction(society_id) if society_id else None
+        
+        # AI Insights - Cash Flow
+        cash_flow_forecast = AIService.generate_cash_flow_forecast(society_id) if society_id else None
+        
+        # AI Insights - Low Stock
+        low_stock_alert = AIService.get_low_stock_items(society_id) if society_id else []
+        
+        # AI Insights - Expiring Items
+        expiring_items = AIService.get_expiring_items(society_id) if society_id else []
+        
+        # AI Insights - Overdue Tasks
+        overdue_tasks = AIService.get_overdue_tasks(society_id) if society_id else []
+        
+        # Generate AI recommendations
+        recommendations = []
+        
+        if collection_forecast and collection_forecast.get("trend") == "decreasing":
+            recommendations.append({
+                "type": "collection_trend",
+                "severity": "warning",
+                "title": "Declining Collection Trend",
+                "description": f"Monthly collections are showing a {collection_forecast['trend_pct']}% decrease compared to previous months. Consider implementing collection strategies.",
+                "action_url": "/reports/collections",
+                "action_label": "View Collection Trends"
+            })
+        
+        if low_stock_alert:
+            critical_items = [item for item in low_stock_alert if item.get("severity") == "critical"]
+            if critical_items:
+                recommendations.append({
+                    "type": "low_stock",
+                    "severity": "critical",
+                    "title": "Critical Low Stock Alert",
+                    "description": f"{len(critical_items)} item(s) have zero stock. Immediate restocking required.",
+                    "action_url": "/operations/inventory",
+                    "action_label": "Review Inventory"
+                })
+        
+        if expiring_items:
+            critical_expiring = [item for item in expiring_items if item.get("severity") == "critical"]
+            if critical_expiring:
+                recommendations.append({
+                    "type": "expiring_items",
+                    "severity": "critical",
+                    "title": "Critical Expiring Items",
+                    "description": f"{len(critical_expiring)} document/contract/warranty expiring within 7 days.",
+                    "action_url": "/documents/vault",
+                    "action_label": "Review Expirations"
+                })
+        
+        if overdue_tasks:
+            critical_tasks = [task for task in overdue_tasks if task.get("priority") == "CRITICAL"]
+            if critical_tasks:
+                recommendations.append({
+                    "type": "overdue_tasks",
+                    "severity": "critical",
+                    "title": "Critical Overdue Tasks",
+                    "description": f"{len(critical_tasks)} critical task(s) overdue by more than 30 days.",
+                    "action_url": "/admin/tasks",
+                    "action_label": "Review Tasks"
+                })
+        
+        if not recommendations:
+            recommendations.append({
+                "type": "general",
+                "severity": "success",
+                "title": "Society Operations Looking Good",
+                "description": "All systems operational. No critical items requiring immediate attention.",
+                "action_url": "/dashboard",
+                "action_label": "View Dashboard"
+            })
+        
+        return {
+            **daily_brief,
+            "ai_forecasts": {
+                "collection_prediction": collection_forecast,
+                "cash_flow_forecast": cash_flow_forecast
+            },
+            "ai_alerts": {
+                "low_stock_count": len(low_stock_alert),
+                "expiring_items_count": len(expiring_items),
+                "overdue_tasks_count": len(overdue_tasks)
+            },
+            "ai_recommendations": recommendations,
+            "note": "AI-Enhanced Daily Brief - For administrative review"
+        }

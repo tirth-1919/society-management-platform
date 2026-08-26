@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Create Event | Admin{% endblock %}
+{% block content %}<div class="page-header">
+    <h1>Create Event</h1>
+</div>
+<form class="card form-card" method="post"><input type="hidden" name="csrf_token"
+        value="{{ csrf_token() }}"><label>Event Name<input name="title" maxlength="150" required></label><label>Event
+        Date<input type="date" name="start_date"></label><label>Venue<input name="location"
+            maxlength="150"></label><label>Description<textarea name="description"
+            rows="5"></textarea></label><label>Publish Event<select name="publish">
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+        </select></label><button class="btn btn-primary" type="submit">Create Event</button></form>{% endblock %}

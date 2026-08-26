@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}AI Energy Intelligence{% endblock %}
+
+{% block content %}
+<div class="page-body">
+    {% include "admin/ai/nav_tabs.html" %}
+
+    <!-- Forecast Cards -->
+    <div
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <div class="card"
+            style="padding: 18px; border-radius: var(--radius-md); background: var(--bg-surface); border: 1px solid var(--border-color);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span
+                    style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Next
+                    7 Days Forecast</span>
+                <i class="fa-solid fa-chart-line" style="color: var(--primary);"></i>
+            </div>
+            {% if forecast.has_sufficient_data %}
+            <div style="font-size: 24px; font-weight: 800; color: var(--text-primary);">{{ forecast.next_7_days_kwh }}
+                kWh</div>
+            <span style="font-size: 12px; color: var(--text-secondary);">Avg: {{ forecast.avg_daily_kwh }} kWh/day ({{
+                (forecast.confidence_score * 100)|round|int }}% Confidence)</span>
+            {% else %}
+            <div style="font-size: 13px; color: var(--text-secondary); font-style: italic; margin-top: 6px;">{{
+                forecast.message }}</div>
+            {% endif %}
+        </div>
+
+        <div class="card"
+            style="padding: 18px; border-radius: var(--radius-md); background: var(--bg-surface); border: 1px solid var(--border-color);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span
+                    style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Next
+                    30 Days Forecast</span>
+                <i class="fa-solid fa-bolt" style="color: var(--warning);"></i>
+            </div>
+            {% if forecast.has_sufficient_data %}
+            <div style="font-size: 24px; font-weight: 800; color: var(--primary);">{{ forecast.next_30_days_kwh }} kWh
+            </div>
+            <span style="font-size: 12px; color: var(--text-secondary);">Est. Cost: ₹{{
+                "{:,.2f}".format(forecast.estimated_cost_inr) }}</span>
+            {% else %}
+            <div style="font-size: 13px; color: var(--text-secondary); font-style: italic; margin-top: 6px;">{{
+                forecast.message }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
+        <!-- Surges & Consumption Anomalies -->
+        <div class="card"
+            style="border-radius: var(--radius-md); padding: 20px; background: var(--bg-surface); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+            <h2 style="font-size: 16px; font-weight: 800; margin: 0 0 16px;">Detected Energy Surges &amp; Anomalies</h2>
+
+            {% if anomalies %}
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                {% for item in anomalies %}
+                <div
+                    style="padding: 14px; border-radius: 8px; background: var(--bg-primary); border-left: 4px solid var(--danger);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span style="font-weight: 700; font-size: 14px;">{{ item.meter_name }} (+{{ item.difference_pct
+                            }}%)</span>
+                        <span class="badge" style="background: rgba(239,68,68,0.15); color: var(--danger);">{{
+                            item.severity }}</span>
+                    </div>
+                    <p style="font-size: 12px; color: var(--text-secondary); margin: 0 0 6px;">{{ item.summary }}</p>
+                    <div style="font-size: 11px; color: var(--primary); font-weight: 600;">
+                        <i class="fa-solid fa-wrench"></i> Action: {{ item.recommended_action }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 24px 16px; color: var(--text-secondary);">
+                <i class="fa-solid fa-circle-check"
+                    style="font-size: 32px; color: var(--success); margin-bottom: 8px; display: block;"></i>
+                <p style="font-size: 13px;">No abnormal consumption surges detected across recorded meters.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Log New Sub-meter Reading -->
+        <div class="card"
+            style="border-radius: var(--radius-md); padding: 20px; background: var(--bg-surface); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+            <h3 style="font-size: 15px; font-weight: 800; margin: 0 0 12px;"><i class="fa-solid fa-plus-circle"></i> Log
+                Meter Reading</h3>
+            <form action="{{ url_for('admin.ai_energy_add_reading') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+                <div style="margin-bottom: 10px;">
+                    <label style="font-size: 11px; font-weight: 700; display: block; margin-bottom: 3px;">Meter
+                        Name</label>
+                    <input type="text" name="meter_name" class="form-control"
+                        placeholder="e.g. Main Transformer, Elevator B" required style="font-size: 12px; height: 34px;">
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label style="font-size: 11px; font-weight: 700; display: block; margin-bottom: 3px;">Meter
+                        Type</label>
+                    <select name="meter_type" class="form-control" style="font-size: 12px; height: 34px;">
+                        <option value="COMMON_AREA">Common Area Lighting</option>
+                        <option value="ELEVATOR">Elevator Bank</option>
+                        <option value="WATER_PUMP">Water Pump</option>
+                        <option value="DIESEL_GENERATOR">Diesel Generator</option>
+                        <option value="EV_CHARGER">EV Charging Station</option>
+                    </select>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label style="font-size: 11px; font-weight: 700; display: block; margin-bottom: 3px;">Units Consumed
+                        (kWh)</label>
+                    <input type="number" step="0.1" name="units_kwh" class="form-control" placeholder="e.g. 145.5"
+                        required style="font-size: 12px; height: 34px;">
+                </div>
+                <button type="submit" class="btn btn-primary"
+                    style="width: 100%; justify-content: center; font-size: 12px;">
+                    Save Reading
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

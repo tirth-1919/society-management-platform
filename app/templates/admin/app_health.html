@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}Application Health & Scheduled Jobs - Society SaaS{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs" style="margin-bottom: 20px;">
+    <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+    <i class="fa-solid fa-chevron-right" style="font-size: 10px; margin: 0 8px; color: var(--text-secondary);"></i>
+    <span style="color: var(--text-secondary);">Application Health Dashboard</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-header"
+    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+    <div>
+        <h1 style="font-size: 24px; font-weight: 800; display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-heart-pulse" style="color: var(--danger);"></i>
+            Application Health Dashboard
+        </h1>
+        <p style="color: var(--text-secondary); margin-top: 4px; font-size: 14px;">
+            Real-time diagnostics for application runtime, database latency, scheduled jobs, error patterns, and webhook
+            events.
+        </p>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <button type="button" class="btn btn-outline" onclick="window.location.reload();">
+            <i class="fa-solid fa-arrows-rotate"></i> Refresh Telemetry
+        </button>
+        <button type="button" class="btn btn-primary" onclick="window.openContextualHelp('system_health');">
+            <i class="fa-solid fa-circle-question"></i> Page Guide
+        </button>
+    </div>
+</div>
+
+<!-- Health Status Cards -->
+<div
+    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+    <div class="card" style="padding: 20px; border-left: 4px solid var(--success);">
+        <div style="font-size: 12px; color: var(--text-secondary); font-weight: 700; text-transform: uppercase;">Overall
+            System Status</div>
+        <div
+            style="font-size: 26px; font-weight: 800; color: var(--success); margin: 8px 0; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-circle-check"></i> {{ health.overall_status }}
+        </div>
+        <div style="font-size: 12px; color: var(--text-secondary);">Python {{ health.application.python_version }} |
+            Flask {{ health.application.environment }}</div>
+    </div>
+
+    <div class="card" style="padding: 20px; border-left: 4px solid var(--primary);">
+        <div style="font-size: 12px; color: var(--text-secondary); font-weight: 700; text-transform: uppercase;">
+            Database Latency</div>
+        <div style="font-size: 26px; font-weight: 800; color: var(--text-primary); margin: 8px 0;">
+            {{ health.database.latency_ms }} <span style="font-size: 16px; color: var(--text-secondary);">ms</span>
+        </div>
+        <div style="font-size: 12px; color: var(--text-secondary);">Engine: {{ health.database.engine|upper }} ({{
+            health.database.status }})</div>
+    </div>
+
+    <div class="card" style="padding: 20px; border-left: 4px solid var(--warning);">
+        <div style="font-size: 12px; color: var(--text-secondary); font-weight: 700; text-transform: uppercase;">
+            Database Records</div>
+        <div style="font-size: 26px; font-weight: 800; color: var(--text-primary); margin: 8px 0;">
+            {{ health.database.table_counts.residents }} <span
+                style="font-size: 14px; font-weight: 500; color: var(--text-secondary);">Residents</span>
+        </div>
+        <div style="font-size: 12px; color: var(--text-secondary);">{{ health.database.table_counts.bills }} bills, {{
+            health.database.table_counts.payments }} payments</div>
+    </div>
+
+    <div class="card" style="padding: 20px; border-left: 4px solid var(--info);">
+        <div style="font-size: 12px; color: var(--text-secondary); font-weight: 700; text-transform: uppercase;">24h
+            Error Rate</div>
+        <div
+            style="font-size: 26px; font-weight: 800; color: {{ 'var(--success)' if health.recent_metrics_24h.automation_failures == 0 else 'var(--danger)' }}; margin: 8px 0;">
+            {{ health.recent_metrics_24h.automation_failures }} <span
+                style="font-size: 14px; font-weight: 500; color: var(--text-secondary);">Failures</span>
+        </div>
+        <div style="font-size: 12px; color: var(--text-secondary);">{{ health.recent_metrics_24h.webhook_failures }}
+            invalid webhook signatures</div>
+    </div>
+</div>
+
+<!-- Scheduled Job Monitor Section -->
+<div class="card" style="padding: 24px; margin-bottom: 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h2 style="font-size: 18px; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-clock" style="color: var(--primary);"></i>
+            Scheduled Job Monitor ({{ jobs|length }})
+        </h2>
+        <span style="font-size: 12px; color: var(--text-secondary);">
+            Monitors regular cron and background task execution health.
+        </span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width: 120px;">Status</th>
+                    <th>Job Name</th>
+                    <th>Execution Schedule</th>
+                    <th>Last Run Time</th>
+                    <th>Records Processed</th>
+                    <th style="width: 100px;">Duration</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for j in jobs %}
+                <tr>
+                    <td>
+                        {% if j.status == 'Healthy' %}
+                        <span class="badge" style="background: rgba(34, 197, 94, 0.15); color: var(--success); font-weight: 700;">HEALTHY</span>
+                        {% elif j.status == 'Delayed' %}
+                        <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #d97706; font-weight: 700;">DELAYED</span>
+                        {% elif j.status == 'Failed' %}
+                        <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: var(--danger); font-weight: 700;">FAILED</span>
+                        {% else %}
+                        <span class="badge" style="background: rgba(100, 116, 139, 0.15); color: var(--text-secondary); font-weight: 600;">NOT RUNNING</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-weight: 700;">{{ j.job_name }}</td>
+                    <td style="font-size: 13px; color: var(--text-secondary);">{{ j.interval }}</td>
+                    <td style="font-size: 13px;">{{ j.last_executed }}</td>
+                    <td style="font-size: 13px; font-weight: 600;">{{ j.records_processed }} records</td>
+                    <td style="font-size: 13px; color: var(--text-secondary);">{{ j.duration_ms }} ms</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Error Pattern Grouper & Webhook Intelligence Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px;">
+    <!-- Error Pattern Analyzer -->
+    <div class="card" style="padding: 24px;">
+        <h2 style="font-size: 18px; font-weight: 700; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-layer-group" style="color: var(--warning);"></i>
+            Error Pattern Grouper
+        </h2>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
+            Aggregates system exceptions without exposing sensitive passwords, tokens, or raw stack traces.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            {% for cat in errors.categories %}
+            <div style="border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; background: var(--bg-surface);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <span style="font-weight: 700; font-size: 14px;">{{ cat.category }}</span>
+                    <span class="badge" style="background: rgba(239, 68, 68, 0.1); color: var(--danger); font-weight: 800;">
+                        {{ cat.count }} event(s)
+                    </span>
+                </div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 6px;">
+                    Last occurrence: {{ cat.latest or 'N/A' }}
+                </div>
+                {% if cat.examples %}
+                <div style="background: var(--bg-hover); border-radius: 4px; padding: 6px 10px; font-family: monospace; font-size: 11px; color: var(--text-secondary);">
+                    {{ cat.examples[0] }}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Webhook Intelligence -->
+    <div class="card" style="padding: 24px;">
+        <h2 style="font-size: 18px; font-weight: 700; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-satellite-dish" style="color: var(--primary);"></i>
+            Webhook Event Timeline
+        </h2>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
+            Incoming payment gateway and external notifications with signature and idempotency verification.
+        </p>
+
+        {% if webhooks %}
+        <div style="display: flex; flex-direction: column; gap: 10px; max-height: 380px; overflow-y: auto;">
+            {% for w in webhooks %}
+            <div style="border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; background: var(--bg-surface);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <span style="font-weight: 700; font-size: 13px;">{{ w.event_type or 'Payment Webhook' }}</span>
+                    <span class="badge {{ w.badge_class }}">{{ w.status_badge }}</span>
+                </div>
+                <div style="font-size: 12px; color: var(--text-secondary);">
+                    ID: {{ w.event_id }} | Received: {{ w.received_at }}
+                </div>
+                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">
+                    Signature: <strong>{{ 'VALID' if w.is_valid_signature else 'INVALID' }}</strong> | Idempotency Key: {{ w.idempotency_key }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="padding: 30px; text-align: center; color: var(--text-secondary);">
+            <i class="fa-solid fa-circle-check" style="font-size: 32px; color: var(--success); margin-bottom: 12px;"></i>
+            <p style="font-size: 13px; margin: 0;">No unverified or failed webhook events recorded.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

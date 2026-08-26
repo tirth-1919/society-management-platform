@@ -1,199 +1,800 @@
 {% extends "base.html" %}
 
-{% block title %}Automation Engine - Society ERP{% endblock %}
+{% block title %}Automation Center — Admin Portal{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<style>
+.auto-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 2px solid var(--border-color);
+  margin-bottom: 24px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.auto-tab-btn {
+  padding: 10px 18px;
+  border: none;
+  background: transparent;
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 8px 8px 0 0;
+  border-bottom: 3px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+.auto-tab-btn:hover {
+  color: var(--primary);
+  background: var(--bg-primary);
+}
+.auto-tab-btn.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  background: var(--bg-surface);
+}
+.auto-section {
+  display: none;
+}
+.auto-section.active {
+  display: block;
+}
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.status-pill.completed { background: rgba(16,185,129,0.15); color: #059669; }
+.status-pill.running { background: rgba(79,70,229,0.15); color: #4338ca; }
+.status-pill.warning { background: rgba(245,158,11,0.15); color: #d97706; }
+.status-pill.failed { background: rgba(239,68,68,0.15); color: #dc2626; }
+.status-pill.idle { background: rgba(107,114,128,0.15); color: #4b5563; }
+.severity-pill-critical { background: rgba(239,68,68,0.15); color: #dc2626; border: 1px solid rgba(239,68,68,0.3); font-weight:700; font-size:11px; padding:3px 8px; border-radius:12px; }
+.severity-pill-warning { background: rgba(245,158,11,0.15); color: #d97706; border: 1px solid rgba(245,158,11,0.3); font-weight:700; font-size:11px; padding:3px 8px; border-radius:12px; }
+.severity-pill-info { background: rgba(6,182,212,0.15); color: #0891b2; border: 1px solid rgba(6,182,212,0.3); font-weight:700; font-size:11px; padding:3px 8px; border-radius:12px; }
+</style>
+
+<div style="max-width: 1200px; margin: 24px auto; padding: 0 16px;">
+
+  <!-- Page Header -->
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+    <div>
+      <h1 style="font-size:24px; font-weight:800; margin:0; display:flex; align-items:center; gap:10px;">
+        <i class="fa-solid fa-robot" style="color:var(--primary);"></i>
+        Automation Center
+      </h1>
+      <p style="color:var(--text-secondary); margin:4px 0 0 0; font-size:13.5px;">
+        Manage automated workflows, event listeners, scheduled jobs, alerts, and execution health
+      </p>
+    </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <a href="{{ url_for('admin.society_health') }}" class="btn btn-secondary" style="font-size:13px; font-weight:600;">
+        <i class="fa-solid fa-heart-pulse" style="color:var(--danger);"></i> Society Health
+      </a>
+      <a href="{{ url_for('admin.reconciliation') }}" class="btn btn-secondary" style="font-size:13px; font-weight:600;">
+        <i class="fa-solid fa-scale-balanced" style="color:var(--primary);"></i> Reconciliation
+      </a>
+    </div>
+  </div>
+
+  <!-- ── Top KPI Metrics Row ───────────────────────────────────────────── -->
+  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:14px; margin-bottom:24px;">
+    <div class="card" style="padding:16px; border-left:4px solid var(--primary); text-align:center;">
+      <div style="font-size:26px; font-weight:800; color:var(--primary);">{{ dashboard_stats.active_automations }}</div>
+      <div style="font-size:12px; color:var(--text-secondary); font-weight:600; margin-top:2px;">
+        <i class="fa-solid fa-sliders" style="margin-right:4px;"></i>Active Automations
+      </div>
+    </div>
+    <div class="card" style="padding:16px; border-left:4px solid #0891b2; text-align:center;">
+      <div style="font-size:26px; font-weight:800; color:#0891b2;">{{ dashboard_stats.todays_executions }}</div>
+      <div style="font-size:12px; color:var(--text-secondary); font-weight:600; margin-top:2px;">
+        <i class="fa-solid fa-calendar-day" style="margin-right:4px;"></i>Today's Executions
+      </div>
+    </div>
+    <div class="card" style="padding:16px; border-left:4px solid var(--success); text-align:center;">
+      <div style="font-size:26px; font-weight:800; color:var(--success);">{{ dashboard_stats.successful }}</div>
+      <div style="font-size:12px; color:var(--text-secondary); font-weight:600; margin-top:2px;">
+        <i class="fa-solid fa-circle-check" style="margin-right:4px;"></i>Successful
+      </div>
+    </div>
+    <div class="card" style="padding:16px; border-left:4px solid var(--danger); text-align:center;">
+      <div style="font-size:26px; font-weight:800; color:var(--danger);">{{ dashboard_stats.failed }}</div>
+      <div style="font-size:12px; color:var(--text-secondary); font-weight:600; margin-top:2px;">
+        <i class="fa-solid fa-circle-xmark" style="margin-right:4px;"></i>Failed
+      </div>
+    </div>
+    <div class="card" style="padding:16px; border-left:4px solid #d97706; text-align:center;">
+      <div style="font-size:26px; font-weight:800; color:#d97706;">{{ dashboard_stats.pending_actions }}</div>
+      <div style="font-size:12px; color:var(--text-secondary); font-weight:600; margin-top:2px;">
+        <i class="fa-solid fa-hourglass-half" style="margin-right:4px;"></i>Pending Actions
+      </div>
+    </div>
+    <div class="card" style="padding:16px; border-left:4px solid {% if dashboard_stats.critical_alerts > 0 %}var(--danger){% else %}#9ca3af{% endif %}; text-align:center;">
+      <div style="font-size:26px; font-weight:800; color:{% if dashboard_stats.critical_alerts > 0 %}var(--danger){% else %}#6b7280{% endif %};">{{ dashboard_stats.critical_alerts }}</div>
+      <div style="font-size:12px; color:var(--text-secondary); font-weight:600; margin-top:2px;">
+        <i class="fa-solid fa-triangle-exclamation" style="margin-right:4px; color:{% if dashboard_stats.critical_alerts > 0 %}var(--danger){% else %}#6b7280{% endif %};"></i>Critical Alerts
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tab Navigation ──────────────────────────────────────────────── -->
+  <div class="auto-tabs" role="tablist">
+    <button class="auto-tab-btn {% if active_tab == 'dashboard' or not active_tab %}active{% endif %}" onclick="switchAutoTab('dashboard')" id="tab-btn-dashboard" type="button">
+      <i class="fa-solid fa-chart-line"></i> Automation Dashboard
+    </button>
+    <button class="auto-tab-btn {% if active_tab == 'rules' %}active{% endif %}" onclick="switchAutoTab('rules')" id="tab-btn-rules" type="button">
+      <i class="fa-solid fa-diagram-project"></i> Rules ({{ rules|length }})
+    </button>
+    <button class="auto-tab-btn {% if active_tab == 'scheduled' %}active{% endif %}" onclick="switchAutoTab('scheduled')" id="tab-btn-scheduled" type="button">
+      <i class="fa-solid fa-clock"></i> Scheduled Jobs ({{ scheduled_jobs|length }})
+    </button>
+    <button class="auto-tab-btn {% if active_tab == 'alerts' %}active{% endif %}" onclick="switchAutoTab('alerts')" id="tab-btn-alerts" type="button">
+      <i class="fa-solid fa-bell"></i> Alerts ({{ alerts|length }})
+    </button>
+    <button class="auto-tab-btn {% if active_tab == 'failed' %}active{% endif %}" onclick="switchAutoTab('failed')" id="tab-btn-failed" type="button">
+      <i class="fa-solid fa-triangle-exclamation"></i> Failed Automations ({{ failed_automations|length }})
+    </button>
+    <button class="auto-tab-btn {% if active_tab == 'history' %}active{% endif %}" onclick="switchAutoTab('history')" id="tab-btn-history" type="button">
+      <i class="fa-solid fa-clock-rotate-left"></i> Execution History
+    </button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       SECTION 1: AUTOMATION DASHBOARD
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div id="section-dashboard" class="auto-section {% if active_tab == 'dashboard' or not active_tab %}active{% endif %}">
+    <!-- Quick Actions Card -->
+    <div class="card" style="margin-bottom: 24px; padding: 20px;">
+      <div style="font-size: 13px; font-weight: 800; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 12px; display:flex; align-items:center; gap:8px;">
+        <i class="fa-solid fa-bolt" style="color:var(--warning);"></i> Quick Actions Menu
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px;">
+        <a href="{{ url_for('auth.register') }}" class="btn btn-secondary" style="font-size:12px; justify-content:flex-start;">
+          <i class="fa-solid fa-user-plus" style="color:var(--primary);"></i> Add Resident
+        </a>
+        <a href="{{ url_for('admin.flats') }}" class="btn btn-secondary" style="font-size:12px; justify-content:flex-start;">
+          <i class="fa-solid fa-building" style="color:#0891b2;"></i> Add Flat
+        </a>
+        <a href="{{ url_for('payments.bills') }}" class="btn btn-secondary" style="font-size:12px; justify-content:flex-start;">
+          <i class="fa-solid fa-file-invoice" style="color:var(--success);"></i> Create Bill
+        </a>
+        <a href="{{ url_for('payments.admin_payment_dashboard') }}" class="btn btn-secondary" style="font-size:12px; justify-content:flex-start;">
+          <i class="fa-solid fa-credit-card" style="color:#8b5cf6;"></i> Record Payment
+        </a>
+        <a href="{{ url_for('accounting.vouchers') }}" class="btn btn-secondary" style="font-size:12px; justify-content:flex-start;">
+          <i class="fa-solid fa-file-invoice-dollar" style="color:var(--warning);"></i> Add Expense
+        </a>
+        <a href="{{ url_for('resident.announcements') }}" class="btn btn-secondary" style="font-size:12px; justify-content:flex-start;">
+          <i class="fa-solid fa-bullhorn" style="color:#ec4899;"></i> Create Notice
+        </a>
+        <a href="{{ url_for('complaints.list_complaints') }}" class="btn btn-secondary" style="font-size:12px; justify-content:flex-start;">
+          <i class="fa-solid fa-headset" style="color:var(--danger);"></i> Create Complaint
+        </a>
+        <a href="{{ url_for('visitors.list_visitors') }}" class="btn btn-secondary" style="font-size:12px; justify-content:flex-start;">
+          <i class="fa-solid fa-id-badge" style="color:#059669;"></i> Add Visitor
+        </a>
+        <a href="{{ url_for('documents.vault') }}" class="btn btn-secondary" style="font-size:12px; justify-content:flex-start;">
+          <i class="fa-solid fa-vault" style="color:#6366f1;"></i> Upload Document
+        </a>
+        <a href="{{ url_for('operations.inventory') }}" class="btn btn-secondary" style="font-size:12px; justify-content:flex-start;">
+          <i class="fa-solid fa-boxes-stacked" style="color:#d97706;"></i> Add Inventory
+        </a>
+        <a href="{{ url_for('operations.assets') }}" class="btn btn-secondary" style="font-size:12px; justify-content:flex-start;">
+          <i class="fa-solid fa-wrench" style="color:#0284c7;"></i> Add Asset
+        </a>
+        <a href="{{ url_for('reports.financial_reports') }}" class="btn btn-secondary" style="font-size:12px; justify-content:flex-start;">
+          <i class="fa-solid fa-chart-pie" style="color:#10b981;"></i> Generate Report
+        </a>
+      </div>
+    </div>
+
+    <!-- Core Automation Engine Status Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px;">
+      <!-- Card 1: Payment Reconciliation -->
+      <div class="card" style="padding:18px; display:flex; flex-direction:column; justify-content:space-between;">
         <div>
-            <h1 class="h3 mb-0 text-gray-800"><i class="bi bi-cpu text-primary me-2"></i>Automation Engine & Control Center</h1>
-            <p class="text-muted mb-0">Manage Automated Billing, Reconciliation, Notifications, and Scheduled Jobs</p>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div style="font-weight:700; font-size:14px; display:flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-scale-balanced" style="color:var(--primary);"></i> Payment Reconciliation
+            </div>
+            <span class="status-pill {{ (status_summary.RECONCILE_PAYMENTS.last_status or 'idle') | lower }}">
+              {{ status_summary.RECONCILE_PAYMENTS.last_status }}
+            </span>
+          </div>
+          <p style="font-size:12.5px; color:var(--text-secondary); margin:0 0 12px 0;">
+            Audits payment records against gateway logs and pending bills to detect discrepancies.
+          </p>
         </div>
+        <form action="{{ url_for('admin.run_automation_action', action_name='RECONCILE_PAYMENTS') }}" method="POST">
+          {% if csrf_token is defined %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+          <button type="submit" class="btn btn-secondary" style="width:100%; font-size:12px; font-weight:700;">
+            <i class="fa-solid fa-play"></i> Trigger Reconciliation
+          </button>
+        </form>
+      </div>
+
+      <!-- Card 2: Monthly Bill Generation -->
+      <div class="card" style="padding:18px; display:flex; flex-direction:column; justify-content:space-between;">
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div style="font-weight:700; font-size:14px; display:flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-file-invoice" style="color:#0891b2;"></i> Monthly Billing Engine
+            </div>
+            <span class="status-pill {{ (status_summary.GENERATE_MONTHLY_BILLS.last_status or 'idle') | lower }}">
+              {{ status_summary.GENERATE_MONTHLY_BILLS.last_status }}
+            </span>
+          </div>
+          <p style="font-size:12.5px; color:var(--text-secondary); margin:0 0 12px 0;">
+            Generates missing monthly maintenance bills for all active occupied units.
+          </p>
+        </div>
+        <form action="{{ url_for('admin.run_automation_action', action_name='GENERATE_MONTHLY_BILLS') }}" method="POST">
+          {% if csrf_token is defined %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+          <button type="submit" class="btn btn-secondary" style="width:100%; font-size:12px; font-weight:700;">
+            <i class="fa-solid fa-play"></i> Generate Missing Bills
+          </button>
+        </form>
+      </div>
+
+      <!-- Card 3: Late Fee Assessment -->
+      <div class="card" style="padding:18px; display:flex; flex-direction:column; justify-content:space-between;">
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div style="font-weight:700; font-size:14px; display:flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-clock-rotate-left" style="color:var(--warning);"></i> Late Fee Engine
+            </div>
+            <span class="status-pill {{ (status_summary.APPLY_LATE_FEES.last_status or 'idle') | lower }}">
+              {{ status_summary.APPLY_LATE_FEES.last_status }}
+            </span>
+          </div>
+          <p style="font-size:12.5px; color:var(--text-secondary); margin:0 0 12px 0;">
+            Evaluates overdue accounts and applies compliant late charges automatically.
+          </p>
+        </div>
+        <form action="{{ url_for('admin.run_automation_action', action_name='APPLY_LATE_FEES') }}" method="POST">
+          {% if csrf_token is defined %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+          <button type="submit" class="btn btn-secondary" style="width:100%; font-size:12px; font-weight:700;">
+            <i class="fa-solid fa-play"></i> Recalculate Late Fees
+          </button>
+        </form>
+      </div>
+
+      <!-- Card 4: Due Reminders Dispatch -->
+      <div class="card" style="padding:18px; display:flex; flex-direction:column; justify-content:space-between;">
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div style="font-weight:700; font-size:14px; display:flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-bell" style="color:#8b5cf6;"></i> Reminder Dispatcher
+            </div>
+            <span class="status-pill {{ (status_summary.SEND_DUE_REMINDERS.last_status or 'idle') | lower }}">
+              {{ status_summary.SEND_DUE_REMINDERS.last_status }}
+            </span>
+          </div>
+          <p style="font-size:12.5px; color:var(--text-secondary); margin:0 0 12px 0;">
+            Dispatches payment notifications with 24-hour deduplication and cooldown rules.
+          </p>
+        </div>
+        <form action="{{ url_for('admin.run_automation_action', action_name='SEND_DUE_REMINDERS') }}" method="POST">
+          {% if csrf_token is defined %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+          <button type="submit" class="btn btn-secondary" style="width:100%; font-size:12px; font-weight:700;">
+            <i class="fa-solid fa-play"></i> Dispatch Reminders
+          </button>
+        </form>
+      </div>
+
+      <!-- Card 5: Health & Consistency Audit -->
+      <div class="card" style="padding:18px; display:flex; flex-direction:column; justify-content:space-between;">
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div style="font-weight:700; font-size:14px; display:flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-heart-pulse" style="color:var(--danger);"></i> Society Health Audit
+            </div>
+            <span class="status-pill {{ (status_summary.RUN_DAILY_HEALTH_CHECK.last_status or 'idle') | lower }}">
+              {{ status_summary.RUN_DAILY_HEALTH_CHECK.last_status }}
+            </span>
+          </div>
+          <p style="font-size:12.5px; color:var(--text-secondary); margin:0 0 12px 0;">
+            Runs complete society diagnostic audit across 10 vital operational indicators.
+          </p>
+        </div>
+        <form action="{{ url_for('admin.run_automation_action', action_name='RUN_DAILY_HEALTH_CHECK') }}" method="POST">
+          {% if csrf_token is defined %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+          <button type="submit" class="btn btn-secondary" style="width:100%; font-size:12px; font-weight:700;">
+            <i class="fa-solid fa-play"></i> Run Health Audit
+          </button>
+        </form>
+      </div>
+
+      <!-- Card 6: Visitor Pass Expiry -->
+      <div class="card" style="padding:18px; display:flex; flex-direction:column; justify-content:space-between;">
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div style="font-weight:700; font-size:14px; display:flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-id-badge" style="color:#059669;"></i> Visitor Pass Expiry
+            </div>
+            <span class="status-pill {{ (status_summary.EXPIRE_VISITOR_PASSES.last_status or 'idle') | lower }}">
+              {{ status_summary.EXPIRE_VISITOR_PASSES.last_status }}
+            </span>
+          </div>
+          <p style="font-size:12.5px; color:var(--text-secondary); margin:0 0 12px 0;">
+            Deactivates expired visitor passes past their validity window safely.
+          </p>
+        </div>
+        <form action="{{ url_for('admin.run_automation_action', action_name='EXPIRE_VISITOR_PASSES') }}" method="POST">
+          {% if csrf_token is defined %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+          <button type="submit" class="btn btn-secondary" style="width:100%; font-size:12px; font-weight:700;">
+            <i class="fa-solid fa-play"></i> Expire Passes
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       SECTION 2: RULES
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div id="section-rules" class="auto-section {% if active_tab == 'rules' %}active{% endif %}">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:12px;">
+      <div>
+        <h3 style="font-size:16px; font-weight:800; margin:0;">Configured Automation Rules</h3>
+        <p style="font-size:13px; color:var(--text-secondary); margin:2px 0 0 0;">Event-driven and scheduled automation triggers</p>
+      </div>
+      <button type="button" class="btn btn-primary" onclick="toggleCreateRuleForm()" style="font-size:12.5px; font-weight:700;">
+        <i class="fa-solid fa-plus"></i> Add Automation Rule
+      </button>
     </div>
 
-    <!-- Quick Run Actions Grid -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-3 h-100">
-                <div class="card-body d-flex flex-column justify-content-between">
-                    <div>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h6 class="fw-bold mb-0"><i class="bi bi-cash-stack text-success me-2"></i>Payment Reconciliation</h6>
-                            <span class="badge bg-{{ 'success' if status_summary.RECONCILE_PAYMENTS.last_status == 'COMPLETED' else 'secondary' }}">
-                                {{ status_summary.RECONCILE_PAYMENTS.last_status }}
-                            </span>
-                        </div>
-                        <p class="small text-muted mb-3">Audits payments vs bills vs gateway logs to detect discrepancies.</p>
-                    </div>
-                    <form action="{{ url_for('admin.run_automation_action', action_name='RECONCILE_PAYMENTS') }}" method="POST">
-                        <button type="submit" class="btn btn-outline-success btn-sm w-100">
-                            <i class="bi bi-play-circle me-1"></i> Trigger Reconciliation
-                        </button>
-                    </form>
-                </div>
-            </div>
+    <!-- Create Rule Collapsible Form -->
+    <div id="create-rule-card" class="card" style="display:none; padding:20px; margin-bottom:24px; border:1.5px solid var(--primary); background:var(--bg-surface);">
+      <h4 style="font-size:15px; font-weight:800; margin:0 0 16px 0; color:var(--primary);">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> Create New Automation Rule
+      </h4>
+      <form action="{{ url_for('admin.create_automation_rule') }}" method="POST">
+        {% if csrf_token is defined %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:14px; margin-bottom:14px;">
+          <div>
+            <label style="font-size:12px; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">Rule Name *</label>
+            <input type="text" name="name" required placeholder="e.g. Notify on New Registration"
+              style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border-color); font-size:13px; background:var(--bg-primary); color:var(--text-primary);">
+          </div>
+          <div>
+            <label style="font-size:12px; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">Action Type *</label>
+            <select name="action_type" required style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border-color); font-size:13px; background:var(--bg-primary); color:var(--text-primary);">
+              <option value="RECONCILE_PAYMENTS">RECONCILE_PAYMENTS</option>
+              <option value="GENERATE_MONTHLY_BILLS">GENERATE_MONTHLY_BILLS</option>
+              <option value="APPLY_LATE_FEES">APPLY_LATE_FEES</option>
+              <option value="SEND_DUE_REMINDERS">SEND_DUE_REMINDERS</option>
+              <option value="RUN_DAILY_HEALTH_CHECK">RUN_DAILY_HEALTH_CHECK</option>
+              <option value="EXPIRE_VISITOR_PASSES">EXPIRE_VISITOR_PASSES</option>
+              <option value="CHECK_OVERDUE_TASKS">CHECK_OVERDUE_TASKS</option>
+              <option value="CHECK_EXPIRY_REMINDERS">CHECK_EXPIRY_REMINDERS</option>
+              <option value="CHECK_LOW_STOCK">CHECK_LOW_STOCK</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">Trigger Type *</label>
+            <select name="trigger_type" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border-color); font-size:13px; background:var(--bg-primary); color:var(--text-primary);">
+              <option value="EVENT_TRIGGERED">EVENT_TRIGGERED (Event-Driven)</option>
+              <option value="SCHEDULED">SCHEDULED (Cron/Interval)</option>
+              <option value="MANUAL">MANUAL (Admin Trigger Only)</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">Event Name (for Event-Driven)</label>
+            <select name="event_name" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border-color); font-size:13px; background:var(--bg-primary); color:var(--text-primary);">
+              <option value="">-- None / Select Event --</option>
+              {% for ev in supported_events %}
+              <option value="{{ ev }}">{{ ev }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">Priority (1=Normal, 2=High, 3=Critical)</label>
+            <select name="priority" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border-color); font-size:13px; background:var(--bg-primary); color:var(--text-primary);">
+              <option value="1">1 — Normal Priority</option>
+              <option value="2">2 — High Priority</option>
+              <option value="3">3 — Critical Priority</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">Schedule Cron / Frequency</label>
+            <input type="text" name="schedule_cron" placeholder="e.g. 0 0 * * * or Daily at 09:00"
+              style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border-color); font-size:13px; background:var(--bg-primary); color:var(--text-primary);">
+          </div>
         </div>
-
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-3 h-100">
-                <div class="card-body d-flex flex-column justify-content-between">
-                    <div>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h6 class="fw-bold mb-0"><i class="bi bi-file-earmark-spreadsheet text-primary me-2"></i>Monthly Bill Generation</h6>
-                            <span class="badge bg-{{ 'success' if status_summary.GENERATE_MONTHLY_BILLS.last_status == 'COMPLETED' else 'secondary' }}">
-                                {{ status_summary.GENERATE_MONTHLY_BILLS.last_status }}
-                            </span>
-                        </div>
-                        <p class="small text-muted mb-3">Generates missing monthly maintenance bills for all active occupied flats.</p>
-                    </div>
-                    <form action="{{ url_for('admin.run_automation_action', action_name='GENERATE_MONTHLY_BILLS') }}" method="POST">
-                        <button type="submit" class="btn btn-outline-primary btn-sm w-100">
-                            <i class="bi bi-play-circle me-1"></i> Generate Monthly Bills
-                        </button>
-                    </form>
-                </div>
-            </div>
+        <div style="margin-bottom:16px;">
+          <label style="font-size:12px; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:4px;">Description</label>
+          <input type="text" name="description" placeholder="Brief description of this automation rule..."
+            style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border-color); font-size:13px; background:var(--bg-primary); color:var(--text-primary);">
         </div>
-
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-3 h-100">
-                <div class="card-body d-flex flex-column justify-content-between">
-                    <div>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h6 class="fw-bold mb-0"><i class="bi bi-heart-pulse text-danger me-2"></i>Society Health Audit</h6>
-                            <span class="badge bg-{{ 'success' if status_summary.RUN_DAILY_HEALTH_CHECK.last_status == 'COMPLETED' else 'secondary' }}">
-                                {{ status_summary.RUN_DAILY_HEALTH_CHECK.last_status }}
-                            </span>
-                        </div>
-                        <p class="small text-muted mb-3">Audits system health, data consistency, and calculates 0-100 score.</p>
-                    </div>
-                    <form action="{{ url_for('admin.run_automation_action', action_name='RUN_DAILY_HEALTH_CHECK') }}" method="POST">
-                        <button type="submit" class="btn btn-outline-danger btn-sm w-100">
-                            <i class="bi bi-play-circle me-1"></i> Run Health Audit
-                        </button>
-                    </form>
-                </div>
-            </div>
+        <div style="display:flex; gap:10px;">
+          <button type="submit" class="btn btn-primary" style="font-size:13px; font-weight:700;">
+            <i class="fa-solid fa-check"></i> Save Automation Rule
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="toggleCreateRuleForm()" style="font-size:13px;">
+            Cancel
+          </button>
         </div>
-
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-3 h-100">
-                <div class="card-body d-flex flex-column justify-content-between">
-                    <div>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h6 class="fw-bold mb-0"><i class="bi bi-bell text-warning me-2"></i>Maintenance Reminders</h6>
-                            <span class="badge bg-{{ 'success' if status_summary.SEND_DUE_REMINDERS.last_status == 'COMPLETED' else 'secondary' }}">
-                                {{ status_summary.SEND_DUE_REMINDERS.last_status }}
-                            </span>
-                        </div>
-                        <p class="small text-muted mb-3">Dispatches upcoming due and overdue SMS/email reminders.</p>
-                    </div>
-                    <form action="{{ url_for('admin.run_automation_action', action_name='SEND_DUE_REMINDERS') }}" method="POST">
-                        <button type="submit" class="btn btn-outline-warning btn-sm w-100">
-                            <i class="bi bi-play-circle me-1"></i> Dispatch Reminders
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-3 h-100">
-                <div class="card-body d-flex flex-column justify-content-between">
-                    <div>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h6 class="fw-bold mb-0"><i class="bi bi-hourglass-split text-secondary me-2"></i>Late Fee Assessment</h6>
-                            <span class="badge bg-{{ 'success' if status_summary.APPLY_LATE_FEES.last_status == 'COMPLETED' else 'secondary' }}">
-                                {{ status_summary.APPLY_LATE_FEES.last_status }}
-                            </span>
-                        </div>
-                        <p class="small text-muted mb-3">Calculates and updates overdue late fees according to society rules.</p>
-                    </div>
-                    <form action="{{ url_for('admin.run_automation_action', action_name='APPLY_LATE_FEES') }}" method="POST">
-                        <button type="submit" class="btn btn-outline-secondary btn-sm w-100">
-                            <i class="bi bi-play-circle me-1"></i> Recalculate Late Fees
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-3 h-100">
-                <div class="card-body d-flex flex-column justify-content-between">
-                    <div>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h6 class="fw-bold mb-0"><i class="bi bi-person-badge text-info me-2"></i>Visitor Pass Expiry</h6>
-                            <span class="badge bg-{{ 'success' if status_summary.EXPIRE_VISITOR_PASSES.last_status == 'COMPLETED' else 'secondary' }}">
-                                {{ status_summary.EXPIRE_VISITOR_PASSES.last_status }}
-                            </span>
-                        </div>
-                        <p class="small text-muted mb-3">Deactivates expired visitor passes past their validity window.</p>
-                    </div>
-                    <form action="{{ url_for('admin.run_automation_action', action_name='EXPIRE_VISITOR_PASSES') }}" method="POST">
-                        <button type="submit" class="btn btn-outline-info btn-sm w-100">
-                            <i class="bi bi-play-circle me-1"></i> Expire Visitor Passes
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
+      </form>
     </div>
 
-    <!-- Execution History Table -->
-    <div class="card border-0 shadow-sm rounded-3">
-        <div class="card-header bg-white py-3">
-            <h5 class="mb-0 fw-bold"><i class="bi bi-clock-history me-2"></i>Recent Automation Execution Logs</h5>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Execution ID</th>
-                            <th>Automation</th>
-                            <th>Status</th>
-                            <th>Trigger Source</th>
-                            <th>Start Time</th>
-                            <th>Duration</th>
-                            <th>Scanned</th>
-                            <th>Created / Updated</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for exec in history %}
-                        <tr>
-                            <td class="small fw-mono">{{ exec.execution_id }}</td>
-                            <td class="fw-semibold">{{ exec.automation_name }}</td>
-                            <td>
-                                {% if exec.status == 'COMPLETED' %}
-                                <span class="badge bg-success">COMPLETED</span>
-                                {% elif exec.status == 'WARNING' %}
-                                <span class="badge bg-warning text-dark">WARNING</span>
-                                {% elif exec.status == 'FAILED' %}
-                                <span class="badge bg-danger">FAILED</span>
-                                {% elif exec.status == 'RUNNING' %}
-                                <span class="badge bg-primary">RUNNING</span>
-                                {% else %}
-                                <span class="badge bg-secondary">{{ exec.status }}</span>
-                                {% endif %}
-                            </td>
-                            <td><span class="badge bg-light text-dark border">{{ exec.trigger_source }}</span></td>
-                            <td class="small text-muted">{{ exec.start_time.strftime('%Y-%m-%d %H:%M:%S') if exec.start_time else 'N/A' }}</td>
-                            <td class="small">{{ exec.duration_ms }} ms</td>
-                            <td class="small">{{ exec.records_scanned }}</td>
-                            <td class="small">{{ exec.records_created }} / {{ exec.records_updated }}</td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="8" class="text-center py-4 text-muted">No automation runs recorded yet.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    <!-- Rules Table -->
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:13px;">
+          <thead>
+            <tr style="background:var(--bg-primary); border-bottom:2px solid var(--border-color);">
+              <th style="padding:12px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Rule Name</th>
+              <th style="padding:12px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Trigger / Event</th>
+              <th style="padding:12px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Action</th>
+              <th style="padding:12px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Priority</th>
+              <th style="padding:12px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Status</th>
+              <th style="padding:12px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Last Run</th>
+              <th style="padding:12px 16px; text-align:right; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in rules %}
+            <tr style="border-bottom:1px solid var(--border-color);">
+              <td style="padding:12px 16px;">
+                <div style="font-weight:700; color:var(--text-primary);">{{ r.name }}</div>
+                {% if r.description %}
+                <div style="font-size:11.5px; color:var(--text-secondary); margin-top:2px;">{{ r.description }}</div>
+                {% endif %}
+              </td>
+              <td style="padding:12px 16px;">
+                <span class="badge badge-info" style="font-size:11px;">{{ r.trigger_type }}</span>
+                {% if r.event_name %}
+                <div style="font-size:11px; color:var(--text-secondary); margin-top:2px; font-family:monospace;">{{ r.event_name }}</div>
+                {% endif %}
+                {% if r.schedule_cron %}
+                <div style="font-size:11px; color:var(--text-secondary); margin-top:2px;"><i class="fa-solid fa-clock"></i> {{ r.schedule_cron }}</div>
+                {% endif %}
+              </td>
+              <td style="padding:12px 16px; font-weight:600; font-family:monospace; font-size:12px;">{{ r.action_type }}</td>
+              <td style="padding:12px 16px;">
+                {% if r.priority == 3 %}
+                <span class="severity-pill-critical">Critical (3)</span>
+                {% elif r.priority == 2 %}
+                <span class="severity-pill-warning">High (2)</span>
+                {% else %}
+                <span class="severity-pill-info">Normal (1)</span>
+                {% endif %}
+              </td>
+              <td style="padding:12px 16px;">
+                <form action="{{ url_for('admin.toggle_automation_rule', rule_id=r.id) }}" method="POST" style="margin:0;">
+                  {% if csrf_token is defined %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+                  <button type="submit" style="background:transparent; border:none; cursor:pointer; padding:0;">
+                    {% if r.is_active %}
+                    <span class="status-pill completed"><i class="fa-solid fa-toggle-on"></i> Enabled</span>
+                    {% else %}
+                    <span class="status-pill idle"><i class="fa-solid fa-toggle-off"></i> Disabled</span>
+                    {% endif %}
+                  </button>
+                </form>
+              </td>
+              <td style="padding:12px 16px; font-size:12px; color:var(--text-secondary);">
+                {{ r.last_run_at.strftime('%d %b %Y %H:%M') if r.last_run_at else 'Never' }}
+              </td>
+              <td style="padding:12px 16px; text-align:right;">
+                <div style="display:inline-flex; gap:6px;">
+                  <form action="{{ url_for('admin.run_automation_action', action_name=r.action_type, tab='rules') }}" method="POST" style="margin:0;">
+                    {% if csrf_token is defined %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+                    <button type="submit" class="btn btn-secondary" style="font-size:11.5px; padding:4px 10px;" title="Trigger this rule immediately">
+                      <i class="fa-solid fa-play"></i> Run
+                    </button>
+                  </form>
+                  <form action="{{ url_for('admin.delete_automation_rule', rule_id=r.id) }}" method="POST" style="margin:0;" onsubmit="return confirm('Delete this automation rule?');">
+                    {% if csrf_token is defined %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+                    <button type="submit" class="btn btn-secondary" style="font-size:11.5px; padding:4px 8px; color:var(--danger);" title="Delete rule">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="7" style="text-align:center; padding:36px; color:var(--text-secondary);">
+                <i class="fa-solid fa-sliders" style="font-size:32px; opacity:0.3; display:block; margin-bottom:8px;"></i>
+                No custom automation rules configured yet. Click "Add Automation Rule" to create one.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       SECTION 3: SCHEDULED JOBS
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div id="section-scheduled" class="auto-section {% if active_tab == 'scheduled' %}active{% endif %}">
+    <div style="margin-bottom:18px;">
+      <h3 style="font-size:16px; font-weight:800; margin:0;">Recurring Scheduled Jobs</h3>
+      <p style="font-size:13px; color:var(--text-secondary); margin:2px 0 0 0;">System cron and interval-based maintenance workflows</p>
+    </div>
+
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:13px;">
+          <thead>
+            <tr style="background:var(--bg-primary); border-bottom:2px solid var(--border-color);">
+              <th style="padding:12px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Job Name</th>
+              <th style="padding:12px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Category</th>
+              <th style="padding:12px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Schedule</th>
+              <th style="padding:12px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Action Type</th>
+              <th style="padding:12px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Last Status</th>
+              <th style="padding:12px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Last Run</th>
+              <th style="padding:12px 16px; text-align:right; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Trigger</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for job in scheduled_jobs %}
+            <tr style="border-bottom:1px solid var(--border-color);">
+              <td style="padding:12px 16px;">
+                <div style="font-weight:700; color:var(--text-primary);">{{ job.name }}</div>
+                <div style="font-size:11.5px; color:var(--text-secondary); margin-top:2px;">{{ job.description }}</div>
+              </td>
+              <td style="padding:12px 16px;">
+                <span class="badge badge-info" style="font-size:11px;">{{ job.category }}</span>
+              </td>
+              <td style="padding:12px 16px; font-weight:600; font-size:12px;">
+                <i class="fa-solid fa-clock" style="color:var(--text-secondary); margin-right:4px;"></i> {{ job.schedule }}
+              </td>
+              <td style="padding:12px 16px; font-family:monospace; font-size:12px; font-weight:600;">{{ job.action_type }}</td>
+              <td style="padding:12px 16px;">
+                <span class="status-pill {{ (job.last_status or 'idle') | lower }}">{{ job.last_status }}</span>
+              </td>
+              <td style="padding:12px 16px; font-size:12px; color:var(--text-secondary);">
+                {{ job.last_run if job.last_run else 'Never' }}
+              </td>
+              <td style="padding:12px 16px; text-align:right;">
+                <form action="{{ url_for('admin.run_automation_action', action_name=job.action_type, tab='scheduled') }}" method="POST" style="margin:0;">
+                  {% if csrf_token is defined %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+                  <button type="submit" class="btn btn-secondary" style="font-size:11.5px; padding:5px 12px; font-weight:700;">
+                    <i class="fa-solid fa-play"></i> Trigger Now
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       SECTION 4: ALERTS
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div id="section-alerts" class="auto-section {% if active_tab == 'alerts' %}active{% endif %}">
+    <div style="margin-bottom:18px;">
+      <h3 style="font-size:16px; font-weight:800; margin:0;">System Automation Alerts</h3>
+      <p style="font-size:13px; color:var(--text-secondary); margin:2px 0 0 0;">Critical threshold warnings, exception signals, and action items</p>
+    </div>
+
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:13px;">
+          <thead>
+            <tr style="background:var(--bg-primary); border-bottom:2px solid var(--border-color);">
+              <th style="padding:12px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Severity</th>
+              <th style="padding:12px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Title / Message</th>
+              <th style="padding:12px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Category</th>
+              <th style="padding:12px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Created</th>
+              <th style="padding:12px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Status</th>
+              <th style="padding:12px 16px; text-align:right; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for alt in alerts %}
+            <tr style="border-bottom:1px solid var(--border-color);">
+              <td style="padding:12px 16px;">
+                {% if alt.severity in ['CRITICAL', 'FAILED'] %}
+                <span class="severity-pill-critical"><i class="fa-solid fa-triangle-exclamation"></i> CRITICAL</span>
+                {% elif alt.severity == 'WARNING' %}
+                <span class="severity-pill-warning"><i class="fa-solid fa-circle-exclamation"></i> WARNING</span>
+                {% else %}
+                <span class="severity-pill-info"><i class="fa-solid fa-circle-info"></i> INFO</span>
+                {% endif %}
+              </td>
+              <td style="padding:12px 16px;">
+                <div style="font-weight:700; color:var(--text-primary);">{{ alt.title }}</div>
+                <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">{{ alt.message }}</div>
+              </td>
+              <td style="padding:12px 16px; font-weight:600; font-size:12px;">{{ alt.alert_type }}</td>
+              <td style="padding:12px 16px; font-size:12px; color:var(--text-secondary);">
+                {{ alt.created_at.strftime('%d %b %Y %H:%M') if alt.created_at else '' }}
+              </td>
+              <td style="padding:12px 16px;">
+                {% if alt.is_resolved %}
+                <span class="badge badge-success" style="font-size:11px;"><i class="fa-solid fa-check"></i> Resolved</span>
+                {% else %}
+                <span class="badge badge-warning" style="font-size:11px;"><i class="fa-solid fa-bell"></i> Open</span>
+                {% endif %}
+              </td>
+              <td style="padding:12px 16px; text-align:right;">
+                {% if not alt.is_resolved %}
+                <form action="{{ url_for('admin.resolve_automation_alert', alert_id=alt.id) }}" method="POST" style="margin:0;">
+                  {% if csrf_token is defined %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+                  <button type="submit" class="btn btn-secondary" style="font-size:11.5px; padding:4px 10px;">
+                    <i class="fa-solid fa-check"></i> Mark Resolved
+                  </button>
+                </form>
+                {% else %}
+                <span style="font-size:11.5px; color:var(--text-secondary); font-style:italic;">Resolved</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="6" style="text-align:center; padding:36px; color:var(--text-secondary);">
+                <i class="fa-solid fa-shield-check" style="font-size:32px; opacity:0.3; display:block; margin-bottom:8px; color:var(--success);"></i>
+                No active automation alerts. System is operating normally.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       SECTION 5: FAILED AUTOMATIONS
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div id="section-failed" class="auto-section {% if active_tab == 'failed' %}active{% endif %}">
+    <div style="margin-bottom:18px;">
+      <h3 style="font-size:16px; font-weight:800; margin:0;">Failed Automations & Exceptions</h3>
+      <p style="font-size:13px; color:var(--text-secondary); margin:2px 0 0 0;">Inspect execution failures and retry interrupted jobs</p>
+    </div>
+
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:13px;">
+          <thead>
+            <tr style="background:var(--bg-primary); border-bottom:2px solid var(--border-color);">
+              <th style="padding:12px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Execution ID</th>
+              <th style="padding:12px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Automation</th>
+              <th style="padding:12px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Error Details</th>
+              <th style="padding:12px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Timestamp</th>
+              <th style="padding:12px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Retries</th>
+              <th style="padding:12px 16px; text-align:right; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for fail in failed_automations %}
+            <tr style="border-bottom:1px solid var(--border-color);">
+              <td style="padding:12px 16px; font-family:monospace; font-size:12px; font-weight:700;">{{ fail.execution_id }}</td>
+              <td style="padding:12px 16px; font-weight:700; color:var(--text-primary);">{{ fail.automation_name }}</td>
+              <td style="padding:12px 16px; max-width:320px;">
+                <div style="font-size:12px; color:var(--danger); font-family:monospace; white-space:pre-wrap; word-break:break-all;">
+                  {{ fail.error_message or fail.errors_json or 'Automation execution error' }}
+                </div>
+              </td>
+              <td style="padding:12px 16px; font-size:12px; color:var(--text-secondary);">
+                {{ fail.start_time.strftime('%d %b %Y %H:%M:%S') if fail.start_time else '' }}
+              </td>
+              <td style="padding:12px 16px; font-weight:700; font-size:12px;">
+                {{ fail.retry_count or 0 }}
+              </td>
+              <td style="padding:12px 16px; text-align:right;">
+                <form action="{{ url_for('admin.retry_automation_execution', exec_id=fail.id) }}" method="POST" style="margin:0;">
+                  {% if csrf_token is defined %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endif %}
+                  <button type="submit" class="btn btn-secondary" style="font-size:11.5px; padding:4px 10px; font-weight:700; color:var(--primary);">
+                    <i class="fa-solid fa-rotate"></i> Retry
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="6" style="text-align:center; padding:36px; color:var(--text-secondary);">
+                <i class="fa-solid fa-circle-check" style="font-size:32px; opacity:0.3; display:block; margin-bottom:8px; color:var(--success);"></i>
+                No failed automation executions recorded.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       SECTION 6: EXECUTION HISTORY
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div id="section-history" class="auto-section {% if active_tab == 'history' %}active{% endif %}">
+    <div style="margin-bottom:18px;">
+      <h3 style="font-size:16px; font-weight:800; margin:0;">Execution History Log</h3>
+      <p style="font-size:13px; color:var(--text-secondary); margin:2px 0 0 0;">Audit log of all automated background and triggered tasks</p>
+    </div>
+
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:13px;">
+          <thead>
+            <tr style="background:var(--bg-primary); border-bottom:2px solid var(--border-color);">
+              <th style="padding:12px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Execution ID</th>
+              <th style="padding:12px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Automation</th>
+              <th style="padding:12px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Status</th>
+              <th style="padding:12px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Source</th>
+              <th style="padding:12px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Start Time</th>
+              <th style="padding:12px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Duration</th>
+              <th style="padding:12px 16px; text-align:left; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Scanned</th>
+              <th style="padding:12px 16px; text-align:right; font-weight:700; color:var(--text-secondary); font-size:11px; text-transform:uppercase;">Created / Updated</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for exec in history %}
+            <tr style="border-bottom:1px solid var(--border-color);">
+              <td style="padding:12px 16px; font-family:monospace; font-size:12px; font-weight:600;">{{ exec.execution_id }}</td>
+              <td style="padding:12px 16px; font-weight:700; color:var(--text-primary);">{{ exec.automation_name }}</td>
+              <td style="padding:12px 16px;">
+                <span class="status-pill {{ (exec.status or 'idle') | lower }}">{{ exec.status }}</span>
+              </td>
+              <td style="padding:12px 16px;"><span class="badge badge-info" style="font-size:11px;">{{ exec.trigger_source }}</span></td>
+              <td style="padding:12px 16px; font-size:12px; color:var(--text-secondary);">
+                {{ exec.start_time.strftime('%Y-%m-%d %H:%M:%S') if exec.start_time else 'N/A' }}
+              </td>
+              <td style="padding:12px 16px; font-size:12px;">{{ exec.duration_ms }} ms</td>
+              <td style="padding:12px 16px; font-size:12px;">{{ exec.records_scanned }}</td>
+              <td style="padding:12px 16px; text-align:right; font-size:12px; font-weight:700;">
+                {{ exec.records_created }} / {{ exec.records_updated }}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="8" style="text-align:center; padding:36px; color:var(--text-secondary);">
+                No automation executions recorded yet.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
 </div>
+
+<script>
+function switchAutoTab(tabName) {
+  const sections = document.querySelectorAll('.auto-section');
+  const buttons = document.querySelectorAll('.auto-tab-btn');
+
+  sections.forEach(s => s.classList.remove('active'));
+  buttons.forEach(b => b.classList.remove('active'));
+
+  const activeSection = document.getElementById('section-' + tabName);
+  const activeButton = document.getElementById('tab-btn-' + tabName);
+
+  if (activeSection) activeSection.classList.add('active');
+  if (activeButton) activeButton.classList.add('active');
+
+  const url = new URL(window.location);
+  url.searchParams.set('tab', tabName);
+  window.history.replaceState({}, '', url);
+}
+
+function toggleCreateRuleForm() {
+  const card = document.getElementById('create-rule-card');
+  if (card) {
+    card.style.display = (card.style.display === 'none' || card.style.display === '') ? 'block' : 'none';
+  }
+}
+</script>
 {% endblock %}

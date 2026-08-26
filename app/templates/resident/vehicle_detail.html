@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Vehicle Details · Resident Portal{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{{ url_for('resident.vehicles') }}">Parking &amp; Vehicles</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">{{ vehicle.vehicle_number }}</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+    <div>
+        <h1 style="font-size: 24px; font-weight: 800; color: var(--text-primary); margin: 0 0 6px 0;">
+            <i class="fa-solid fa-car" style="color: var(--primary); margin-right: 8px;"></i>{{ vehicle.brand_model or vehicle.vehicle_number }}
+        </h1>
+        <div style="font-size: 15px; font-family: monospace; font-weight: 700; color: var(--primary);">
+            🚗 {{ vehicle.vehicle_number }}
+        </div>
+    </div>
+    {% if is_owner %}
+    <div style="display: flex; gap: 10px;">
+        <a href="{{ url_for('resident.edit_vehicle', vehicle_id=vehicle.id) }}" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 8px; font-weight: 600; text-decoration: none;">
+            <i class="fa-solid fa-pen-to-square"></i> Edit
+        </a>
+        {% if vehicle.status == 'ACTIVE' %}
+        <form method="POST" action="{{ url_for('resident.deactivate_vehicle', vehicle_id=vehicle.id) }}" onsubmit="return confirm('Are you sure you want to deactivate this vehicle?');" style="margin: 0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-danger" style="padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-power-off"></i> Deactivate
+            </button>
+        </form>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<div class="card" style="max-width: 800px; margin: 0 auto; padding: 28px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.05));">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 24px;">
+        <div>
+            <span style="color: var(--text-secondary); display: block; font-size: 11px; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Status</span>
+            <span class="badge {{ 'badge-success' if vehicle.status == 'ACTIVE' else 'badge-danger' }}" style="font-weight: 700; font-size: 12px; padding: 4px 10px; border-radius: 6px;">
+                {{ vehicle.status }}
+            </span>
+        </div>
+
+        <div>
+            <span style="color: var(--text-secondary); display: block; font-size: 11px; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Owner</span>
+            <strong style="color: var(--text-primary); font-size: 14px;">
+                {{ details.owner_name if (details and details.owner_name) else (vehicle.owner.full_name if vehicle.owner else (vehicle.resident.full_name if vehicle.resident else 'Society Resident')) }}
+            </strong>
+        </div>
+
+        <div>
+            <span style="color: var(--text-secondary); display: block; font-size: 11px; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Flat Allocation</span>
+            <strong style="color: var(--text-primary); font-size: 14px;"><i class="fa-solid fa-door-closed" style="color: var(--primary); margin-right: 4px;"></i>{{ details.flat_number if (details and details.flat_number) else (vehicle.flat.property_key if vehicle.flat else (vehicle.flat.flat_number if vehicle.flat else '-')) }}</strong>
+        </div>
+
+        <div>
+            <span style="color: var(--text-secondary); display: block; font-size: 11px; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Vehicle Type</span>
+            <strong style="color: var(--text-primary); font-size: 14px;">{{ vehicle.vehicle_type }}</strong>
+        </div>
+
+        <div>
+            <span style="color: var(--text-secondary); display: block; font-size: 11px; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Make / Model</span>
+            <strong style="color: var(--text-primary); font-size: 14px;">{{ vehicle.brand_model or vehicle.make_model or '-' }}</strong>
+        </div>
+
+        <div>
+            <span style="color: var(--text-secondary); display: block; font-size: 11px; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Color</span>
+            <strong style="color: var(--text-primary); font-size: 14px;">{{ vehicle.color or '-' }}</strong>
+        </div>
+
+        <div>
+            <span style="color: var(--text-secondary); display: block; font-size: 11px; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Parking Slot</span>
+            <strong style="color: var(--text-primary); font-size: 14px;">{{ vehicle.parking_slot_display }}</strong>
+        </div>
+
+        <div>
+            <span style="color: var(--text-secondary); display: block; font-size: 11px; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Registration Date</span>
+            <strong style="color: var(--text-primary); font-size: 14px;">{{ vehicle.created_at.strftime('%d %B %Y') if vehicle.created_at else '-' }}</strong>
+        </div>
+    </div>
+
+    <!-- Contact Details Card -->
+    {% set primary_phone = details.phone if (details and details.phone) else (vehicle.owner.mobile if (vehicle.owner and vehicle.owner.mobile) else (vehicle.resident.mobile if (vehicle.resident and vehicle.resident.mobile) else None)) %}
+    <div style="background: var(--bg-alt, rgba(0,0,0,0.02)); padding: 18px 20px; border-radius: 10px; margin-bottom: 24px; border: 1px solid var(--border-color);">
+        <h3 style="font-size: 14px; font-weight: 700; color: var(--text-primary); margin: 0 0 12px 0;">
+            <i class="fa-solid fa-address-book" style="color: var(--primary); margin-right: 6px;"></i>Contact Information
+        </h3>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-bottom: 14px;">
+            <div>
+                <span style="color: var(--text-secondary); font-size: 12px; display: block; font-weight: 600;">Primary Phone</span>
+                {% if primary_phone %}
+                    <strong style="color: var(--text-primary); font-size: 15px;">{{ primary_phone }}</strong>
+                {% else %}
+                    <span style="color: var(--text-muted, #9ca3af); font-style: italic; font-size: 13px;">Phone number not available</span>
+                {% endif %}
+            </div>
+
+            {% if vehicle.secondary_mobile %}
+            <div style="border-left: 1px solid var(--border-color); padding-left: 14px;">
+                <span style="color: var(--text-secondary); font-size: 12px; display: block; font-weight: 600;">Secondary Phone</span>
+                <strong style="color: var(--text-primary); font-size: 15px;">{{ vehicle.secondary_mobile }}</strong>
+            </div>
+            {% endif %}
+        </div>
+
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            {% if primary_phone %}
+            <a href="tel:{{ primary_phone }}" class="btn btn-success btn-sm" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; font-weight: 600; text-decoration: none; background: #10b981; color: #fff;">
+                <i class="fa-solid fa-phone"></i> Call Primary
+            </a>
+            {% endif %}
+
+            {% if vehicle.secondary_mobile %}
+            <a href="tel:{{ vehicle.secondary_mobile }}" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; font-weight: 600; text-decoration: none;">
+                <i class="fa-solid fa-phone-volume"></i> Call Secondary
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if is_owner and vehicle.notes %}
+    <div style="background: var(--bg-alt, rgba(0,0,0,0.02)); padding: 14px 18px; border-radius: 8px; margin-bottom: 24px;">
+        <span style="color: var(--text-secondary); display: block; font-size: 11px; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Private Notes (Visible to Owner Only)</span>
+        <div style="color: var(--text-primary); font-size: 13px;">{{ vehicle.notes }}</div>
+    </div>
+    {% endif %}
+
+    <div style="border-top: 1px solid var(--border-color); padding-top: 18px; display: flex; justify-content: space-between; align-items: center;">
+        <a href="{{ url_for('resident.vehicles') }}" class="btn btn-secondary" style="padding: 9px 18px; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Vehicles
+        </a>
+    </div>
+</div>
+{% endblock %}

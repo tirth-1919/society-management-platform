@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% block title %}Accounting & Expense Vouchers{% endblock %}
 {% block content %}
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
@@ -10,6 +10,7 @@
     <div class="card">
         <h3>Record Expense Voucher</h3>
         <form action="{{ url_for('accounting.vouchers') }}" method="POST" style="margin-top: 16px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
             <div style="margin-bottom: 16px;">
                 <label style="font-weight: 600;">Expense Category</label>
                 <select name="category" required style="width: 100%; padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary);">

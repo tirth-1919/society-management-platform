@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}AI Document Verification{% endblock %}
+
+{% block content %}
+<div class="page-body">
+    {% include "admin/ai/nav_tabs.html" %}
+
+    <div class="card"
+        style="border-radius: var(--radius-md); padding: 20px; background: var(--bg-surface); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+            <div>
+                <h2 style="font-size: 18px; font-weight: 800; margin: 0;">Document Verification &amp; Expiry Registry
+                </h2>
+                <span style="font-size: 13px; color: var(--text-secondary);">Automated classification, expiry tracking,
+                    and human-in-the-loop verification</span>
+            </div>
+        </div>
+
+        {% if analyses %}
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+            {% for item in analyses %}
+            {% set doc = item.document %}
+            {% set fields = item.get_extracted_fields() %}
+            {% set issues = item.get_potential_issues() %}
+            <div style="padding: 16px; border-radius: 8px; background: var(--bg-primary); border: 1px solid var(--border-color);" class="{{ 'border-left-success' if item.verification_status == 'VERIFIED' else ('border-left-danger' if (item.verification_status == 'REJECTED' or item.is_expired) else 'border-left-warning') }}">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 250px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                            <span class="badge" style="font-size: 10px; font-weight: 700;">{{ item.detected_category
+                                }}</span>
+                            <span class="badge {{ 'badge-success' if item.verification_status == 'VERIFIED' else ('badge-danger' if item.verification_status == 'REJECTED' else 'badge-warning') }}" style="font-size: 10px; font-weight: 700;">{{ item.verification_status }}</span>
+                            <span style="font-size: 12px; color: var(--text-secondary);">Confidence: {{
+                                (item.confidence_score * 100)|round|int }}%</span>
+                        </div>
+                        <h3 style="font-size: 15px; font-weight: 700; margin: 0 0 4px;">{{ doc.title if doc else
+                            'Document' }}</h3>
+                        <div
+                            style="display: flex; gap: 16px; font-size: 12px; color: var(--text-secondary); margin: 6px 0;">
+                            <span>Category: <strong>{{ doc.category if doc else 'General' }}</strong></span>
+                            <span>Expiry: <strong class="{{ 'text-danger-color' if item.is_expired else '' }}">{{
+                                    item.expiry_date or 'No expiry date detected' }}</strong></span>
+                            <span>File Size: <strong>{{ doc.file_size_bytes if doc else 0 }} B</strong></span>
+                        </div>
+
+                        {% if issues %}
+                        <div style="font-size: 12px; color: var(--danger); margin-top: 6px;">
+                            <i class="fa-solid fa-triangle-exclamation"></i> {{ issues|join('; ') }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Verification Actions -->
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <form action="{{ url_for('admin.ai_document_verify', analysis_id=item.id) }}" method="POST"
+                            style="margin:0;">
+                            <input type="hidden" name="csrf_token"
+                                value="{{ csrf_token() if csrf_token is defined else '' }}">
+                            <input type="hidden" name="status" value="VERIFIED">
+                            <button type="submit" class="btn btn-sm btn-primary"
+                                style="font-size: 11px; padding: 4px 8px;">Verify</button>
+                        </form>
+                        <form action="{{ url_for('admin.ai_document_verify', analysis_id=item.id) }}" method="POST"
+                            style="margin:0;">
+                            <input type="hidden" name="csrf_token"
+                                value="{{ csrf_token() if csrf_token is defined else '' }}">
+                            <input type="hidden" name="status" value="REJECTED">
+                            <button type="submit" class="btn btn-sm btn-outline"
+                                style="font-size: 11px; padding: 4px 8px; color: var(--danger);">Reject</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 32px 16px; color: var(--text-secondary);">
+            <p>No documents uploaded to vault for AI verification.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

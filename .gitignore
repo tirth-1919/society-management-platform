@@ -43,3 +43,6 @@ frontend_backup_before_react_transfer/
 # Generated/local application data
 instance/documents/
 instance/*.backup
+
+# Local runtime/database data
+instance/

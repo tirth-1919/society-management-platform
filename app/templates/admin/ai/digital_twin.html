@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}AI Society Digital Twin{% endblock %}
+
+{% block content %}
+<div class="page-body">
+    {% include "admin/ai/nav_tabs.html" %}
+
+    <!-- Digital Twin Topology Metrics -->
+    <div
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px;">
+        <div class="card"
+            style="padding: 14px; border-radius: 8px; background: var(--bg-surface); border: 1px solid var(--border-color);">
+            <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 700;">
+                Wings / Blocks</div>
+            <div style="font-size: 20px; font-weight: 800; color: var(--primary); margin-top: 2px;">{{
+                graph.metrics.total_wings }}</div>
+        </div>
+        <div class="card"
+            style="padding: 14px; border-radius: 8px; background: var(--bg-surface); border: 1px solid var(--border-color);">
+            <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 700;">
+                Total Units (Flats)</div>
+            <div style="font-size: 20px; font-weight: 800; color: var(--primary); margin-top: 2px;">{{
+                graph.metrics.total_flats }}</div>
+        </div>
+        <div class="card"
+            style="padding: 14px; border-radius: 8px; background: var(--bg-surface); border: 1px solid var(--border-color);">
+            <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 700;">
+                Active Residents</div>
+            <div style="font-size: 20px; font-weight: 800; color: var(--success); margin-top: 2px;">{{
+                graph.metrics.active_residents }}</div>
+        </div>
+        <div class="card"
+            style="padding: 14px; border-radius: 8px; background: var(--bg-surface); border: 1px solid var(--border-color);">
+            <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 700;">
+                Physical Assets</div>
+            <div style="font-size: 20px; font-weight: 800; color: var(--text-primary); margin-top: 2px;">{{
+                graph.metrics.total_assets }}</div>
+        </div>
+        <div class="card"
+            style="padding: 14px; border-radius: 8px; background: var(--bg-surface); border: 1px solid var(--border-color);">
+            <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 700;">
+                Active AI Findings</div>
+            <div style="font-size: 20px; font-weight: 800; color: #ea580c; margin-top: 2px;">{{
+                graph.metrics.active_ai_findings }}</div>
+        </div>
+    </div>
+
+    <!-- Interactive Entity Explorer -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+
+        <!-- Physical Assets Topology -->
+        <div class="card"
+            style="border-radius: var(--radius-md); padding: 20px; background: var(--bg-surface); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+            <h2 style="font-size: 16px; font-weight: 800; margin: 0 0 16px;"><i class="fa-solid fa-layer-group"></i>
+                Physical Assets &amp; Equipment</h2>
+
+            {% if assets %}
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                {% for a in assets %}
+                <div
+                    style="padding: 12px; border-radius: 6px; background: var(--bg-primary); border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 700; font-size: 14px;">{{ a.asset_name }}</div>
+                        <div style="font-size: 11px; color: var(--text-secondary);">Category: {{ a.category }} |
+                            Location: {{ a.location or 'Common' }}</div>
+                    </div>
+                    <span class="badge" style="font-size: 10px; background: var(--bg-surface);">{{ a.status }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="font-size: 13px; color: var(--text-secondary);">No physical assets recorded.</p>
+            {% endif %}
+        </div>
+
+        <!-- Flats & Units Topology -->
+        <div class="card"
+            style="border-radius: var(--radius-md); padding: 20px; background: var(--bg-surface); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+            <h2 style="font-size: 16px; font-weight: 800; margin: 0 0 16px;"><i class="fa-solid fa-city"></i> Society
+                Units (Flats)</h2>
+
+            {% if flats %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px;">
+                {% for f in flats %}
+                <div
+                    style="padding: 10px; border-radius: 6px; background: var(--bg-primary); border: 1px solid var(--border-color); text-align: center;">
+                    <div style="font-weight: 800; font-size: 14px; color: var(--primary);">{{ f.flat_number }}</div>
+                    <div style="font-size: 10px; color: var(--text-secondary);">{{ f.building.name if f.building else ''
+                        }}</div>
+                    <div class="{{ 'text-success-color' if f.occupancy_status == 'Occupied' else 'text-secondary-color' }}"
+                        style="font-size: 10px; font-weight: 600; margin-top: 4px;">
+                        {{ f.occupancy_status }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="font-size: 13px; color: var(--text-secondary);">No flats recorded.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

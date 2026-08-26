@@ -14,6 +14,8 @@ from app.models import (
     Staff,
     ExpenseVoucher,
     Document,
+    Asset,
+    InventoryItem,
     AuditLog,
     Role,
 )
@@ -197,31 +199,27 @@ class SearchService:
                         ]
                     })
 
-            # 6. Own Vehicles
+            # 6. Vehicles (Permitted same-society vehicle search)
             if should_include("category_vehicles"):
                 try:
-                    own_vehicles = (
-                        Vehicle.query.filter_by(society_id=society_id, flat_id=resident.flat_id)
-                        .filter(
-                            (Vehicle.vehicle_number.ilike(term))
-                            | (Vehicle.vehicle_type.ilike(term))
-                            | (Vehicle.make_model.ilike(term))
-                        )
-                        .limit(limit)
-                        .all()
-                    )
-                    if own_vehicles:
+                    from app.services.parking_vehicle_service import ParkingVehicleService
+                    vehicles_found = ParkingVehicleService.search_vehicles(
+                        society_id=society_id,
+                        query_text=q_clean,
+                        active_only=True,
+                    )[:limit]
+                    if vehicles_found:
                         categories.append({
                             "key": "category_vehicles",
                             "items": [
                                 {
                                     "id": vh.id,
                                     "title": f"Vehicle #{vh.vehicle_number}",
-                                    "subtitle": f"Type: {vh.vehicle_type} | Model: {vh.make_model or '-'}",
-                                    "url": "/resident/profile",
+                                    "subtitle": f"{vh.brand_model or vh.make_model or vh.vehicle_type} | Flat: {vh.flat.property_key if vh.flat else (vh.flat.flat_number if vh.flat else '-')}",
+                                    "url": f"/resident/vehicles/{vh.id}",
                                     "icon": "fa-car"
                                 }
-                                for vh in own_vehicles
+                                for vh in vehicles_found
                             ]
                         })
                 except Exception:
@@ -263,7 +261,6 @@ class SearchService:
                         .filter(
                             (Document.title.ilike(term))
                             | (Document.category.ilike(term))
-                            | (Document.description.ilike(term))
                         )
                         .order_by(Document.created_at.desc())
                         .limit(limit)
@@ -458,8 +455,11 @@ class SearchService:
                     if q_lower not in ["vehicle", "vehicles", "car", "bike", "parking"]:
                         veh_q = veh_q.filter(
                             (Vehicle.vehicle_number.ilike(term))
+                            | (Vehicle.normalized_number_plate.ilike(term))
                             | (Vehicle.vehicle_type.ilike(term))
-                            | (Vehicle.make_model.ilike(term))
+                            | (Vehicle.make.ilike(term))
+                            | (Vehicle.model.ilike(term))
+                            | (Vehicle.brand_model.ilike(term))
                         )
                     vehicles = veh_q.limit(limit).all()
                     if vehicles:
@@ -469,8 +469,8 @@ class SearchService:
                                 {
                                     "id": v.id,
                                     "title": f"Vehicle #{v.vehicle_number}",
-                                    "subtitle": f"Type: {v.vehicle_type} | Model: {v.make_model or '-'}",
-                                    "url": "/visitors/list",
+                                    "subtitle": f"Type: {v.vehicle_type} | Model: {v.brand_model or v.make_model or '-'}",
+                                    "url": f"/admin/vehicles/{v.id}",
                                     "icon": "fa-car"
                                 }
                                 for v in vehicles
@@ -573,7 +573,6 @@ class SearchService:
                         doc_q = doc_q.filter(
                             (Document.title.ilike(term))
                             | (Document.category.ilike(term))
-                            | (Document.description.ilike(term))
                         )
                     docs = doc_q.order_by(Document.created_at.desc()).limit(limit).all()
                     if docs:
@@ -593,7 +592,72 @@ class SearchService:
                 except Exception:
                     pass
 
-            # 12. Notices
+            # 12. Receipts
+            if should_include("category_receipts"):
+                receipts = (PaymentReceipt.query.join(Payment)
+                    .filter(Payment.society_id == society_id)
+                    .filter((PaymentReceipt.receipt_number.ilike(term)) | (Payment.transaction_id.ilike(term)))
+                    .order_by(PaymentReceipt.generated_at.desc()).limit(limit).all())
+                if receipts:
+                    categories.append({
+                        "key": "category_receipts",
+                        "items": [{
+                            "id": receipt.id,
+                            "title": f"Receipt #{receipt.receipt_number}",
+                            "subtitle": f"Payment transaction: {receipt.payment.transaction_id or receipt.payment.id}",
+                            "url": "/payments/admin_dashboard",
+                            "icon": "fa-receipt",
+                        } for receipt in receipts],
+                    })
+            # 13. Assets
+            if should_include("category_assets"):
+                try:
+                    asset_q = Asset.query.filter_by(society_id=society_id)
+                    if q_lower not in ["asset", "assets"]:
+                        asset_q = asset_q.filter(
+                            (Asset.asset_name.ilike(term))
+                            | (Asset.category.ilike(term))
+                            | (Asset.location.ilike(term))
+                            | (Asset.status.ilike(term))
+                        )
+                    assets = asset_q.limit(limit).all()
+                    if assets:
+                        categories.append({
+                            "key": "category_assets",
+                            "items": [{
+                                "id": asset.id,
+                                "title": f"Asset: {asset.asset_name}",
+                                "subtitle": f"Category: {asset.category} | Status: {asset.status}",
+                                "url": "/operations/assets",
+                                "icon": "fa-boxes-stacked",
+                            } for asset in assets],
+                        })
+                except Exception:
+                    pass
+            # 13. Inventory
+            if should_include("category_inventory"):
+                try:
+                    inventory_q = InventoryItem.query.filter_by(society_id=society_id)
+                    if q_lower not in ["inventory", "inventories", "stock"]:
+                        inventory_q = inventory_q.filter(
+                            (InventoryItem.item_name.ilike(term))
+                            | (InventoryItem.category.ilike(term))
+                        )
+                    inventory = inventory_q.limit(limit).all()
+                    if inventory:
+                        categories.append({
+                            "key": "category_inventory",
+                            "items": [{
+                                "id": item.id,
+                                "title": f"Inventory: {item.item_name}",
+                                "subtitle": f"Stock: {item.current_stock} {item.unit} | Minimum: {item.minimum_threshold}",
+                                "url": "/operations/inventory",
+                                "icon": "fa-boxes-stacked",
+                            } for item in inventory],
+                        })
+                except Exception:
+                    pass
+            # 14. Notices
             if should_include("category_notices"):
                 notices_q = Notice.query.filter_by(society_id=society_id)
                 if q_lower not in ["notice", "notices", "announcement", "announcements", "circular"]:
@@ -646,3 +710,68 @@ class SearchService:
                     pass
 
         return {"query": query_str, "categories": categories}
+
+    @staticmethod
+    def ai_document_search(user, society_id, query, categories=None, limit=20):
+        """
+        AI-enhanced document search.
+        Searches metadata, category.
+        Respects Admin authorization and society isolation.
+        """
+        if user.role == Role.RESIDENT:
+            # Residents can only search their own authorized documents
+            return {
+                "query": query,
+                "error": "Document search is available for Admin roles only",
+                "admin_required": True
+            }
+
+        q = Document.query.filter_by(society_id=society_id)
+
+        # Search by category if specified
+        if categories:
+            if isinstance(categories, str):
+                categories = [categories]
+            q = q.filter(Document.category.in_(categories))
+
+        # Search by query string in title, category
+        if query:
+            search_pattern = f"%{query}%"
+            q = q.filter(
+                Document.title.ilike(search_pattern) |
+                Document.category.ilike(search_pattern)
+            )
+
+        documents = q.order_by(Document.created_at.desc()).limit(limit).all()
+
+        # Score documents by relevance
+        results = []
+        query_lower = query.lower() if query else ""
+
+        for doc in documents:
+            score = 0
+
+            if doc.title and query_lower in doc.title.lower():
+                score += 10
+            if doc.category and query_lower in doc.category.lower():
+                score += 3
+
+            if score > 0:
+                results.append({
+                    "id": doc.id,
+                    "title": doc.title,
+                    "category": doc.category,
+                    "access_level": doc.access_level,
+                    "created_at": doc.created_at.isoformat() if doc.created_at else None,
+                    "relevance_score": score,
+                    "suggested_action": "View document details"
+                })
+
+        results.sort(key=lambda x: x["relevance_score"], reverse=True)
+
+        return {
+            "query": query,
+            "total_results": len(results),
+            "results": results,
+            "note": "AI-Enhanced Search - Results ranked by relevance"
+        }

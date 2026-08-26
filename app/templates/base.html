@@ -9,8 +9,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;600;700&family=Noto+Sans+Gujarati:wght@400;600;700&family=Noto+Sans+Gurmukhi:wght@400;600;700&family=Noto+Sans+Kannada:wght@400;600;700&family=Noto+Sans+Malayalam:wght@400;600;700&family=Noto+Sans+Tamil:wght@400;600;700&family=Noto+Sans+Telugu:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta name="csrf-token" content="{{ csrf_token() if csrf_token is defined else '' }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/design-system.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/event-photos.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body data-role="{{ session.role or 'Guest' }}" data-user-id="{{ session.user_id or '' }}" data-user-name="{{ session.user_name or '' }}">
@@ -44,6 +46,8 @@
 
             {% if session.role == 'Resident' %}
             <a href="{{ url_for('resident.profile') }}" class="nav-item" data-tooltip="My Profile"><i class="fa-solid fa-user"></i> <span data-i18n="my_profile">My Profile</span></a>
+            <a href="{{ url_for('resident.vehicles') }}" class="nav-item" data-tooltip="Parking &amp; Vehicles"><i class="fa-solid fa-car"></i> <span>Parking &amp; Vehicles</span></a>
+            <a href="{{ url_for('event_photos.resident_events') }}" class="nav-item" data-tooltip="Events"><i class="fa-solid fa-calendar-days"></i> <span>Events</span></a>
             <a href="{{ url_for('resident.bills') }}" class="nav-item" data-tooltip="My Bills"><i class="fa-solid fa-file-invoice"></i> <span data-i18n="my_bills">My Bills</span></a>
             <a href="{{ url_for('resident.receipts') }}" class="nav-item" data-tooltip="Receipts"><i class="fa-solid fa-receipt"></i> <span data-i18n="receipts">Receipts</span></a>
             <a href="{{ url_for('payments.payment_history') }}" class="nav-item" data-tooltip="Payment History"><i class="fa-solid fa-clock-rotate-left"></i> <span>Payment History</span></a>
@@ -60,17 +64,33 @@
             <a href="{{ url_for('resident.activity') }}" class="nav-item" data-tooltip="My Activity"><i class="fa-solid fa-clock-rotate-left"></i> <span data-i18n="my_activity">My Activity</span></a>
             <a href="{{ url_for('resident.notification_preferences') }}" class="nav-item" data-tooltip="Preferences"><i class="fa-solid fa-sliders"></i> <span data-i18n="preferences">Preferences</span></a>
             <a href="{{ url_for('resident.help_center') }}" class="nav-item" data-tooltip="Help &amp; Support"><i class="fa-solid fa-circle-question"></i> <span data-i18n="help_support">Help &amp; Support</span></a>
+            <a href="{{ url_for('resident.quick_actions') }}" class="nav-item" data-tooltip="Quick Actions"><i class="fa-solid fa-bolt" style="color:var(--warning);"></i> <span>Quick Actions</span></a>
+            <a href="{{ url_for('resident.ai_assistant') }}" class="nav-item" data-tooltip="AI Assistant" style="background:rgba(79,70,229,.07);"><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--primary);"></i> <span>AI Assistant</span></a>
             {% endif %}
 
             {% if session.role in ['Super Admin', 'Society Admin'] %}
+            <a href="{{ url_for('admin.ai_operations') }}" class="nav-item" data-tooltip="AI Operations Center" style="background: rgba(79, 70, 229, 0.08); border-left: 3px solid var(--primary); font-weight: 700;">
+                <i class="fa-solid fa-microchip" style="color: var(--primary);"></i> <span>AI Operations</span>
+            </a>
+            <a href="{{ url_for('admin.vehicles') }}" class="nav-item" data-tooltip="Parking &amp; Vehicles"><i class="fa-solid fa-car"></i> <span>Parking &amp; Vehicles</span></a>
+            <a href="{{ url_for('admin.events') }}" class="nav-item" data-tooltip="Events"><i class="fa-solid fa-calendar-days"></i> <span>Events</span></a>
+            <a href="{{ url_for('admin.create_event') }}" class="nav-item" data-tooltip="Add Event"><i class="fa-solid fa-calendar-plus"></i> <span>Add Event</span></a>
+            <a href="{{ url_for('admin.event_photo_moderation') }}" class="nav-item" data-tooltip="Event Media Approvals"><i class="fa-solid fa-images"></i> <span>Manage Event Media</span></a>
+            <a href="{{ url_for('admin.event_photo_reports') }}" class="nav-item" data-tooltip="Event Photo Reports"><i class="fa-solid fa-flag"></i> <span>Event Photo Reports</span></a>
+            <a href="{{ url_for('admin.work_queue_dashboard') }}" class="nav-item" data-tooltip="Admin Work Queue">
+                <i class="fa-solid fa-list-check" style="color: var(--primary);"></i> <span>Work Queue</span>
+            </a>
+            <a href="{{ url_for('admin.data_quality_center') }}" class="nav-item" data-tooltip="Data Quality Center">
+                <i class="fa-solid fa-database"></i> <span>Data Quality</span>
+            </a>
             <a href="{{ url_for('admin.flats') }}" class="nav-item" data-tooltip="Flats & Wings">
                 <i class="fa-solid fa-city"></i> <span data-i18n="flats_and_wings">Flats & Wings</span>
             </a>
             <a href="{{ url_for('admin.residents') }}" class="nav-item" data-tooltip="Residents">
                 <i class="fa-solid fa-users"></i> <span data-i18n="residents">Residents</span>
             </a>
-            <a href="{{ url_for('admin.member_details') }}" class="nav-item" data-tooltip="Member Details">
-                <i class="fa-solid fa-id-card"></i> <span>Member Details</span>
+            <a href="{{ url_for('admin.registrations') }}" class="nav-item" data-tooltip="Pending Resident Registrations">
+                <i class="fa-solid fa-clipboard-list"></i> <span>Pending Resident Registrations</span>
             </a>
             {% endif %}
 
@@ -104,6 +124,9 @@
             </a>
             <a href="{{ url_for('documents.vault') }}" class="nav-item" data-tooltip="Document Vault">
                 <i class="fa-solid fa-vault"></i> <span data-i18n="document_vault">Document Vault</span>
+            </a>
+            <a href="{{ url_for('admin.application_health') }}" class="nav-item" data-tooltip="App Health">
+                <i class="fa-solid fa-heart-pulse"></i> <span>App Health</span>
             </a>
             <a href="{{ url_for('system.backups') }}" class="nav-item" data-tooltip="System Health">
                 <i class="fa-solid fa-server"></i> <span data-i18n="system_health">System Health</span>
@@ -159,6 +182,11 @@
                 </a>
                 {% endif %}
 
+                <!-- Accessibility Controls -->
+                <button type="button" class="navbar-icon-btn" onclick="window.toggleHighContrast()" aria-label="Toggle high contrast mode" title="High Contrast Mode">
+                    <i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i>
+                </button>
+
                 <!-- Theme Toggle -->
                 <button id="theme-toggle-btn" class="navbar-icon-btn" aria-label="Toggle dark mode" aria-pressed="false">
                     <i class="fa-solid fa-moon" aria-hidden="true"></i>
@@ -190,8 +218,8 @@
                 {% if messages %}
                     <div role="status" aria-live="polite">
                     {% for category, message in messages %}
-                        <div class="card" style="border-left: 4px solid var(--{{ category if category != 'danger' else 'danger' }}); margin-bottom: 20px; padding: 14px 20px; background: var(--bg-surface); display: flex; align-items: center; gap: 10px;">
-                            <i class="fa-solid fa-circle-info" style="color: var(--{{ category if category != 'danger' else 'danger' }});" aria-hidden="true"></i>
+                        <div class="card flash-card flash-{{ 'danger' if category in ['danger', 'error'] else ('success' if category == 'success' else ('warning' if category == 'warning' else 'info')) }}">
+                            <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
                             <span>{{ message }}</span>
                         </div>
                     {% endfor %}
@@ -274,6 +302,8 @@
 <script src="{{ url_for('static', filename='js/i18n_translations.js') }}"></script>
 <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
 <script src="{{ url_for('static', filename='js/ui-components.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ai-productivity.js') }}"></script>
+{% block scripts %}{% endblock %}
 <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>

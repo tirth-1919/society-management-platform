@@ -55,11 +55,24 @@ def _current_resident():
     ):
         abort(403)
 
+    # The tenant comes from the authenticated account/session, never from a
+    # browser-supplied resident identifier.  Do not fall back to an
+    # unscoped Resident lookup: that can select a profile from another
+    # society when an account has stale or incomplete session state.
+    society_id = user.society_id or session.get("society_id")
+    if not society_id:
+        abort(403)
+
     resident = Resident.query.filter_by(
         user_id=user.id,
-        society_id=user.society_id,
+        society_id=society_id,
         is_primary=True,
     ).first()
+    if not resident:
+        resident = Resident.query.filter_by(
+            user_id=user.id,
+            society_id=society_id,
+        ).first()
 
     if not resident:
         abort(403)
@@ -1395,9 +1408,12 @@ def invite_visitor():
             return redirect(url_for("resident.invite_visitor"))
 
         try:
-            from datetime import date as date_cls
-            expected_date = date_cls.fromisoformat(expected_date_str)
-        except ValueError:
+            from datetime import date as date_cls, datetime as dt_cls
+            try:
+                expected_date = date_cls.fromisoformat(expected_date_str)
+            except ValueError:
+                expected_date = dt_cls.strptime(expected_date_str, "%Y-%m-%d").date()
+        except Exception:
             flash("Invalid date format.", "danger")
             return redirect(url_for("resident.invite_visitor"))
 
@@ -1793,3 +1809,386 @@ def submit_dispute():
     return redirect(url_for("resident.bills"))
 
 
+
+
+# ===========================================================================
+# PHASE 1 AI — /resident/ai-assistant page
+# ===========================================================================
+
+@resident_bp.route("/ai-assistant")
+def ai_assistant():
+    """
+    Resident AI Assistant page.
+    The actual chat is handled by the existing /api/v1/resident/ai/query
+    JSON endpoint (no duplicate route needed here).
+    """
+    user, resident = _current_resident()
+    from app.services.ai_service import AIService
+    return render_template(
+        "resident/ai_assistant.html",
+        user=user,
+        resident=resident,
+        ai_available=AIService.is_available(),
+    )
+
+# ===========================================================================
+# PHASE 1 AI — /resident/quick-actions page
+# ===========================================================================
+
+@resident_bp.route("/quick-actions")
+def quick_actions():
+    """Resident Quick Actions landing page."""
+    user, resident = _current_resident()
+
+    # Compute live badge counts (read-only)
+    from app.models import Complaint
+
+    pending_bills_count = MaintenanceBill.query.filter_by(
+        resident_id=resident.id,
+        society_id=user.society_id,
+    ).filter(
+        MaintenanceBill.status.in_(["Pending", "Overdue", "Partially Paid"])
+    ).count()
+
+    open_complaints_count = Complaint.query.filter_by(
+        resident_id=resident.id,
+        society_id=user.society_id,
+    ).filter(
+        Complaint.status.in_(["Submitted", "Assigned", "In Progress"])
+    ).count()
+
+    unread_count = NotificationLog.query.filter_by(
+        user_id=user.id,
+        society_id=user.society_id,
+    ).filter(NotificationLog.read_at.is_(None)).count()
+
+    outstanding_amount = 0.0
+    if pending_bills_count:
+        bills = MaintenanceBill.query.filter_by(
+            resident_id=resident.id,
+            society_id=user.society_id,
+        ).filter(
+            MaintenanceBill.status.in_(["Pending", "Overdue", "Partially Paid"])
+        ).all()
+        outstanding_amount = round(sum(b.remaining_amount for b in bills), 2)
+
+    # Next payable bill
+    next_bill = (
+        MaintenanceBill.query.filter_by(
+            resident_id=resident.id,
+            society_id=user.society_id,
+        )
+        .filter(MaintenanceBill.status.in_(["Pending", "Overdue", "Partially Paid"]))
+        .order_by(MaintenanceBill.due_date.asc())
+        .first()
+    )
+
+    return render_template(
+        "resident/quick_actions.html",
+        user=user,
+        resident=resident,
+        pending_bills_count=pending_bills_count,
+        open_complaints_count=open_complaints_count,
+        unread_count=unread_count,
+        outstanding_amount=outstanding_amount,
+        next_bill=next_bill,
+    )
+
+
+# ============================================================
+# RESIDENT VEHICLE & PARKING DIRECTORY
+# ============================================================
+
+@resident_bp.route("/vehicles")
+def vehicles():
+    """Resident Vehicle Hub: Search numbers & view own vehicles."""
+    user, resident = _current_resident()
+    from app.models import Vehicle
+    from app.services.parking_vehicle_service import ParkingVehicleService
+
+    search_query = request.args.get("q", "").strip()
+    type_filter = request.args.get("type", "").strip()
+
+    society_id = user.society_id or resident.society_id or session.get("society_id")
+
+    search_performed = bool(search_query or (type_filter and type_filter.lower() != "all"))
+
+    # Matched vehicles for search or full directory for initial load
+    society_matched_vehicles = ParkingVehicleService.search_vehicles(
+        society_id=society_id,
+        query_text=search_query,
+        vehicle_type=type_filter if (type_filter and type_filter.lower() != "all") else None,
+        active_only=True,
+    )
+
+    directory_vehicles = [
+        ParkingVehicleService.get_safe_public_details(v)
+        for v in society_matched_vehicles
+    ]
+
+    # Fetch all own vehicles (active & inactive)
+    my_vehicles = Vehicle.query.filter_by(
+        society_id=society_id,
+    ).filter(
+        (Vehicle.owner_user_id == user.id) | (Vehicle.resident_id == resident.id)
+    ).order_by(Vehicle.created_at.desc()).all()
+
+    total_society_vehicles = Vehicle.query.filter_by(
+        society_id=society_id,
+        status="ACTIVE",
+    ).count()
+
+    return render_template(
+        "resident/vehicles.html",
+        user=user,
+        resident=resident,
+        my_vehicles=my_vehicles,
+        search_query=search_query,
+        type_filter=type_filter,
+        search_performed=search_performed,
+        search_results=directory_vehicles if search_performed else [],
+        society_vehicles=directory_vehicles,
+        directory_vehicles=directory_vehicles,
+        total_society_vehicles=total_society_vehicles,
+    )
+
+
+@resident_bp.route("/vehicles/add", methods=["GET", "POST"])
+def add_vehicle():
+    """Register a new vehicle owned by the authenticated resident."""
+    user, resident = _current_resident()
+    from app.services.parking_vehicle_service import ParkingVehicleService
+
+    if request.method == "POST":
+        vehicle_number = request.form.get("vehicle_number", "").strip()
+        vehicle_type = request.form.get("vehicle_type", "Car").strip()
+        make = request.form.get("make", "").strip()
+        model = request.form.get("model", "").strip()
+        color = request.form.get("color", "").strip()
+        parking_slot_number = request.form.get("parking_slot_number", "").strip()
+        secondary_mobile = request.form.get("secondary_mobile", "").strip()
+        notes = request.form.get("notes", "").strip()
+
+        if not vehicle_number:
+            flash("Vehicle number plate is required.", "danger")
+            return render_template("resident/add_vehicle.html", user=user, resident=resident)
+
+        if not make:
+            flash("Make / Brand is required.", "danger")
+            return render_template("resident/add_vehicle.html", user=user, resident=resident)
+
+        try:
+            veh = ParkingVehicleService.register_vehicle(
+                society_id=user.society_id,
+                owner_user_id=user.id,
+                resident_id=resident.id,
+                flat_id=resident.flat_id,
+                vehicle_number=vehicle_number,
+                vehicle_type=vehicle_type,
+                make=make,
+                model=model,
+                color=color,
+                parking_slot_number=parking_slot_number,
+                secondary_mobile=secondary_mobile,
+                email=user.email,
+                notes=notes,
+                status="ACTIVE",
+            )
+            flash(f"Vehicle {veh.vehicle_number} registered successfully!", "success")
+            return redirect(url_for("resident.vehicles"))
+        except ValueError as exc:
+            flash(str(exc), "danger")
+            return render_template("resident/add_vehicle.html", user=user, resident=resident)
+
+    return render_template("resident/add_vehicle.html", user=user, resident=resident)
+
+
+@resident_bp.route("/vehicles/<int:vehicle_id>")
+def vehicle_detail(vehicle_id):
+    """View permitted details of any active vehicle within user's society."""
+    user, resident = _current_resident()
+    from app.models import Vehicle
+    from app.services.parking_vehicle_service import ParkingVehicleService
+
+    society_id = user.society_id or resident.society_id or session.get("society_id")
+    vehicle = Vehicle.query.filter_by(
+        id=vehicle_id,
+        society_id=society_id,
+    ).first()
+
+    if not vehicle:
+        abort(404, description="Vehicle not found or unauthorized.")
+
+    is_owner = (
+        vehicle.owner_user_id == user.id
+        or (vehicle.resident and vehicle.resident.user_id == user.id)
+    )
+
+    details = ParkingVehicleService.get_safe_public_details(vehicle)
+
+    return render_template(
+        "resident/vehicle_detail.html",
+        user=user,
+        resident=resident,
+        vehicle=vehicle,
+        details=details,
+        is_owner=is_owner,
+    )
+
+
+@resident_bp.route("/vehicles/<int:vehicle_id>/edit", methods=["GET", "POST"])
+def edit_vehicle(vehicle_id):
+    """Edit resident's own vehicle."""
+    user, resident = _current_resident()
+    from app.models import Vehicle
+    from app.services.parking_vehicle_service import ParkingVehicleService
+
+    vehicle = Vehicle.query.filter_by(
+        id=vehicle_id,
+        society_id=user.society_id,
+    ).first()
+
+    if not vehicle:
+        abort(404, description="Vehicle not found.")
+
+    is_owner = (
+        vehicle.owner_user_id == user.id
+        or (vehicle.resident and vehicle.resident.user_id == user.id)
+    )
+    if not is_owner:
+        abort(403, description="Unauthorized: You can only edit your own vehicles.")
+
+    if request.method == "POST":
+        vehicle_number = request.form.get("vehicle_number", "").strip()
+        vehicle_type = request.form.get("vehicle_type", "Car").strip()
+        make = request.form.get("make", "").strip()
+        model = request.form.get("model", "").strip()
+        color = request.form.get("color", "").strip()
+        parking_slot_number = request.form.get("parking_slot_number", "").strip()
+        secondary_mobile = request.form.get("secondary_mobile", "").strip()
+        notes = request.form.get("notes", "").strip()
+
+        if not make:
+            flash("Make / Brand is required.", "danger")
+            return render_template("resident/edit_vehicle.html", user=user, resident=resident, vehicle=vehicle)
+
+        try:
+            ParkingVehicleService.update_vehicle(
+                vehicle_id=vehicle.id,
+                user=user,
+                make=make,
+                model=model,
+                color=color,
+                vehicle_type=vehicle_type,
+                parking_slot_number=parking_slot_number,
+                secondary_mobile=secondary_mobile,
+                notes=notes,
+                number_plate=vehicle_number if vehicle_number else None,
+            )
+            flash("Vehicle details updated successfully.", "success")
+            return redirect(url_for("resident.vehicles"))
+        except PermissionError:
+            abort(403, description="Unauthorized: You can only edit your own vehicles.")
+        except ValueError as exc:
+            flash(str(exc), "danger")
+            return render_template("resident/edit_vehicle.html", user=user, resident=resident, vehicle=vehicle)
+
+    return render_template("resident/edit_vehicle.html", user=user, resident=resident, vehicle=vehicle)
+
+
+@resident_bp.route("/vehicles/<int:vehicle_id>/deactivate", methods=["POST"])
+def deactivate_vehicle(vehicle_id):
+    """Soft deactivate own vehicle."""
+    user, resident = _current_resident()
+    from app.services.parking_vehicle_service import ParkingVehicleService
+
+    try:
+        ParkingVehicleService.deactivate_vehicle(
+            vehicle_id=vehicle_id,
+            user=user,
+            reason="Deactivated by resident owner",
+        )
+        flash("Vehicle deactivated successfully.", "info")
+    except PermissionError:
+        abort(403, description="Unauthorized: You can only deactivate your own vehicles.")
+    except ValueError as exc:
+        flash(str(exc), "danger")
+
+    return redirect(url_for("resident.vehicles"))
+
+
+@resident_bp.route("/vehicles/<int:vehicle_id>/contact", methods=["POST"])
+def contact_vehicle_owner(vehicle_id):
+    """Send privacy-safe internal alert to target vehicle owner."""
+    user, resident = _current_resident()
+    from app.models import Vehicle
+    from app.services.parking_vehicle_service import ParkingVehicleService
+
+    vehicle = Vehicle.query.filter_by(
+        id=vehicle_id,
+        society_id=user.society_id,
+        status="ACTIVE",
+    ).first()
+
+    if not vehicle:
+        flash("Vehicle not found in your society.", "danger")
+        return redirect(url_for("resident.vehicles"))
+
+    message_type = request.form.get("message_type", "REQUEST_CONTACT").strip()
+    custom_note = request.form.get("custom_note", "").strip()
+
+    try:
+        ParkingVehicleService.notify_vehicle_owner(
+            sender_user=user,
+            vehicle_id=vehicle.id,
+            message_type=message_type,
+            custom_note=custom_note,
+        )
+        flat_label = vehicle.flat.property_key if vehicle.flat else "the resident"
+        flash(f"In-App notice sent successfully to the owner of {vehicle.vehicle_number} (Flat {flat_label}).", "success")
+    except Exception as exc:
+        flash(f"Could not send notification: {exc}", "danger")
+
+    return redirect(url_for("resident.vehicles"))
+
+
+@resident_bp.route("/vehicles/<int:vehicle_id>/report-issue", methods=["POST"])
+def report_parking_issue(vehicle_id):
+    """Report parking violation / issue as a formal ticket."""
+    user, resident = _current_resident()
+    from app.models import Vehicle
+    from app.services.complaint_service import ComplaintService
+
+    vehicle = Vehicle.query.filter_by(
+        id=vehicle_id,
+        society_id=user.society_id,
+    ).first()
+
+    if not vehicle:
+        flash("Vehicle not found.", "danger")
+        return redirect(url_for("resident.vehicles"))
+
+    issue_type = request.form.get("issue_type", "Parking Issue").strip()
+    description = request.form.get("description", "").strip()
+
+    if not description:
+        flash("Please provide details of the parking issue.", "danger")
+        return redirect(url_for("resident.vehicles"))
+
+    full_description = f"Vehicle: {vehicle.vehicle_number} ({vehicle.brand_model or vehicle.vehicle_type})\nSlot: {vehicle.parking_slot_display}\nViolation: {issue_type}\nDetails: {description}"
+
+    try:
+        complaint = ComplaintService.create_complaint(
+            society_id=user.society_id,
+            flat_id=resident.flat_id,
+            resident_id=resident.id,
+            category="Parking",
+            title=f"Parking Violation: {vehicle.vehicle_number} - {issue_type}",
+            description=full_description,
+            priority="High",
+        )
+        flash(f"Parking ticket #{complaint.ticket_number} logged successfully with management.", "success")
+    except Exception as exc:
+        flash(f"Could not log complaint: {exc}", "danger")
+
+    return redirect(url_for("resident.vehicles"))

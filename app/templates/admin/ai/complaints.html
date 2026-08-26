@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}AI Complaint Intelligence{% endblock %}
+
+{% block content %}
+<div class="page-body">
+    {% include "admin/ai/nav_tabs.html" %}
+
+    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; margin-bottom: 24px;">
+        <!-- Complaint Clusters & Groups -->
+        <div class="card"
+            style="border-radius: var(--radius-md); padding: 20px; background: var(--bg-surface); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+            <h2 style="font-size: 16px; font-weight: 800; margin: 0 0 12px;"><i class="fa-solid fa-object-group"></i>
+                Detected Complaint Clusters</h2>
+            <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">AI clusters active tickets
+                with similar root causes.</p>
+
+            {% if clusters %}
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                {% for cl in clusters %}
+                <div
+                    style="background: var(--bg-primary); padding: 12px; border-radius: 6px; border-left: 3px solid var(--primary);">
+                    <div
+                        style="display: flex; justify-content: space-between; font-weight: 700; font-size: 13px; margin-bottom: 4px;">
+                        <span>{{ cl.cluster_name }}</span>
+                        <span class="badge" style="background: rgba(79,70,229,0.15); color: var(--primary);">{{ cl.count
+                            }} tickets</span>
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-secondary);">
+                        Tickets: {{ cl.ticket_numbers|join(', ') }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 24px 16px; color: var(--text-secondary); font-size: 13px;">
+                No duplicate complaint clusters currently detected.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Intake Triage & SLA Recommendations -->
+        <div class="card"
+            style="border-radius: var(--radius-md); padding: 20px; background: var(--bg-surface); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+            <h2 style="font-size: 16px; font-weight: 800; margin: 0 0 16px;">Open Complaints AI Triage</h2>
+
+            {% if triage_list %}
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                {% for item in triage_list %}
+                {% set c = item.complaint %}
+                {% set t = item.triage %}
+                <div
+                    style="padding: 14px; border-radius: 8px; background: var(--bg-primary); border: 1px solid var(--border-color);">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <span style="font-weight: 700; font-size: 14px;">#{{ c.ticket_number }}: {{ c.title }}</span>
+                        <span class="badge" style="background: var(--bg-surface); font-size: 11px;">{{ c.status
+                            }}</span>
+                    </div>
+                    <p style="font-size: 12px; color: var(--text-secondary); margin: 0 0 8px;">{{ c.description }}</p>
+                    <div
+                        style="display: flex; gap: 12px; font-size: 11px; flex-wrap: wrap; background: var(--bg-surface); padding: 6px 10px; border-radius: 6px;">
+                        <span>Suggested Dept: <strong style="color: var(--primary);">{{ t.suggested_department
+                                }}</strong></span>
+                        <span>Priority: <strong>{{ t.suggested_priority }}</strong></span>
+                        <span>Target SLA: <strong>{{ t.suggested_sla_hours }}h</strong></span>
+                        <span>Confidence: <strong>{{ (t.confidence_score * 100)|round|int }}%</strong></span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 24px 16px; color: var(--text-secondary); font-size: 13px;">
+                No open complaints pending triage.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

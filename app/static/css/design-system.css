@@ -1886,3 +1886,364 @@ th.sorted-desc::after { content: '▼'; opacity: 1; color: var(--primary); }
     cursor: not-allowed !important;
     pointer-events: none;
 }
+
+/* --------------------------------------------------------------------------
+   21. Accessibility Tokens: High-Contrast & Font-Size Controls
+   -------------------------------------------------------------------------- */
+[data-theme="contrast"], [data-contrast="high"] {
+    --bg-primary: #000000 !important;
+    --bg-surface: #000000 !important;
+    --text-primary: #ffffff !important;
+    --text-secondary: #ffff00 !important;
+    --border-color: #ffffff !important;
+    --primary: #ffff00 !important;
+    --primary-light: #222200 !important;
+    --success: #00ff00 !important;
+    --danger: #ff3333 !important;
+    --warning: #ffcc00 !important;
+}
+
+[data-theme="contrast"] .card, [data-contrast="high"] .card {
+    border: 2px solid #ffffff !important;
+    box-shadow: none !important;
+}
+
+[data-theme="contrast"] a, [data-contrast="high"] a {
+    color: #ffff00 !important;
+    text-decoration: underline !important;
+}
+
+html[data-font-size="small"] { font-size: 14px; }
+html[data-font-size="normal"] { font-size: 16px; }
+html[data-font-size="large"] { font-size: 18px; }
+html[data-font-size="xlarge"] { font-size: 20px; }
+
+/* --------------------------------------------------------------------------
+   22. Network Offline & Online Status Banner
+   -------------------------------------------------------------------------- */
+.network-status-banner {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: #1e293b;
+    color: #ffffff;
+    padding: 10px 20px;
+    border-radius: var(--radius-full);
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: var(--shadow-lg);
+    z-index: 99999;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+}
+
+.network-status-banner.visible {
+    transform: translateX(-50%) translateY(0);
+}
+
+.network-status-banner.offline {
+    background: var(--danger);
+}
+
+.network-status-banner.online {
+    background: var(--success);
+}
+
+/* --------------------------------------------------------------------------
+   23. Mobile Pull-To-Refresh Spinner
+   -------------------------------------------------------------------------- */
+.pull-to-refresh-indicator {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%) scale(0);
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+    font-size: 16px;
+    z-index: 9999;
+    transition: transform 0.2s ease;
+    pointer-events: none;
+}
+
+.pull-to-refresh-indicator.active {
+    transform: translateX(-50%) scale(1);
+}
+
+/* --------------------------------------------------------------------------
+   24. Mobile Floating Quick Actions (FAB)
+   -------------------------------------------------------------------------- */
+.mobile-fab-btn {
+    position: fixed;
+    bottom: calc(var(--bottom-nav-height, 60px) + 16px);
+    right: 16px;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+    color: #ffffff;
+    border: none;
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 890;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mobile-fab-btn:active {
+    transform: scale(0.92);
+}
+
+@media (max-width: 768px) {
+    .mobile-fab-btn {
+        display: flex;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   25. Payment Success Animation & Status Styles
+   -------------------------------------------------------------------------- */
+.payment-success-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+    animation: successPulse 2s infinite cubic-bezier(0.66, 0, 0, 1);
+}
+
+.payment-success-circle i {
+    font-size: 38px;
+    color: #ffffff;
+    animation: successCheck 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes successPulse {
+    0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); }
+    70% { box-shadow: 0 0 0 18px rgba(34, 197, 94, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+@keyframes successCheck {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* --------------------------------------------------------------------------
+   26. Event Countdown & Interactive Cards
+   -------------------------------------------------------------------------- */
+.event-countdown-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    font-size: 11.5px;
+    font-weight: 700;
+    background: rgba(79, 70, 229, 0.1);
+    color: var(--primary);
+    border: 1px solid rgba(79, 70, 229, 0.2);
+}
+
+.event-countdown-badge.live {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+    border-color: rgba(239, 68, 68, 0.3);
+    animation: blinkGlow 1.5s infinite;
+}
+
+@keyframes blinkGlow {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.event-rsvp-group {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+.event-rsvp-btn {
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 12.5px;
+    font-weight: 600;
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.event-rsvp-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.event-rsvp-btn.selected {
+    background: var(--primary);
+    color: #ffffff;
+    border-color: var(--primary);
+}
+
+.event-reactions-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color);
+}
+
+.reaction-btn {
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-color);
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    font-size: 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s ease;
+}
+
+.reaction-btn:hover, .reaction-btn.active {
+    background: var(--primary-light);
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+/* --------------------------------------------------------------------------
+   27. Complaint SLA Countdown Badge
+   -------------------------------------------------------------------------- */
+.sla-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 700;
+    font-family: monospace;
+}
+
+.sla-badge.sla-ok {
+    background: rgba(16, 185, 129, 0.12);
+    color: var(--success);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.sla-badge.sla-warning {
+    background: rgba(245, 158, 11, 0.12);
+    color: #d97706;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.sla-badge.sla-breached {
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--danger);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+/* --------------------------------------------------------------------------
+   28. Maintenance 12-Month Calendar Grid
+   -------------------------------------------------------------------------- */
+.payment-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+    margin: 16px 0;
+}
+
+@media (max-width: 640px) {
+    .payment-calendar-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.payment-cal-month {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 10px;
+    text-align: center;
+    background: var(--bg-surface);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.payment-cal-month.paid {
+    border-left: 3px solid var(--success);
+    background: rgba(16, 185, 129, 0.04);
+}
+
+.payment-cal-month.pending {
+    border-left: 3px solid var(--warning);
+    background: rgba(245, 158, 11, 0.04);
+}
+
+.payment-cal-month.overdue {
+    border-left: 3px solid var(--danger);
+    background: rgba(239, 68, 68, 0.04);
+}
+
+.payment-cal-month-name {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.payment-cal-status {
+    font-size: 11px;
+    margin-top: 4px;
+    font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   29. Resident Quick View Drawer & Contact Cards
+   -------------------------------------------------------------------------- */
+.resident-contact-card {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    background: var(--bg-surface);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.resident-contact-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary);
+}
+
+.resident-contact-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-color);
+}
