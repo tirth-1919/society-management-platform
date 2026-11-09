@@ -56,7 +56,12 @@ def _require_resident_session():
         abort(403)
     if user.role != Role.RESIDENT:
         abort(403)
-    resident = user.residents[0] if user.residents else None
+    if not user.society_id or session.get("society_id") != user.society_id:
+        abort(403)
+    from app.models import Resident
+    resident = Resident.query.filter_by(
+        user_id=user.id, society_id=user.society_id
+    ).first()
     if not resident:
         abort(403)
     return user, resident
@@ -71,6 +76,10 @@ def _require_admin_session():
         or user.role not in [Role.SUPER_ADMIN, Role.SOCIETY_ADMIN]
     ):
         abort(403)
+    if user.role == Role.SOCIETY_ADMIN and (
+        not user.society_id or session.get("society_id") != user.society_id
+    ):
+        abort(403, description="Forbidden: Invalid society scope")
     return user
 @payments_bp.route("/bills")
 def bills():

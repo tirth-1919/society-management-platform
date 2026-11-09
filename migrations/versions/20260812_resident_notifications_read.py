@@ -21,8 +21,5 @@ def upgrade():
 
 
 def downgrade():
-    inspector = sa.inspect(op.get_bind())
-    columns = {column["name"] for column in inspector.get_columns("notification_logs")}
-    if "read_at" in columns:
-        with op.batch_alter_table("notification_logs", schema=None) as batch_op:
-            batch_op.drop_column("read_at")
+    # This column may have existed before Alembic adopted the schema.
+    pass

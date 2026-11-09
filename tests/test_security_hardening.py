@@ -1,4 +1,5 @@
 import pytest
+from werkzeug.security import generate_password_hash
 from app.models import db, User, Role, Society
 from app.services.auth_service import AuthService
 from app.utils import utcnow
@@ -19,7 +20,7 @@ def setup_sec_data(app):
             is_active=True,
             society_id=s1.id,
         )
-        u1.set_password("CorrectPass@123")
+        u1.set_password("CorrectPassphrase@123")
 
         u2 = User(
             full_name="User Two",
@@ -39,13 +40,49 @@ def setup_sec_data(app):
 
 
 def test_password_strength_validation():
-    # Min length 8 chars, needs letters and digits/special
+    # Minimum 12 characters, with the existing letter and digit/special rule.
     valid, _ = AuthService.validate_password_strength("Short1")
     assert not valid
     valid, _ = AuthService.validate_password_strength("onlylettershere")
     assert not valid
-    valid, _ = AuthService.validate_password_strength("ValidPass@123")
+    valid, _ = AuthService.validate_password_strength("ValidPassphrase@123")
     assert valid
+
+
+def test_user_rejects_passwords_shorter_than_12_characters():
+    user = User()
+
+    with pytest.raises(ValueError, match="at least 12 characters"):
+        user.set_password("legacy-pass")
+
+
+@pytest.mark.parametrize("password", ["TwelveChars1", "MoreThanTwelveChars123"])
+def test_user_accepts_passwords_of_12_or_more_characters(password):
+    user = User()
+
+    user.set_password(password)
+
+    assert user.password_hash
+    assert user.check_password(password)
+
+
+def test_user_verifies_existing_short_password_hashes():
+    legacy_password = "legacy-pass"
+    user = User(password_hash=generate_password_hash(legacy_password))
+
+    assert user.check_password(legacy_password)
+    assert not user.check_password("incorrect")
+
+
+@pytest.mark.parametrize("invalid_password", [None, "", object()])
+def test_user_password_verification_safely_rejects_invalid_input(invalid_password):
+    user = User(password_hash=generate_password_hash("a-long-password"))
+    assert not user.check_password(invalid_password)
+
+
+def test_user_password_verification_safely_rejects_missing_or_malformed_hashes():
+    assert not User(password_hash=None).check_password("legacy-pass")
+    assert not User(password_hash="malformed-hash").check_password("legacy-pass")
 
 
 def test_otp_attempt_limits_and_invalidation(app, setup_sec_data):
@@ -87,7 +124,7 @@ def test_login_brute_force_lockout(client, app, setup_sec_data):
         # 6th attempt with correct password while locked must fail
         res = client.post(
             "/login",
-            data={"mobile": "9800011111", "password": "CorrectPass@123"},
+            data={"mobile": "9800011111", "password": "CorrectPassphrase@123"},
             follow_redirects=True,
         )
         assert b"Account temporarily locked" in res.data
@@ -104,7 +141,7 @@ def test_account_unlock_after_expiry(client, app, setup_sec_data):
         # Login with correct password after lock expiration should succeed
         res = client.post(
             "/login",
-            data={"mobile": "9800011111", "password": "CorrectPass@123"},
+            data={"mobile": "9800011111", "password": "CorrectPassphrase@123"},
             follow_redirects=True,
         )
         assert res.status_code == 200
@@ -189,7 +226,7 @@ def test_logout_invalidates_session(client, app, setup_sec_data):
     # Successful login
     res = client.post(
         "/login",
-        data={"mobile": "9800011111", "password": "CorrectPass@123"},
+        data={"mobile": "9800011111", "password": "CorrectPassphrase@123"},
         follow_redirects=True,
     )
     assert res.status_code == 200

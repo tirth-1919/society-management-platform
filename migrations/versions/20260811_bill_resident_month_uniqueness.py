@@ -55,7 +55,48 @@ def upgrade():
     # A flat can receive a new resident. The bill must belong to that resident's
     # occupancy so the replacement resident does not inherit the old account.
     bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    if not inspector.has_table("maintenance_bills"):
+        raise RuntimeError("Required table 'maintenance_bills' does not exist.")
+
+    # Remove only exact obsolete flat/month uniqueness objects. This relaxes a
+    # schema rule that conflicts with resident occupancy billing, and deletes
+    # no bill records.
+    for constraint in inspector.get_unique_constraints("maintenance_bills"):
+        if tuple(constraint.get("column_names") or ()) == (
+            "flat_id", "billing_month"
+        ):
+            with op.batch_alter_table("maintenance_bills") as batch_op:
+                batch_op.drop_constraint(constraint["name"], type_="unique")
+            inspector = sa.inspect(bind)
+    for index in inspector.get_indexes("maintenance_bills"):
+        if index.get("unique") and tuple(index.get("column_names") or ()) == (
+            "flat_id", "billing_month"
+        ):
+            op.drop_index(index["name"], table_name="maintenance_bills")
+            inspector = sa.inspect(bind)
+
     new_exists = _required_uniqueness_exists(bind)
+
+    if not new_exists:
+        duplicate_count = bind.execute(
+            sa.text("""
+                SELECT COUNT(*)
+                FROM (
+                    SELECT resident_id, billing_month
+                    FROM maintenance_bills
+                    WHERE resident_id IS NOT NULL
+                    GROUP BY resident_id, billing_month
+                    HAVING COUNT(*) > 1
+                ) AS duplicates
+            """)
+        ).scalar_one()
+        if duplicate_count:
+            raise RuntimeError(
+                f"Found {duplicate_count} duplicate resident/month billing "
+                "groups. Resolve them manually before applying the constraint. "
+                "No billing records were changed."
+            )
 
     with op.batch_alter_table("maintenance_bills", schema=None) as batch_op:
         # This migration is additive for production safety. The legacy
@@ -67,8 +108,6 @@ def upgrade():
 
 
 def downgrade():
-    with op.batch_alter_table("maintenance_bills", schema=None) as batch_op:
-        batch_op.drop_constraint("uq_maintenance_bill_resident_month", type_="unique")
-        batch_op.create_unique_constraint(
-            "uq_maintenance_bill_flat_month", ["flat_id", "billing_month"]
-        )
+    # Do not remove potentially pre-existing uniqueness or create a different
+    # invariant as a side effect of rollback.
+    pass

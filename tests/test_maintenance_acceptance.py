@@ -25,7 +25,7 @@ def add_active_resident(society, flat, mobile, start_month="2026-08"):
         is_active=True,
         maintenance_start_month=start_month,
     )
-    user.set_password("Pass@123")
+    user.set_password("Passphrase@123")
     db.session.add(user)
     db.session.flush()
     resident = Resident(
@@ -54,7 +54,7 @@ def test_repeated_resident_logins_do_not_create_duplicate_bills(client, app):
 
     for _ in range(2):
         response = client.post(
-            "/login", data={"mobile": mobile, "password": "Pass@123"}
+            "/login", data={"mobile": mobile, "password": "Passphrase@123"}
         )
         assert response.status_code == 302
         client.get("/logout")

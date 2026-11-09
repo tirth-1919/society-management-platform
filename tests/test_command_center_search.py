@@ -46,7 +46,7 @@ def test_resident_cannot_access_unauthorized_records(client, app):
             account_status="ACTIVE",
             is_active=True
         )
-        res_user.set_password("Pass@123")
+        res_user.set_password("Passphrase@123")
         db.session.add(res_user)
         db.session.commit()
 

@@ -52,7 +52,7 @@ def setup_cash_data(app):
             is_active=True,
             society_id=society.id,
         )
-        admin_user.set_password("Admin@123")
+        admin_user.set_password("AdminPassword@123")
         db.session.add(admin_user)
         db.session.flush()
 

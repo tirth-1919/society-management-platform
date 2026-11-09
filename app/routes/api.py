@@ -7,6 +7,20 @@ from app.services.single_society_service import SingleSocietyService
 
 api_bp = Blueprint("api", __name__, url_prefix="/api/v1")
 
+
+@api_bp.before_request
+def enforce_api_tenant_session_scope():
+    """Reject stale or mismatched tenant scope on authenticated API calls."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return
+    user = db.session.get(User, user_id)
+    if not user:
+        abort(401)
+    if user.role in (Role.SOCIETY_ADMIN, Role.RESIDENT):
+        if not user.society_id or session.get("society_id") != user.society_id:
+            abort(403, description="Forbidden: Invalid society scope")
+
 # ── Public endpoints used by registration form (no auth required) ──────────
 
 # Also register at /api/buildings so the register.html form can call it

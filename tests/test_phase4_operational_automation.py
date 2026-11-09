@@ -74,7 +74,7 @@ def phase4_ctx():
             account_status="ACTIVE",
             society_id=soc.id,
         )
-        user.set_password("Pass123!")
+        user.set_password("Passphrase123!")
         db.session.add(user)
         db.session.commit()
 
@@ -101,7 +101,7 @@ def phase4_ctx():
             account_status="ACTIVE",
             society_id=soc.id,
         )
-        admin_user.set_password("AdminPass123!")
+        admin_user.set_password("AdminPassphrase123!")
         db.session.add(admin_user)
         db.session.commit()
 
@@ -319,7 +319,7 @@ def test_occupancy_move_in_out_financial_isolation(phase4_ctx):
         account_status="ACTIVE",
         society_id=soc.id,
     )
-    user_b.set_password("Pass123!")
+    user_b.set_password("Passphrase123!")
     db.session.add(user_b)
     db.session.commit()
 

@@ -39,6 +39,7 @@ from app.models import (
     db,
 )
 from app.utils import utcnow
+from app.services.auth_service import AuthService
 
 
 resident_bp = Blueprint("resident", __name__, url_prefix="/resident")
@@ -169,9 +170,12 @@ def change_password():
         )
         return redirect(url_for("resident.profile"))
 
-    if len(new_password) < 8:
+    password_valid, password_message = AuthService.validate_password_strength(
+        new_password
+    )
+    if not password_valid:
         flash(
-            "New password must be at least 8 characters.",
+            password_message,
             "danger",
         )
         return redirect(url_for("resident.profile"))

@@ -28,7 +28,7 @@ def make_resident(society, flat, mobile):
         account_status="ACTIVE",
         is_active=True,
     )
-    user.set_password("Pass@123")
+    user.set_password("Passphrase@123")
     db.session.add(user)
     db.session.flush()
     resident = Resident(
@@ -59,7 +59,7 @@ def test_approval_month_creates_one_bill_and_is_stable(app):
             account_status="PENDING_APPROVAL",
             is_active=False,
         )
-        user.set_password("Pass@123")
+        user.set_password("Passphrase@123")
         db.session.add(user)
         db.session.flush()
         req = RegistrationRequest(

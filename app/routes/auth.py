@@ -13,7 +13,7 @@ from flask import (
     abort,
 )
 from werkzeug.exceptions import HTTPException
-from app.models import db, User, Society, RegistrationRequest, AuditLog, Flat, Building, Block
+from app.models import db, User, Society, RegistrationRequest, AuditLog, Flat, Building, Block, Role
 from app.services.auth_service import AuthService
 from app.services.registration_service import (
     RegistrationService,
@@ -39,7 +39,7 @@ def login():
         password = request.form.get("password", "").strip()
 
         user = User.query.filter_by(mobile=mobile).first()
-        if user:
+        if user and user.role == Role.RESIDENT:
             # Check account lockout
             if user.locked_until:
                 if user.locked_until > utcnow():
@@ -290,6 +290,8 @@ def send_otp():
         return jsonify(
             {"success": False, "message": "Mobile number not registered"}
         ), 404
+    if user.role != Role.RESIDENT:
+        return jsonify({"success": False, "message": "Mobile number not registered"}), 404
 
     try:
         code = AuthService.generate_otp(mobile)
@@ -313,6 +315,10 @@ def verify_otp():
         user = User.query.filter_by(mobile=mobile).first()
         if not user:
             flash("User not found.", "danger")
+            return redirect(url_for("auth.login"))
+
+        if user.role != Role.RESIDENT:
+            flash("Invalid mobile number or OTP", "danger")
             return redirect(url_for("auth.login"))
 
         if user.account_status != "ACTIVE":

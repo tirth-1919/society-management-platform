@@ -21,7 +21,7 @@ def test_data(app):
             account_status="ACTIVE",
             is_active=True,
         )
-        res_user.set_password("Pass@123")
+        res_user.set_password("Passphrase@123")
         db.session.add(res_user)
         db.session.commit()
 
@@ -212,7 +212,7 @@ def test_download_route_view_mode_and_attachment(client, app, test_data):
     payment_id = test_data["payment_id"]
 
     # Login as resident using mobile
-    login_res = client.post("/login", data={"mobile": "9876543210", "password": "Pass@123"})
+    login_res = client.post("/login", data={"mobile": "9876543210", "password": "Passphrase@123"})
     assert login_res.status_code == 302
 
     # TEST 9: view=1 -> inline view

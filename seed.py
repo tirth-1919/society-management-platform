@@ -12,6 +12,7 @@ IMPORTANT:
 """
 
 from datetime import date, timedelta
+import secrets
 import sys
 
 from dotenv import load_dotenv
@@ -40,6 +41,11 @@ sys.stdout.reconfigure(encoding="utf-8")
 load_dotenv()
 
 app = create_app()
+
+
+def _seed_password():
+    """Return a strong one-time credential without logging or persisting it."""
+    return secrets.token_urlsafe(24)
 
 
 # ==================================================
@@ -159,7 +165,7 @@ with app.app_context():
         )
 
         admin_user.set_password(
-            "Admin@123"
+            _seed_password()
         )
 
         db.session.add(admin_user)
@@ -170,9 +176,6 @@ with app.app_context():
         )
         print(
             "          username: admin"
-        )
-        print(
-            "          password: Admin@123"
         )
 
     else:
@@ -254,7 +257,7 @@ with app.app_context():
         )
 
         adm.set_password(
-            "Admin@1234"
+            _seed_password()
         )
 
         db.session.add(adm)
@@ -265,9 +268,6 @@ with app.app_context():
         )
         print(
             "          mobile: 9100000001"
-        )
-        print(
-            "          password: Admin@1234"
         )
 
     else:
@@ -402,7 +402,7 @@ with app.app_context():
             )
 
             user.set_password(
-                "Resident@123"
+                _seed_password()
             )
 
             db.session.add(user)
@@ -1088,7 +1088,7 @@ with app.app_context():
         )
 
         guard.set_password(
-            "Guard@1234"
+            _seed_password()
         )
 
         db.session.add(guard)
@@ -1102,9 +1102,6 @@ with app.app_context():
             "          mobile: 9700000001"
         )
 
-        print(
-            "          password: Guard@1234"
-        )
 
     else:
 
@@ -1279,58 +1276,7 @@ with app.app_context():
 
     print()
 
-    print(
-        "NEW LOGIN CREDENTIALS "
-        "(only if these users did not already exist):"
-    )
-
-    print()
-
-    print(
-        "Super Admin"
-    )
-    print(
-        "  Username : admin"
-    )
-    print(
-        "  Password : Admin@123"
-    )
-
-    print()
-
-    print(
-        "Society Admin"
-    )
-    print(
-        "  Mobile   : 9100000001"
-    )
-    print(
-        "  Password : Admin@1234"
-    )
-
-    print()
-
-    print(
-        "Resident"
-    )
-    print(
-        "  Mobile   : 9800000001"
-    )
-    print(
-        "  Password : Resident@123"
-    )
-
-    print()
-
-    print(
-        "Security Guard"
-    )
-    print(
-        "  Mobile   : 9700000001"
-    )
-    print(
-        "  Password : Guard@1234"
-    )
+    print("Generated account credentials are not displayed.")
 
     print()
 

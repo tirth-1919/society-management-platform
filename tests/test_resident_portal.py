@@ -15,7 +15,7 @@ def _resident(app):
         account_status="ACTIVE",
         is_active=True,
     )
-    user.set_password("Pass@123")
+    user.set_password("Passphrase@123")
     db.session.add(user)
     db.session.flush()
     resident = Resident(
@@ -82,7 +82,7 @@ def test_resident_cannot_access_previous_occupants_bill_or_receipt(client, app):
             account_status="ACTIVE",
             is_active=True,
         )
-        old_user.set_password("Pass@123")
+        old_user.set_password("Passphrase@123")
         db.session.add(old_user)
         db.session.flush()
         old_resident = Resident(
@@ -160,7 +160,7 @@ def test_resident_bill_detail_and_receipts_working(client, app):
             account_status="ACTIVE",
             is_active=True,
         )
-        other_user.set_password("Pass@123")
+        other_user.set_password("Passphrase@123")
         db.session.add(other_user)
         db.session.flush()
         other_resident = Resident(

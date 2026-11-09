@@ -19,7 +19,7 @@ def test_cross_society_admin_approval_forbidden(client, app):
             account_status="ACTIVE",
             is_active=True,
         )
-        soc1_admin.set_password("Admin@123")
+        soc1_admin.set_password("AdminPassword@123")
         db.session.add(soc1_admin)
 
         # User registering for Society 2
@@ -31,7 +31,7 @@ def test_cross_society_admin_approval_forbidden(client, app):
             account_status="PENDING_APPROVAL",
             is_active=False,
         )
-        u2.set_password("Pass123")
+        u2.set_password("Passphrase123")
         db.session.add(u2)
         db.session.commit()
 
@@ -120,7 +120,7 @@ def test_cross_society_and_idor_bill_access(client, app):
             account_status="ACTIVE",
             is_active=True,
         )
-        u1.set_password("Pass@123")
+        u1.set_password("Passphrase@123")
         db.session.add(u1)
         db.session.flush()
 
@@ -145,7 +145,7 @@ def test_cross_society_and_idor_bill_access(client, app):
             account_status="ACTIVE",
             is_active=True,
         )
-        u2.set_password("Pass@123")
+        u2.set_password("Passphrase@123")
         db.session.add(u2)
         db.session.flush()
 
@@ -217,7 +217,7 @@ def test_cross_society_document_download_forbidden(client, app, tmp_path):
             account_status="ACTIVE",
             is_active=True,
         )
-        u1_admin.set_password("Admin@123")
+        u1_admin.set_password("AdminPassword@123")
         db.session.add(u1_admin)
         db.session.flush()
 
@@ -268,7 +268,7 @@ def test_cross_society_facility_booking_and_cancellation_idor(client, app):
             account_status="ACTIVE",
             is_active=True,
         )
-        u1.set_password("Pass@123")
+        u1.set_password("Passphrase@123")
         db.session.add(u1)
 
         u2 = User(
@@ -279,7 +279,7 @@ def test_cross_society_facility_booking_and_cancellation_idor(client, app):
             account_status="ACTIVE",
             is_active=True,
         )
-        u2.set_password("Pass@123")
+        u2.set_password("Passphrase@123")
         db.session.add(u2)
         db.session.flush()
 

@@ -9,7 +9,6 @@ from flask import (
     flash,
     session,
     abort,
-    current_app,
     jsonify,
 )
 from sqlalchemy import func
@@ -56,11 +55,17 @@ def admin_guard():
         or user.role not in [Role.SUPER_ADMIN, Role.SOCIETY_ADMIN]
     ):
         abort(403, description="Forbidden: Resident cannot access admin portal")
+<<<<<<< Updated upstream
     # Every administrator operates on the configured single society.
     # Keep the user's persisted tenant assignment untouched; the request/session
     # context is the source of truth for this single-society Admin portal.
     society_id = SingleSocietyService.get_id()
     session["society_id"] = society_id
+=======
+    if user.role == Role.SOCIETY_ADMIN:
+        if not user.society_id or session.get("society_id") != user.society_id:
+            abort(403, description="Forbidden: Invalid society scope")
+>>>>>>> Stashed changes
 
 
 @admin_bp.route("/login", methods=["GET", "POST"])
@@ -82,6 +87,7 @@ def admin_login():
 
         user = User.query.filter_by(username=username).first()
         valid_password = user and user.check_password(password)
+<<<<<<< Updated upstream
         if current_app.testing and password == "Admin@123":
             valid_password = True
         if (
@@ -91,6 +97,8 @@ def admin_login():
             and password == current_app.config["ADMIN_DEV_PASSWORD"]
         ):
             valid_password = True
+=======
+>>>>>>> Stashed changes
         if (
             user
             and user.role in [Role.SUPER_ADMIN, Role.SOCIETY_ADMIN]

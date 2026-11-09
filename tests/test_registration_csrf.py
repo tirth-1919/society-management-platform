@@ -13,7 +13,7 @@ def _setup_request(app):
         account_status="ACTIVE",
         is_active=True,
     )
-    admin.set_password("Admin@123")
+    admin.set_password("AdminPassword@123")
     applicant = User(
         full_name="CSRF Applicant",
         mobile="9812345678",

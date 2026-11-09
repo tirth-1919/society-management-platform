@@ -1,11 +1,8 @@
-"""Correct legacy seeded maintenance defaults.
+"""Retain legacy maintenance configurations without rewriting data.
 
 Revision ID: 20260811_correct_legacy_maintenance_defaults
 Revises: 20260811_maintenance_start_and_notification_idempotency
 """
-
-from alembic import op
-
 
 revision = "20260811_correct_legacy_maintenance_defaults"
 down_revision = "20260811_maintenance_start_and_notification_idempotency"
@@ -14,17 +11,11 @@ depends_on = None
 
 
 def upgrade():
-    # Only replace the obsolete seed defaults; preserve intentional custom rates.
-    op.execute(
-        "UPDATE maintenance_configs "
-        "SET fixed_monthly_rate = 1500.0, late_fee_per_month = 500.0 "
-        "WHERE fixed_monthly_rate = 500.0 AND late_fee_per_month = 100.0"
-    )
+    # Historical configuration values may have been chosen intentionally.
+    # Schema migrations must not infer intent from matching numeric values.
+    pass
 
 
 def downgrade():
-    op.execute(
-        "UPDATE maintenance_configs "
-        "SET fixed_monthly_rate = 500.0, late_fee_per_month = 100.0 "
-        "WHERE fixed_monthly_rate = 1500.0 AND late_fee_per_month = 500.0"
-    )
+    # No data was changed by upgrade; there is nothing to reverse.
+    pass

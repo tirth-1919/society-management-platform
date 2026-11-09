@@ -202,7 +202,7 @@ def test_frontend_cannot_manipulate_total_amount(app, client):
             account_status="ACTIVE",
             is_active=True,
         )
-        user.set_password("Pass@123")
+        user.set_password("Passphrase@123")
         db.session.add(user)
         db.session.commit()
 

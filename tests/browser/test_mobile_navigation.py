@@ -17,7 +17,7 @@ def live_server(app):
 def _login_admin(page: Page, base_url: str):
     page.goto(f"{base_url}/admin/login", timeout=15000)
     page.fill('input[name="username"]', "admin")
-    page.fill('input[name="password"]', "Admin@123")
+    page.fill('input[name="password"]', "AdminPassword@123")
     page.click('button[type="submit"]')
     page.wait_for_load_state("networkidle")
 

@@ -32,7 +32,7 @@ def app():
             society_id=society.id,
             account_status="ACTIVE"
         )
-        admin_user.set_password("Admin@1234")
+        admin_user.set_password("AdminPassword@1234")
 
         # Resident 1
         r1_user = User(

@@ -56,7 +56,7 @@ def test_hierarchy_mismatch_returns_403(client, app):
             "building_id": b2.id,
             "flat_id": f2.id,
             "occupancy_type": "TENANT",
-            "password": "Password123",
+            "password": "Password1234",
         },
     )
     assert res.status_code == 403
@@ -79,7 +79,7 @@ def test_admin_approve_and_reject_flow(client, app):
             account_status="PENDING_APPROVAL",
             is_active=False,
         )
-        u1.set_password("Pass123")
+        u1.set_password("Passphrase123")
         db.session.add(u1)
 
         # Registration 2: for rejection
@@ -90,7 +90,7 @@ def test_admin_approve_and_reject_flow(client, app):
             account_status="PENDING_APPROVAL",
             is_active=False,
         )
-        u2.set_password("Pass123")
+        u2.set_password("Passphrase123")
         db.session.add(u2)
         db.session.commit()
 
@@ -167,7 +167,7 @@ def test_duplicate_active_mobile_blocked(client, app):
             account_status="ACTIVE",
             is_active=True,
         )
-        u.set_password("Pass123")
+        u.set_password("Passphrase123")
         db.session.add(u)
         db.session.commit()
 
@@ -180,7 +180,7 @@ def test_duplicate_active_mobile_blocked(client, app):
             "building_id": bid,
             "flat_id": fid,
             "occupancy_type": "OWNER",
-            "password": "Pass1234",
+            "password": "Passphrase1234",
         },
         follow_redirects=True,
     )

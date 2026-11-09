@@ -10,7 +10,7 @@ def test_root_redirects_unauthenticated_users_to_login(client):
 def test_admin_login_success(client):
     res = client.post(
         "/admin/login",
-        data={"username": "admin", "password": "Admin@123"},
+        data={"username": "admin", "password": "AdminPassword@123"},
         follow_redirects=False,
     )
     assert res.status_code == 302
@@ -286,7 +286,7 @@ def test_logout_workflow(client, app):
 def test_admin_dashboard_navigation_is_relative_and_portal_local(client):
     response = client.post(
         "/admin/login",
-        data={"username": "admin", "password": "Admin@123"},
+        data={"username": "admin", "password": "AdminPassword@123"},
         follow_redirects=True,
     )
     assert response.status_code == 200
@@ -301,7 +301,7 @@ def test_admin_session_cookie_is_distinct_and_dashboard_stays_admin(client, app)
     app.config["SESSION_COOKIE_NAME"] = app.config["ADMIN_SESSION_COOKIE_NAME"]
     response = client.post(
         "/admin/login",
-        data={"username": "admin", "password": "Admin@123"},
+        data={"username": "admin", "password": "AdminPassword@123"},
         follow_redirects=False,
     )
     assert response.status_code == 302
@@ -329,13 +329,13 @@ def test_society_admin_session_reaches_admin_dashboard(client, app):
             account_status="ACTIVE",
             is_active=True,
         )
-        admin.set_password("Admin@123")
+        admin.set_password("AdminPassword@123")
         db.session.add(admin)
         db.session.commit()
 
     response = client.post(
         "/admin/login",
-        data={"username": "society_admin_flow", "password": "Admin@123"},
+        data={"username": "society_admin_flow", "password": "AdminPassword@123"},
         follow_redirects=False,
     )
     assert response.status_code == 302
@@ -352,7 +352,7 @@ def test_admin_login_form_includes_csrf_and_opens_dashboard(client):
     assert b'name="csrf_token"' in login_page.data
     response = client.post(
         "/admin/login",
-        data={"username": "admin", "password": "Admin@123"},
+        data={"username": "admin", "password": "AdminPassword@123"},
         follow_redirects=False,
     )
     assert response.status_code == 302
@@ -458,7 +458,7 @@ def test_admin_payment_dashboard_is_society_scoped_and_month_range(client, app):
         db.session.commit()
         payment_ids = [payment.id for payment in payments]
         society_id = society.id
-    client.post("/admin/login", data={"username": "admin", "password": "Admin@123"})
+    client.post("/admin/login", data={"username": "admin", "password": "AdminPassword@123"})
     with client.session_transaction() as session:
         session["society_id"] = society_id
     response = client.get("/payments/admin/dashboard")

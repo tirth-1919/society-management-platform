@@ -343,6 +343,12 @@ class RegistrationService:
         4. Hashes password into User model ONLY. (Never in RegistrationRequest).
         5. Creates RegistrationRequest record with PENDING_APPROVAL status.
         """
+        valid_password, password_message = AuthService.validate_password_strength(
+            password
+        )
+        if not valid_password:
+            raise ValueError(password_message)
+
         mobile = AuthService.normalize_mobile(mobile)
         if block_id is not None:
             society, wing, block, flat = RegistrationService.validate_hierarchy(

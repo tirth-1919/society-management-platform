@@ -1,3 +1,4 @@
+
 """Add resident notification ownership and billing fields.
 
 Revision ID: 20260811_notification_log_user_fields
@@ -15,127 +16,127 @@ branch_labels = None
 depends_on = None
 
 
-def _existing_columns():
-    bind = op.get_bind()
-    inspector = sa.inspect(bind)
-    return {
-        column["name"]
-        for column in inspector.get_columns("notification_logs")
-    }
+TABLE_NAME = "notification_logs"
+
+EXPECTED_COLUMNS = {
+    "user_id": sa.Column(
+        "user_id",
+        sa.Integer(),
+        nullable=True,
+    ),
+    "notification_type": sa.Column(
+        "notification_type",
+        sa.String(length=50),
+        nullable=True,
+    ),
+    "billing_month": sa.Column(
+        "billing_month",
+        sa.String(length=7),
+        nullable=True,
+    ),
+    "sent_at": sa.Column(
+        "sent_at",
+        sa.DateTime(),
+        nullable=True,
+    ),
+}
+
+EXPECTED_INDEXES = {
+    "ix_notification_logs_user_id": ["user_id"],
+    "ix_notification_logs_notification_type": ["notification_type"],
+    "ix_notification_logs_billing_month": ["billing_month"],
+}
 
 
-def _existing_indexes():
-    bind = op.get_bind()
-    inspector = sa.inspect(bind)
-    return {
-        index["name"]
-        for index in inspector.get_indexes("notification_logs")
-    }
+def _get_inspector():
+    return sa.inspect(op.get_bind())
+
+
+def _check_table():
+    inspector = _get_inspector()
+
+    if not inspector.has_table(TABLE_NAME):
+        raise RuntimeError(
+            f"Required table '{TABLE_NAME}' does not exist."
+        )
+
+    return inspector
 
 
 def upgrade():
-    """Add notification fields without rebuilding the SQLite table."""
+    """Add missing notification fields and indexes safely."""
 
-    columns = _existing_columns()
+    inspector = _check_table()
 
-    if "user_id" not in columns:
-        op.add_column(
-            "notification_logs",
-            sa.Column(
-                "user_id",
-                sa.Integer(),
-                nullable=True,
-            ),
-        )
+    existing_columns = {
+        column["name"]
+        for column in inspector.get_columns(TABLE_NAME)
+    }
 
-    if "notification_type" not in columns:
-        op.add_column(
-            "notification_logs",
-            sa.Column(
-                "notification_type",
-                sa.String(length=50),
-                nullable=True,
-            ),
-        )
+    # Add only missing columns.
+    for column_name, column in EXPECTED_COLUMNS.items():
+        if column_name not in existing_columns:
+            op.add_column(
+                TABLE_NAME,
+                column.copy(),
+            )
+            print(
+                f"[MIGRATION] Added column: {column_name}"
+            )
 
-    if "billing_month" not in columns:
-        op.add_column(
-            "notification_logs",
-            sa.Column(
-                "billing_month",
-                sa.String(length=7),
-                nullable=True,
-            ),
-        )
+    # Refresh index information after column changes.
+    inspector = _get_inspector()
 
-    if "sent_at" not in columns:
-        op.add_column(
-            "notification_logs",
-            sa.Column(
-                "sent_at",
-                sa.DateTime(),
-                nullable=True,
-            ),
-        )
+    indexes = inspector.get_indexes(TABLE_NAME)
+    existing_indexes = {
+        index["name"]: tuple(index.get("column_names") or ())
+        for index in indexes
+        if index.get("name")
+    }
+    existing_unique_constraints = inspector.get_unique_constraints(TABLE_NAME)
+    existing_unique_index_columns = {
+        tuple(item.get("column_names") or ())
+        for item in indexes if item.get("unique")
+    } | {
+        tuple(item.get("column_names") or ())
+        for item in existing_unique_constraints
+    }
 
-    indexes = _existing_indexes()
-
-    if "ix_notification_logs_user_id" not in indexes:
-        op.create_index(
-            "ix_notification_logs_user_id",
-            "notification_logs",
-            ["user_id"],
-            unique=False,
-        )
-
-    if "ix_notification_logs_notification_type" not in indexes:
-        op.create_index(
-            "ix_notification_logs_notification_type",
-            "notification_logs",
-            ["notification_type"],
-            unique=False,
-        )
-
-    if "ix_notification_logs_billing_month" not in indexes:
-        op.create_index(
-            "ix_notification_logs_billing_month",
-            "notification_logs",
-            ["billing_month"],
-            unique=False,
-        )
+    # Create only missing indexes.
+    for index_name, column_names in EXPECTED_INDEXES.items():
+        expected_columns = tuple(column_names)
+        if existing_indexes.get(index_name) not in (None, expected_columns):
+            raise RuntimeError(
+                f"Index '{index_name}' already exists with columns "
+                f"{existing_indexes[index_name]}, expected {expected_columns}."
+            )
+        if (index_name not in existing_indexes
+                and expected_columns not in existing_unique_index_columns
+                and not any(
+                    tuple(item.get("column_names") or ()) == expected_columns
+                    and not item.get("unique") for item in indexes
+                )):
+            op.create_index(
+                index_name,
+                TABLE_NAME,
+                column_names,
+                unique=False,
+            )
+            print(
+                f"[MIGRATION] Created index: {index_name}"
+            )
 
 
 def downgrade():
-    indexes = _existing_indexes()
-    columns = _existing_columns()
+    """
+    Intentionally preserve existing columns and indexes.
 
-    if "ix_notification_logs_billing_month" in indexes:
-        op.drop_index(
-            "ix_notification_logs_billing_month",
-            table_name="notification_logs",
-        )
+    This migration may run against a database where these fields
+    existed before Alembic began tracking migrations. Automatically
+    dropping them could destroy pre-existing application schema.
+    """
 
-    if "ix_notification_logs_notification_type" in indexes:
-        op.drop_index(
-            "ix_notification_logs_notification_type",
-            table_name="notification_logs",
-        )
-
-    if "ix_notification_logs_user_id" in indexes:
-        op.drop_index(
-            "ix_notification_logs_user_id",
-            table_name="notification_logs",
-        )
-
-    # Only remove columns that this migration added.
-    if "sent_at" in columns:
-        op.drop_column("notification_logs", "sent_at")
-
-    if "billing_month" in columns:
-        op.drop_column("notification_logs", "billing_month")
-
-    if "notification_type" in columns:
-        op.drop_column("notification_logs", "notification_type")
-
-    if "user_id" in columns:
-        op.drop_column("notification_logs", "user_id")
+    print(
+        "[MIGRATION] Downgrade skipped to preserve existing "
+        "notification schema and data."
+    )

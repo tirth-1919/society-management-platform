@@ -51,7 +51,7 @@ def recon_data(app):
         db.session.commit()
 
         admin = User(username="reconadmin", full_name="Recon Admin", email="admin@reconsoc.com", mobile="9876543213", role=Role.SOCIETY_ADMIN, society_id=society.id)
-        admin.set_password("Admin@123")
+        admin.set_password("AdminPassword@123")
         db.session.add(admin)
         db.session.commit()
 

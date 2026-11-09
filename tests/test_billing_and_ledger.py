@@ -39,7 +39,7 @@ def setup_society_and_resident(mobile, flat_idx=0, start_month="2026-01"):
         account_status="ACTIVE",
         is_active=True,
     )
-    user.set_password("Pass@123")
+    user.set_password("Passphrase@123")
     db.session.add(user)
     db.session.flush()
 

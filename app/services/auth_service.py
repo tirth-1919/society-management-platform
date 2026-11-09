@@ -24,8 +24,8 @@ class AuthService:
     @staticmethod
     def validate_password_strength(password):
         """Validates password meets minimum security requirements."""
-        if not password or len(password) < 8:
-            return False, "Password must be at least 8 characters long."
+        if not password or len(password) < 12:
+            return False, "Password must be at least 12 characters long."
         if not re.search(r"[A-Za-z]", password):
             return False, "Password must contain at least one letter."
         if not re.search(r"[\d@$!%*#?&]", password):

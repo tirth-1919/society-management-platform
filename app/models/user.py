@@ -65,10 +65,23 @@ class User(db.Model):
             setattr(self, key, value)
 
     def set_password(self, password):
+        if not isinstance(password, str) or len(password) < 12:
+            raise ValueError("Password must be at least 12 characters long.")
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
+        password_hash = self.password_hash
+        if (
+            not isinstance(password, str)
+            or not password
+            or not isinstance(password_hash, str)
+            or not password_hash
+        ):
+            return False
+        try:
+            return check_password_hash(password_hash, password)
+        except (TypeError, ValueError):
+            return False
 
 
 class UserSession(db.Model):

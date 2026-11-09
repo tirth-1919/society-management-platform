@@ -22,7 +22,7 @@ def _admin(app, society, suffix):
         account_status="ACTIVE",
         is_active=True,
     )
-    user.set_password("Admin@123")
+    user.set_password("AdminPassword@123")
     db.session.add(user)
     db.session.commit()
     return user

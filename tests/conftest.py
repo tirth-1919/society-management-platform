@@ -70,7 +70,7 @@ def app():
             account_status="ACTIVE",
             is_active=True,
         )
-        admin.set_password("Admin@123")
+        admin.set_password("AdminPassword@123")
         db.session.add(admin)
         db.session.commit()
 

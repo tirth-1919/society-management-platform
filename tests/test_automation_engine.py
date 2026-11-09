@@ -36,7 +36,7 @@ def auth_admin(app):
             society_id=society.id,
             account_status="ACTIVE",
         )
-        user.set_password("Admin@123")
+        user.set_password("AdminPassword@123")
         db.session.add(user)
         db.session.commit()
         return user.id, society.id

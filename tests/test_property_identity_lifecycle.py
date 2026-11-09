@@ -56,7 +56,7 @@ def prop_society(app):
             society_id=society.id,
             account_status="ACTIVE",
         )
-        admin.set_password("Admin@123")
+        admin.set_password("AdminPassword@123")
         db.session.add(admin)
         db.session.commit()
 
