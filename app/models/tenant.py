@@ -15,7 +15,6 @@ def patch_sqlite_schema(app=None):
     try:
         from sqlalchemy import inspect, text
 
-        # PostgreSQL and other databases must use Alembic.
         if db.engine.dialect.name != "sqlite":
             print(
                 f"[DB PATCH] Skipped: database is "
@@ -23,7 +22,6 @@ def patch_sqlite_schema(app=None):
             )
             return
 
-        # Create missing tables only for SQLite.
         db.create_all()
 
         with db.engine.connect() as conn:
@@ -48,64 +46,52 @@ def patch_sqlite_schema(app=None):
                         )
                     )
                     conn.commit()
-
-<<<<<<< Updated upstream
-            if "automation_rules" in inspector.get_table_names():
-                cols_ar = [c["name"] for c in inspector.get_columns("automation_rules")]
-                if "event_name" not in cols_ar:
-                    conn.execute(
-                        text("ALTER TABLE automation_rules ADD COLUMN event_name VARCHAR(100)")
-                    )
-                    conn.commit()
-                if "priority" not in cols_ar:
-                    conn.execute(
-                        text("ALTER TABLE automation_rules ADD COLUMN priority INTEGER DEFAULT 1")
-                    )
-                    conn.commit()
-
-            if "automation_executions" in inspector.get_table_names():
-                cols_ae = [c["name"] for c in inspector.get_columns("automation_executions")]
-                if "retry_count" not in cols_ae:
-                    conn.execute(
-                        text("ALTER TABLE automation_executions ADD COLUMN retry_count INTEGER DEFAULT 0")
-                    )
-                    conn.commit()
-
-            # Event photo hardening fields are additive so existing SQLite deployments
-            # remain compatible before their Alembic migration is run.
-            if "events" in inspector.get_table_names():
-                cols_events = [c["name"] for c in inspector.get_columns("events")]
-                if "photo_upload_deadline" not in cols_events:
-                    conn.execute(text("ALTER TABLE events ADD COLUMN photo_upload_deadline DATETIME"))
-                    conn.commit()
-            # Vehicle directory fields are additive for existing SQLite databases
-            if "vehicles" in inspector.get_table_names():
-                cols_vehicles = [c["name"] for c in inspector.get_columns("vehicles")]
-                vehicle_cols = [
-                    ("owner_user_id", "INTEGER REFERENCES users(id)"),
-                    ("normalized_number_plate", "VARCHAR(50)"),
-                    ("make", "VARCHAR(100)"),
-                    ("model", "VARCHAR(100)"),
-                    ("parking_slot_number", "VARCHAR(50)"),
-                    ("secondary_mobile", "VARCHAR(20)"),
-                    ("email", "VARCHAR(120)"),
-                    ("status", "VARCHAR(20) DEFAULT 'ACTIVE'"),
-                    ("notes", "TEXT"),
-                    ("vehicle_photo", "VARCHAR(255)"),
-                    ("updated_at", "DATETIME"),
-                ]
-                for col_name, col_def in vehicle_cols:
-                    if col_name not in cols_vehicles:
-                        conn.execute(text(f"ALTER TABLE vehicles ADD COLUMN {col_name} {col_def}"))
-                        conn.commit()
-
-    except Exception as e:
-        print(f"[DB PATCH NOTE] Schema patch skipped or already applied: {e}")
-=======
                     print(
                         f"[DB PATCH] Added "
                         f"{table_name}.{column_name}"
                     )
+
+            # AUTOMATION
+            add_column(
+                "automation_rules",
+                "event_name",
+                "VARCHAR(100)"
+            )
+            add_column(
+                "automation_rules",
+                "priority",
+                "INTEGER DEFAULT 1"
+            )
+            add_column(
+                "automation_executions",
+                "retry_count",
+                "INTEGER DEFAULT 0"
+            )
+
+            # EVENTS
+            add_column(
+                "events",
+                "photo_upload_deadline",
+                "DATETIME"
+            )
+
+            # VEHICLES
+            vehicle_columns = [
+                ("owner_user_id", "INTEGER REFERENCES users(id)"),
+                ("normalized_number_plate", "VARCHAR(50)"),
+                ("make", "VARCHAR(100)"),
+                ("model", "VARCHAR(100)"),
+                ("parking_slot_number", "VARCHAR(50)"),
+                ("secondary_mobile", "VARCHAR(20)"),
+                ("email", "VARCHAR(120)"),
+                ("status", "VARCHAR(20) DEFAULT 'ACTIVE'"),
+                ("notes", "TEXT"),
+                ("vehicle_photo", "VARCHAR(255)"),
+                ("updated_at", "DATETIME"),
+            ]
+
+            for column_name, definition in vehicle_columns:
+                add_column("vehicles", column_name, definition)
 
             # FLATS
             add_column(
@@ -129,43 +115,25 @@ def patch_sqlite_schema(app=None):
             )
 
             # RESIDENTS
-            add_column(
-                "residents",
-                "advance_balance",
-                "FLOAT DEFAULT 0.0"
-            )
-            add_column(
-                "residents",
-                "move_out_date",
-                "DATE"
-            )
-            add_column(
-                "residents",
-                "move_out_reason",
-                "VARCHAR(255)"
-            )
-            add_column(
-                "residents",
-                "moved_out_approved_by",
-                "INTEGER"
-            )
+            resident_columns = [
+                ("advance_balance", "FLOAT DEFAULT 0.0"),
+                ("move_out_date", "DATE"),
+                ("move_out_reason", "VARCHAR(255)"),
+                ("moved_out_approved_by", "INTEGER"),
+            ]
+
+            for column_name, definition in resident_columns:
+                add_column("residents", column_name, definition)
 
             # COMPLAINTS
-            add_column(
-                "complaints",
-                "resolution_notes",
-                "TEXT"
-            )
-            add_column(
-                "complaints",
-                "resolved_at",
-                "DATETIME"
-            )
-            add_column(
-                "complaints",
-                "assigned_staff_id",
-                "INTEGER REFERENCES users(id)"
-            )
+            complaint_columns = [
+                ("resolution_notes", "TEXT"),
+                ("resolved_at", "DATETIME"),
+                ("assigned_staff_id", "INTEGER REFERENCES users(id)"),
+            ]
+
+            for column_name, definition in complaint_columns:
+                add_column("complaints", column_name, definition)
 
             # NOTIFICATION LOGS
             add_column(
@@ -185,20 +153,11 @@ def patch_sqlite_schema(app=None):
             ]
 
             for column_name, definition in payment_columns:
-                add_column(
-                    "payments",
-                    column_name,
-                    definition
-                )
+                add_column("payments", column_name, definition)
 
             # FLATS UNIQUE INDEX
             if "flats" in inspect(conn).get_table_names():
                 inspector = inspect(conn)
-
-                unique_objects = (
-                    inspector.get_unique_constraints("flats")
-                    + inspector.get_indexes("flats")
-                )
 
                 expected_columns = {
                     "society_id",
@@ -206,14 +165,25 @@ def patch_sqlite_schema(app=None):
                     "flat_number",
                 }
 
-                already_exists = any(
+                unique_constraints = (
+                    inspector.get_unique_constraints("flats")
+                )
+                indexes = inspector.get_indexes("flats")
+
+                constraint_exists = any(
+                    set(item.get("column_names") or [])
+                    == expected_columns
+                    for item in unique_constraints
+                )
+
+                index_exists = any(
                     item.get("unique", False)
                     and set(item.get("column_names") or [])
                     == expected_columns
-                    for item in unique_objects
+                    for item in indexes
                 )
 
-                if not already_exists:
+                if not constraint_exists and not index_exists:
                     conn.execute(
                         text(
                             "CREATE UNIQUE INDEX "
@@ -223,10 +193,7 @@ def patch_sqlite_schema(app=None):
                         )
                     )
                     conn.commit()
-
-                    print(
-                        "[DB PATCH] Flat unique index created."
-                    )
+                    print("[DB PATCH] Flat unique index created.")
 
             # FACILITY BOOKINGS
             add_column(
@@ -242,7 +209,6 @@ def patch_sqlite_schema(app=None):
             f"[DB PATCH ERROR] SQLite schema patch failed: {error}"
         )
         raise
->>>>>>> Stashed changes
 
 
 class Society(db.Model):
@@ -458,8 +424,3 @@ class Flat(db.Model):
             ),
             None,
         )
-<<<<<<< Updated upstream
-
-
-=======
->>>>>>> Stashed changes
