@@ -75,10 +75,15 @@ def admin_login():
         return redirect(url_for("main.dashboard"))
 
     if request.method == "POST":
-        username = request.form.get("username", "").strip()
+        login_input = request.form.get("username", "").strip()
         password = request.form.get("password", "").strip()
+        normalized_mobile = AuthService.normalize_mobile(login_input)
 
-        user = User.query.filter_by(username=username).first()
+        user = User.query.filter(
+            (User.username == login_input)
+            | (User.mobile == login_input)
+            | (User.mobile == normalized_mobile)
+        ).first()
         valid_password = user and user.check_password(password)
 
         if (
@@ -108,7 +113,7 @@ def admin_login():
         audit = AuditLog(
             user_id=user.id if user else None,
             action="ADMIN_LOGIN_FAILURE",
-            details=f"Failed login attempt for username: {username}",
+            details=f"Failed login attempt for identifier: {login_input}",
         )
         db.session.add(audit)
         db.session.commit()

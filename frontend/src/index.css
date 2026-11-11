@@ -1,4 +1,4 @@
-﻿* {
+* {
   box-sizing: border-box;
 }
 
@@ -6,7 +6,7 @@ body {
   margin: 0;
   font-family: Arial, sans-serif;
   background: #f4f7fb;
-  color: #172033;
+  color: #172B4D;
 }
 
 .app {
@@ -16,7 +16,7 @@ body {
 }
 
 header {
-  background: #1769e0;
+  background: linear-gradient(135deg, #0875E1, #082B65);
   color: white;
   padding: 30px;
   border-radius: 14px;
@@ -46,7 +46,7 @@ button {
   border: 0;
   padding: 12px 20px;
   border-radius: 8px;
-  background: #1769e0;
+  background: #0875E1;
   color: white;
   cursor: pointer;
   font-size: 15px;

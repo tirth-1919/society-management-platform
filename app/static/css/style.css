@@ -4,23 +4,28 @@
     --font-heading: 'Outfit', 'Inter', 'Noto Sans', 'Noto Sans Gujarati', 'Noto Sans Bengali', 'Noto Sans Tamil', 'Noto Sans Telugu', 'Noto Sans Kannada', 'Noto Sans Malayalam', 'Noto Sans Gurmukhi', sans-serif;
     --font-body: 'Inter', 'Noto Sans', 'Noto Sans Gujarati', 'Noto Sans Bengali', 'Noto Sans Tamil', 'Noto Sans Telugu', 'Noto Sans Kannada', 'Noto Sans Malayalam', 'Noto Sans Gurmukhi', sans-serif;
 
-    /* Light Palette */
-    --bg-primary: #f8fafc;
+    /* Light Palette — Apna Socity Brand Standards */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8fafc;
     --bg-surface: #ffffff;
-    --bg-glass: rgba(255, 255, 255, 0.75);
-    --border-color: rgba(226, 232, 240, 0.8);
-    --text-primary: #0f172a;
-    --text-secondary: #64748b;
+    --bg-glass: rgba(255, 255, 255, 0.85);
+    --border-color: #E5EAF0;
+    --text-primary: #172B4D;
+    --text-secondary: #5E6C84;
 
-    /* Accent & Brand Colors */
-    --primary: #4f46e5;
-    --primary-hover: #4338ca;
-    --primary-light: #eef2ff;
-    --secondary: #06b6d4;
+    /* Accent & Brand Colors: Apna Socity Royal & Navy */
+    --primary: #0875E1;
+    --primary-hover: #0660bc;
+    --primary-light: #edf6ff;
+    --secondary: #082B65;
+    --secondary-hover: #051b40;
+    --brand-royal: #0875E1;
+    --brand-navy: #082B65;
+    --brand-light-gray: #E5EAF0;
     --success: #10b981;
     --warning: #f59e0b;
     --danger: #ef4444;
-    --info: #3b82f6;
+    --info: #0875E1;
 
     /* Layout & Navigation Dimensions */
     --header-height: 70px;
@@ -29,9 +34,9 @@
     --sidebar-collapsed-width: 72px;
 
     /* Shadows & Effects */
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+    --shadow-sm: 0 1px 3px 0 rgba(8, 43, 101, 0.06);
+    --shadow-md: 0 4px 8px -1px rgba(8, 43, 101, 0.08), 0 2px 4px -1px rgba(8, 43, 101, 0.04);
+    --shadow-lg: 0 12px 28px -4px rgba(8, 43, 101, 0.12), 0 8px 12px -6px rgba(8, 43, 101, 0.06);
     --glass-blur: blur(12px);
     --radius-sm: 8px;
     --radius-md: 12px;
@@ -40,13 +45,14 @@
 }
 
 [data-theme="dark"] {
-    --bg-primary: #0b0f19;
-    --bg-surface: #111827;
-    --bg-glass: rgba(17, 24, 39, 0.75);
-    --border-color: rgba(31, 41, 55, 0.8);
-    --text-primary: #f8fafc;
+    --bg-primary: #081528;
+    --bg-secondary: #0c1e38;
+    --bg-surface: #102646;
+    --bg-glass: rgba(16, 38, 70, 0.85);
+    --border-color: rgba(229, 234, 240, 0.15);
+    --text-primary: #ffffff;
     --text-secondary: #94a3b8;
-    --primary-light: rgba(79, 70, 229, 0.15);
+    --primary-light: rgba(8, 117, 225, 0.18);
 }
 
 * {
@@ -89,11 +95,52 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .sidebar-header {
-    padding: 24px;
+    padding: 18px 20px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-brand-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: inherit;
+    flex: 1;
+    min-width: 0;
+}
+
+.brand-logo-img {
+    height: 40px;
+    width: auto;
+    max-width: 180px;
+    object-fit: contain;
+    transition: all 0.25s ease;
+    display: block;
+}
+
+.brand-tagline-text {
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    color: var(--secondary);
+    white-space: nowrap;
+}
+
+.sidebar.sidebar-collapsed .brand-logo-img {
+    height: 36px;
+    width: 36px;
+    max-width: 36px;
+    object-fit: cover;
+    object-position: left center;
+    border-radius: 8px;
+}
+
+.sidebar.sidebar-collapsed .brand-tagline-text,
+.sidebar.sidebar-collapsed .sidebar-brand-text {
+    display: none !important;
 }
 
 .brand-icon {
@@ -106,7 +153,7 @@ h1, h2, h3, h4, h5, h6 {
     justify-content: center;
     color: #fff;
     font-size: 20px;
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    box-shadow: 0 4px 12px rgba(8, 117, 225, 0.25);
 }
 
 .sidebar-nav {

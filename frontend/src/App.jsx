@@ -1,4 +1,5 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
+import apnaLogo from './assets/apna-socity-logo.png'
 
 function App() {
   const [residents, setResidents] = useState([])
@@ -49,9 +50,12 @@ function App() {
 
   return (
     <div className="app">
-      <header>
-        <h1>Society Maintenance</h1>
-        <p>React + Flask + MySQL</p>
+      <header style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+        <img src={apnaLogo} alt="Apna Socity" style={{ height: '70px', borderRadius: '10px', background: '#fff', padding: '6px' }} />
+        <div>
+          <h1 style={{ margin: 0 }}>Apna Socity</h1>
+          <p style={{ margin: '4px 0 0 0', opacity: 0.9 }}>Our Society • Our Home</p>
+        </div>
       </header>
 
       <section className="connection">

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Society SaaS Platform{% endblock %}</title>
+    <title>{% block title %}Apna Socity — Our Society • Our Home{% endblock %}</title>
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,11 +29,9 @@
     <!-- Sidebar -->
     <aside class="sidebar" id="app-sidebar">
         <div class="sidebar-header">
-            <div class="brand-icon"><i class="fa-solid fa-building-user"></i></div>
-            <div style="flex: 1; min-width: 0;">
-                <h3 style="font-size: 16px; font-weight: 800; white-space: nowrap;">Society SaaS</h3>
-                <span style="font-size: 11px; color: var(--text-secondary);">Enterprise v2.0</span>
-            </div>
+            {% with variant='sidebar' %}
+                {% include "components/brand_logo.html" %}
+            {% endwith %}
             <button type="button" class="sidebar-toggle-btn" id="sidebar-toggle-btn" title="Toggle icon-only sidebar" aria-label="Collapse sidebar">
                 <i class="fa-solid fa-bars-staggered"></i>
             </button>
@@ -149,6 +147,10 @@
                     <i class="fa-solid fa-bars"></i>
                 </button>
 
+                <a href="{{ url_for('main.dashboard') }}" class="mobile-navbar-brand" style="display: none; align-items: center; margin-right: 12px; text-decoration: none;">
+                    <img src="{{ url_for('static', filename='images/apna-socity-logo.png') }}" alt="Apna Socity" style="height: 32px; width: auto; object-fit: contain;">
+                </a>
+
                 <div class="header-search-container">
                     <button type="button" class="header-search-btn" id="global-search-trigger" aria-label="Search residents, flats, bills, actions..." title="Search residents, flats, bills, actions...">
                         <i class="fa-solid fa-magnifying-glass"></i>
@@ -228,6 +230,18 @@
             {% endwith %}
 
             {% block content %}{% endblock %}
+
+            <footer class="app-footer" style="padding: 24px 0 16px 0; font-size: 12px; color: var(--text-secondary); border-top: 1px solid var(--border-color); margin-top: 48px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <img src="{{ url_for('static', filename='images/apna-socity-logo.png') }}" alt="Apna Socity" style="height: 24px; width: auto; object-fit: contain;">
+                    <span style="font-weight: 700; color: #082B65; font-size: 13px;">Apna Socity</span>
+                    <span style="color: var(--border-color);">&bull;</span>
+                    <span style="color: #0875E1; font-weight: 600;">Our Society &bull; Our Home</span>
+                </div>
+                <div style="color: var(--text-secondary); font-size: 12px;">
+                    &copy; 2026 Apna Socity &bull; Residential Management Platform
+                </div>
+            </footer>
         </main>
     </div>
 </div>

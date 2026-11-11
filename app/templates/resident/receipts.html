@@ -1,5 +1,5 @@
-﻿{% extends "base.html" %}
-{% block title %}My Receipts · Society SaaS{% endblock %}
+{% extends "base.html" %}
+{% block title %}My Receipts · Apna Socity{% endblock %}
 
 {% block breadcrumbs %}
 <nav class="breadcrumb-nav" aria-label="Breadcrumb">
@@ -65,7 +65,7 @@
                     </a>
                     <div style="font-size: 11px; color: var(--text-secondary);">{{ receipt.payment.bill.bill_number if receipt.payment.bill else '' }}</div>
                 </td>
-                <td style="font-weight: 700; color: var(--success);">₹{{ '{:,.2f}'.format(receipt.payment.amount_paid) }}</td>
+                <td style="font-weight: 700; color: var(--success);">?{{ '{:,.2f}'.format(receipt.payment.amount_paid) }}</td>
                 <td><span class="badge badge-info">{{ receipt.payment.payment_method }}</span></td>
                 <td><span class="badge badge-success">{{ receipt.payment.status }}</span></td>
                 <td>

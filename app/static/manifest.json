@@ -1,11 +1,16 @@
 {
-  "name": "Society Management & Maintenance SaaS",
-  "short_name": "SocietySaaS",
+  "name": "Apna Socity",
+  "short_name": "Apna Socity",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0b0f19",
-  "theme_color": "#4f46e5",
+  "background_color": "#ffffff",
+  "theme_color": "#0875E1",
   "icons": [
+    {
+      "src": "/static/images/apna-socity-logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
     {
       "src": "/static/images/icon-192.png",
       "sizes": "192x192",

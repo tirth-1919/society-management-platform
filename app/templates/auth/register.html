@@ -1,23 +1,42 @@
 {% extends "base.html" %}
 
-{% block title %}Create Account — Resident Registration{% endblock %}
+{% block title %}Create Account — Apna Socity{% endblock %}
 
 {% block content %}
+<style>
+  .auth-alert {
+    padding: 12px 16px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    font-size: 14px;
+  }
+  .auth-alert-danger {
+    background: #fee2e2;
+    color: #991b1b;
+    border-left: 4px solid #ef4444;
+  }
+  .auth-alert-success {
+    background: #dcfce7;
+    color: #166534;
+    border-left: 4px solid #22c55e;
+  }
+  .auth-alert-info {
+    background: #edf6ff;
+    color: #082B65;
+    border-left: 4px solid #0875E1;
+  }
+</style>
 <div style="min-height: 80vh; display: flex; align-items: center; justify-content: center; padding: 32px 24px;">
   <div style="width: 100%; max-width: 580px;">
 
-    <!-- Header -->
-    <div style="text-align: center; margin-bottom: 28px;">
-      <div style="
-        width: 64px; height: 64px; border-radius: 16px;
-        background: linear-gradient(135deg, #10b981, #06b6d4);
-        display: flex; align-items: center; justify-content: center;
-        margin: 0 auto 14px auto; font-size: 26px; color: #fff;
-        box-shadow: 0 8px 24px rgba(16,185,129,0.35);">
-        <i class="fa-solid fa-user-plus"></i>
-      </div>
-      <h1 style="font-size: 24px; font-weight: 800; margin: 0;">Create Resident Account</h1>
-      <p style="color: var(--text-secondary); margin-top: 6px; font-size: 14px;">
+    <!-- Header & Brand Logo -->
+    <div style="text-align: center; margin-bottom: 24px;">
+      {% with variant='auth', show_tagline=True %}
+        {% include "components/brand_logo.html" %}
+      {% endwith %}
+
+      <h1 style="font-size: 22px; font-weight: 800; margin: 8px 0 0 0; color: #082B65;">Create Resident Account</h1>
+      <p style="color: var(--text-secondary); margin-top: 4px; font-size: 13.5px;">
         Register for resident membership in your society
       </p>
     </div>
@@ -26,12 +45,7 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
-          <div style="
-            padding: 12px 16px; border-radius: 10px; margin-bottom: 16px;
-            background: {% if category == 'danger' %}#fee2e2{% elif category == 'success' %}#dcfce7{% else %}#eff6ff{% endif %};
-            color: {% if category == 'danger' %}#991b1b{% elif category == 'success' %}#166534{% else %}#1e40af{% endif %};
-            border-left: 4px solid {% if category == 'danger' %}#ef4444{% elif category == 'success' %}#22c55e{% else %}#3b82f6{% endif %};
-            font-size: 14px;">
+          <div class="auth-alert {% if category == 'danger' %}auth-alert-danger{% elif category == 'success' %}auth-alert-success{% else %}auth-alert-info{% endif %}">
             <i class="fa-solid fa-{% if category == 'danger' %}circle-exclamation{% elif category == 'success' %}circle-check{% else %}circle-info{% endif %}"></i>
             {{ message }}
           </div>
@@ -39,14 +53,14 @@
       {% endif %}
     {% endwith %}
 
-    <div class="card" style="padding: 36px; border-radius: 18px; box-shadow: 0 20px 60px rgba(0,0,0,0.12);">
+    <div class="card" style="padding: 36px; border-radius: 18px; box-shadow: 0 20px 60px rgba(0,0,0,0.12); border-top: 4px solid #0875E1;">
       <form action="{{ url_for('auth.register') }}" method="POST" id="register-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
         <!-- Progress Steps -->
         <div style="display: flex; gap: 6px; margin-bottom: 28px;">
-          <div style="flex:1; height:4px; border-radius:4px; background: linear-gradient(90deg, #10b981, #06b6d4);"></div>
-          <div style="flex:1; height:4px; border-radius:4px; background: linear-gradient(90deg, #10b981, #06b6d4);"></div>
+          <div style="flex:1; height:4px; border-radius:4px; background: linear-gradient(90deg, #0875E1, #082B65);"></div>
+          <div style="flex:1; height:4px; border-radius:4px; background: linear-gradient(90deg, #0875E1, #082B65);"></div>
           <div style="flex:1; height:4px; border-radius:4px; background: var(--border-color);"></div>
         </div>
 
@@ -60,13 +74,13 @@
             <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Full Name *</label>
             <input type="text" name="full_name" required placeholder="John Doe" id="reg-fullname"
               style="width:100%; padding:11px 14px; border-radius:9px; border:1.5px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:14px; box-sizing:border-box;"
-              onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='var(--border-color)'">
+              onfocus="this.style.borderColor='#0875E1'" onblur="this.style.borderColor='var(--border-color)'">
           </div>
           <div>
             <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Mobile Number *</label>
             <input type="tel" name="mobile" required placeholder="9876543210" id="reg-mobile"
               style="width:100%; padding:11px 14px; border-radius:9px; border:1.5px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:14px; box-sizing:border-box;"
-              onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='var(--border-color)'">
+              onfocus="this.style.borderColor='#0875E1'" onblur="this.style.borderColor='var(--border-color)'">
           </div>
         </div>
 
@@ -87,7 +101,7 @@
         <div style="margin-bottom: 16px;">
           <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Society</label>
           <div style="padding: 11px 14px; border-radius: 9px; border: 1.5px solid var(--border-color); background: var(--bg-primary, rgba(0,0,0,0.02)); color: var(--text-primary); font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
-            <i class="fa-solid fa-building-circle-check" style="color: #10b981;"></i>
+            <i class="fa-solid fa-building-circle-check" style="color: #0875E1;"></i>
             <span>{{ society.name if society else 'Sunrise Heights' }}</span>
           </div>
           <input type="hidden" name="society_id" id="society-select" value="{{ society.id if society else 2 }}">
@@ -120,7 +134,7 @@
               <div class="occ-btn" data-val="{{ val }}" style="
                 padding: 10px 8px; border-radius: 10px; border: 2px solid var(--border-color);
                 text-align: center; font-size: 12px; font-weight: 600; transition: all 0.2s;
-                {% if val == 'OWNER' %}border-color: #10b981; background: rgba(16,185,129,0.1); color: #10b981;{% endif %}">
+                {% if val == 'OWNER' %}border-color: #0875E1; background: rgba(8,117,225,0.08); color: #0875E1;{% endif %}">
                 <i class="fa-solid {{ icon }}" style="display:block; font-size:18px; margin-bottom:5px;"></i>
                 {{ label }}
               </div>
@@ -141,7 +155,7 @@
           <div style="position:relative;">
             <input type="password" name="password" id="reg-password" required minlength="12" placeholder="Create a strong password"
               style="width:100%; padding:11px 48px 11px 14px; border-radius:9px; border:1.5px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:14px; box-sizing:border-box;"
-              onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='var(--border-color)'">
+              onfocus="this.style.borderColor='#0875E1'" onblur="this.style.borderColor='var(--border-color)'">
             <button type="button" onclick="togglePwd('reg-password', this)"
               style="position:absolute; right:14px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--text-secondary);">
               <i class="fa-solid fa-eye"></i>
@@ -160,8 +174,8 @@
 
         <button type="submit" id="reg-submit-btn"
           style="width:100%; padding:14px; border-radius:10px; border:none; cursor:pointer;
-                 background: linear-gradient(135deg, #10b981, #06b6d4); color:#fff;
-                 font-size:15px; font-weight:700; box-shadow:0 4px 16px rgba(16,185,129,0.35); transition:all 0.2s;">
+                 background: linear-gradient(135deg, #0875E1, #082B65); color:#fff;
+                 font-size:15px; font-weight:700; box-shadow:0 4px 16px rgba(8,117,225,0.35); transition:all 0.2s;">
           <i class="fa-solid fa-paper-plane"></i> Submit Registration
         </button>
 
@@ -200,9 +214,9 @@ function selectOccupancy(radio) {
   });
   const active = document.querySelector(`.occ-btn[data-val="${radio.value}"]`);
   if (active) {
-    active.style.borderColor = '#10b981';
-    active.style.background = 'rgba(16,185,129,0.1)';
-    active.style.color = '#10b981';
+    active.style.borderColor = '#0875E1';
+    active.style.background = 'rgba(8,117,225,0.08)';
+    active.style.color = '#0875E1';
   }
 }
 

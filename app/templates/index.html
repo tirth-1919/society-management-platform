@@ -1,20 +1,28 @@
 {% extends "base.html" %}
 
-{% block title %}Society Management SaaS — Resident Portal{% endblock %}
+{% block title %}Apna Socity — Our Society • Our Home{% endblock %}
 
 {% block content %}
 <div style="min-height: 80vh; display:flex; align-items:center; justify-content:center; padding: 24px;">
   <div style="width:100%; max-width:960px; text-align:center;">
 
+    <!-- Brand Logo -->
+    <div style="margin-bottom: 20px;">
+      <img src="{{ url_for('static', filename='images/apna-socity-logo.png') }}" alt="Apna Socity" style="height: 100px; max-width: 100%; object-fit: contain;">
+    </div>
+
     <!-- Hero -->
     <div style="
-      font-size: clamp(32px, 5vw, 54px); font-weight: 900;
-      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      font-size: clamp(32px, 5vw, 48px); font-weight: 900;
+      background: linear-gradient(135deg, var(--brand-royal, #0875E1), var(--brand-navy, #082B65));
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      margin-bottom: 16px; line-height: 1.15;">
-      Society Management &amp;<br>Maintenance Platform
+      margin-bottom: 8px; line-height: 1.15;">
+      Society Management &amp; Maintenance Platform
     </div>
-    <p style="font-size: 17px; color: var(--text-secondary); max-width: 600px; margin: 0 auto 40px auto; line-height: 1.7;">
+    <div style="font-size: 17px; font-weight: 700; color: var(--secondary, #082B65); margin-bottom: 16px; letter-spacing: 0.5px;">
+      Our Society &bull; Our Home
+    </div>
+    <p style="font-size: 16px; color: var(--text-secondary); max-width: 600px; margin: 0 auto 36px auto; line-height: 1.7;">
       Automated billing, visitor security, complaints management, document vault, and AI-powered insights — all in one platform.
     </p>
 
@@ -24,9 +32,9 @@
         style="display:inline-flex; align-items:center; gap:10px; padding:16px 36px; border-radius:12px;
                background:linear-gradient(135deg, var(--primary), var(--secondary)); color:#fff;
                font-weight:700; font-size:16px; text-decoration:none;
-               box-shadow:0 8px 24px rgba(79,70,229,0.35); transition:all 0.2s;"
-        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 12px 32px rgba(79,70,229,0.45)';"
-        onmouseout="this.style.transform=''; this.style.boxShadow='0 8px 24px rgba(79,70,229,0.35)';">
+               box-shadow:0 8px 24px rgba(8,117,225,0.35); transition:all 0.2s;"
+        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 12px 32px rgba(8,117,225,0.45)';"
+        onmouseout="this.style.transform=''; this.style.boxShadow='0 8px 24px rgba(8,117,225,0.35)';">
         <i class="fa-solid fa-right-to-bracket"></i> Resident Sign In
       </a>
       <a href="{{ url_for('auth.register') }}" id="register-hero-btn"
@@ -42,7 +50,7 @@
     <!-- Feature Cards -->
     <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:20px; text-align:left;">
       {% for icon, color, bg, title, desc in [
-        ('fa-building', '#4f46e5', 'rgba(79,70,229,0.1)', 'Multi-Society', 'Complete tenant isolation'),
+        ('fa-building', '#0875E1', 'rgba(8,117,225,0.1)', 'Multi-Society', 'Complete tenant isolation'),
         ('fa-calculator', '#10b981', 'rgba(16,185,129,0.1)', 'Auto Billing', 'Late fee engine & receipts'),
         ('fa-shield-halved', '#06b6d4', 'rgba(6,182,212,0.1)', 'Visitor Security', 'Gate pass & approval flow'),
         ('fa-folder-open', '#f59e0b', 'rgba(245,158,11,0.1)', 'Document Vault', 'Secure document storage'),
@@ -60,8 +68,8 @@
     </div>
 
     <!-- Admin Portal Note -->
-    <div style="margin-top:36px; padding:14px 20px; background:rgba(124,58,237,0.08); border:1px dashed rgba(124,58,237,0.3); border-radius:12px; font-size:13px; color:var(--text-secondary);">
-      <i class="fa-solid fa-user-shield" style="color:#7c3aed;"></i>
+    <div style="margin-top:36px; padding:14px 20px; background:rgba(8,43,101,0.08); border:1px dashed rgba(8,117,225,0.3); border-radius:12px; font-size:13px; color:var(--text-secondary);">
+      <i class="fa-solid fa-user-shield" style="color:#0875E1;"></i>
       Society administrators? Open the Admin Portal using its separately assigned local or ngrok address.
     </div>
   </div>

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Invoice {{ bill.bill_number }} · Society SaaS{% endblock %}
+{% block title %}Invoice {{ bill.bill_number }} · Apna Socity{% endblock %}
 
 {% block breadcrumbs %}
 <nav class="breadcrumb-nav" aria-label="Breadcrumb">
@@ -44,7 +44,7 @@
             <div>
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
                     <div class="brand-icon" style="width: 36px; height: 36px; font-size: 18px;"><i class="fa-solid fa-building-user"></i></div>
-                    <h2 style="font-size: 20px; margin: 0;">{{ bill.society.name if bill.society else 'Society SaaS' }}</h2>
+                    <h2 style="font-size: 20px; margin: 0;">{{ bill.society.name if bill.society else 'Apna Socity' }}</h2>
                 </div>
                 <p style="color: var(--text-secondary); font-size: 12.5px; margin: 0;">Maintenance Management & Billing Engine</p>
             </div>

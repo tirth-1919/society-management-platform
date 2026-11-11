@@ -169,6 +169,9 @@ class AIAnalysisRun(db.Model):
     society = db.relationship("Society", foreign_keys=[society_id], lazy=True)
     triggered_by = db.relationship("User", foreign_keys=[triggered_by_id], lazy=True)
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     def to_dict(self) -> dict:
         return {
             "id": self.id,
@@ -196,6 +199,9 @@ class AIModelVersion(db.Model):
     accuracy_metric = db.Column(db.Float, nullable=True)
     status = db.Column(db.String(30), default="ACTIVE", index=True)  # ACTIVE, DEPRECATED, EVALUATION
     created_at = db.Column(db.DateTime, default=utcnow)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def to_dict(self) -> dict:
         return {
@@ -251,6 +257,9 @@ class AIInvestigation(db.Model):
     assigned_to = db.relationship("User", foreign_keys=[assigned_to_id], lazy=True)
     created_by = db.relationship("User", foreign_keys=[created_by_id], lazy=True)
     findings = db.relationship("AIFinding", backref="investigation", foreign_keys="AIFinding.investigation_id", lazy=True)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def get_timeline(self) -> list:
         try:
@@ -323,6 +332,9 @@ class AIDocumentAnalysis(db.Model):
     document = db.relationship("Document", foreign_keys=[document_id], lazy=True)
     society = db.relationship("Society", foreign_keys=[society_id], lazy=True)
     verified_by = db.relationship("User", foreign_keys=[verified_by_id], lazy=True)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def get_extracted_fields(self) -> dict:
         try:
@@ -398,6 +410,9 @@ class AIDuplicateCandidate(db.Model):
     society = db.relationship("Society", foreign_keys=[society_id], lazy=True)
     reviewed_by = db.relationship("User", foreign_keys=[reviewed_by_id], lazy=True)
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     def get_reasons(self) -> list:
         try:
             return json.loads(self.reasons_json or "[]")
@@ -444,6 +459,9 @@ class AIEnergyReading(db.Model):
     created_at = db.Column(db.DateTime, default=utcnow)
 
     society = db.relationship("Society", foreign_keys=[society_id], lazy=True)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def to_dict(self) -> dict:
         return {
@@ -492,6 +510,9 @@ class AIParkingEvent(db.Model):
     vehicle = db.relationship("Vehicle", foreign_keys=[vehicle_id], lazy=True)
     reported_by = db.relationship("User", foreign_keys=[reported_by_id], lazy=True)
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     def to_dict(self) -> dict:
         return {
             "id": self.id,
@@ -528,3 +549,6 @@ class AIFindingFeedback(db.Model):
 
     finding = db.relationship("AIFinding", foreign_keys=[finding_id], backref="feedbacks", lazy=True)
     user = db.relationship("User", foreign_keys=[user_id], lazy=True)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)

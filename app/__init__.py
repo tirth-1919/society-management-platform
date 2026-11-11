@@ -26,6 +26,10 @@ def create_app(config_name=None):
     migrate.init_app(app, db)
     csrf.init_app(app)
 
+    from app.cli.account_audit import register_account_audit_command
+
+    register_account_audit_command(app)
+
     # Ensure instance directories exist
     os.makedirs(app.config["INSTANCE_DIR"], exist_ok=True)
     os.makedirs(app.config["BACKUP_DIR"], exist_ok=True)

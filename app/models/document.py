@@ -10,6 +10,9 @@ class DocumentCategory(db.Model):
         db.String(50), unique=True, nullable=False
     )  # Resident Proofs, Vendor Contracts, Society Bye-Laws, Financial Receipts, Audit Reports
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
 
 class Document(db.Model):
     __tablename__ = "documents"
@@ -30,6 +33,9 @@ class Document(db.Model):
     )  # ADMIN_ONLY, RESIDENT_PUBLIC, VENDOR_RESTRICTED
     created_at = db.Column(db.DateTime, default=utcnow)
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
 
 class DocumentAccessLog(db.Model):
     __tablename__ = "document_access_logs"
@@ -40,6 +46,9 @@ class DocumentAccessLog(db.Model):
     )
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     accessed_at = db.Column(db.DateTime, default=utcnow)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 
 

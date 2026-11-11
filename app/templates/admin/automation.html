@@ -169,7 +169,7 @@
           <i class="fa-solid fa-file-invoice" style="color:var(--success);"></i> Create Bill
         </a>
         <a href="{{ url_for('payments.admin_payment_dashboard') }}" class="btn btn-secondary" style="font-size:12px; justify-content:flex-start;">
-          <i class="fa-solid fa-credit-card" style="color:#8b5cf6;"></i> Record Payment
+          <i class="fa-solid fa-credit-card" style="color:#0875E1;"></i> Record Payment
         </a>
         <a href="{{ url_for('accounting.vouchers') }}" class="btn btn-secondary" style="font-size:12px; justify-content:flex-start;">
           <i class="fa-solid fa-file-invoice-dollar" style="color:var(--warning);"></i> Add Expense
@@ -274,7 +274,7 @@
         <div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
             <div style="font-weight:700; font-size:14px; display:flex; align-items:center; gap:8px;">
-              <i class="fa-solid fa-bell" style="color:#8b5cf6;"></i> Reminder Dispatcher
+              <i class="fa-solid fa-bell" style="color:#0875E1;"></i> Reminder Dispatcher
             </div>
             <span class="status-pill {{ (status_summary.SEND_DUE_REMINDERS.last_status or 'idle') | lower }}">
               {{ status_summary.SEND_DUE_REMINDERS.last_status }}

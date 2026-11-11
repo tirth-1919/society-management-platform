@@ -1,24 +1,42 @@
 {% extends "base.html" %}
 
-{% block title %}Resident Login — Society SaaS{% endblock %}
+{% block title %}Resident Login — Apna Socity{% endblock %}
 
 {% block content %}
+<style>
+  .auth-alert {
+    padding: 12px 16px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    font-size: 14px;
+  }
+  .auth-alert-danger {
+    background: #fee2e2;
+    color: #991b1b;
+    border-left: 4px solid #ef4444;
+  }
+  .auth-alert-success {
+    background: #dcfce7;
+    color: #166534;
+    border-left: 4px solid #22c55e;
+  }
+  .auth-alert-info {
+    background: #edf6ff;
+    color: #082B65;
+    border-left: 4px solid #0875E1;
+  }
+</style>
 <div style="min-height: 80vh; display: flex; align-items: center; justify-content: center; padding: 24px;">
   <div style="width: 100%; max-width: 460px;">
 
-    <!-- Header -->
-    <div style="text-align: center; margin-bottom: 32px;">
-      <div style="
-        width: 64px; height: 64px; border-radius: 16px;
-        background: linear-gradient(135deg, var(--primary), var(--secondary));
-        display: flex; align-items: center; justify-content: center;
-        margin: 0 auto 16px auto; font-size: 28px; color: #fff;
-        box-shadow: 0 8px 24px rgba(79,70,229,0.35);">
-        <i class="fa-solid fa-building-user"></i>
-      </div>
+    <!-- Header & Brand Logo -->
+    <div style="text-align: center; margin-bottom: 24px;">
+      {% with variant='auth', show_tagline=True %}
+        {% include "components/brand_logo.html" %}
+      {% endwith %}
 
-      <h1 style="font-size: 26px; font-weight: 800; margin: 0;" data-i18n="login">Resident Portal</h1>
-      <p style="color: var(--text-secondary); margin-top: 6px; font-size: 14px;">
+      <h1 style="font-size: 22px; font-weight: 800; margin: 8px 0 0 0; color: #082B65;" data-i18n="login">Resident Portal</h1>
+      <p style="color: var(--text-secondary); margin-top: 4px; font-size: 13.5px;">
         Sign in with your registered mobile number
       </p>
     </div>
@@ -27,13 +45,8 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
-          <div style="
-            padding: 12px 16px; border-radius: 10px; margin-bottom: 16px;
-            background: {% if category == 'danger' %}#fee2e2{% elif category == 'success' %}#dcfce7{% else %}#eff6ff{% endif %};
-            color: {% if category == 'danger' %}#991b1b{% elif category == 'success' %}#166534{% else %}#1e40af{% endif %};
-            border-left: 4px solid {% if category == 'danger' %}#ef4444{% elif category == 'success' %}#22c55e{% else %}#3b82f6{% endif %};
-            font-size: 14px;">
-            <i class="fa-solid fa-{% if category == 'danger' %}circle-exclamation{% elif category == 'success' %}circle-check{% else %}circle-info{% endif %}"></i>
+          <div class="auth-alert auth-alert-{{ 'danger' if category == 'danger' else ('success' if category == 'success' else 'info') }}">
+            <i class="fa-solid fa-{{ 'circle-exclamation' if category == 'danger' else ('circle-check' if category == 'success' else 'circle-info') }}"></i>
             {{ message }}
           </div>
         {% endfor %}
@@ -41,7 +54,7 @@
     {% endwith %}
 
     <!-- Login Card -->
-    <div class="card" style="padding: 36px; border-radius: 18px; box-shadow: 0 20px 60px rgba(0,0,0,0.12);">
+    <div class="card" style="padding: 36px; border-radius: 18px; box-shadow: 0 20px 60px rgba(8,43,101,0.10); border-top: 4px solid #0875E1;">
       <form action="{{ url_for('auth.login') }}" method="POST" id="login-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
@@ -85,7 +98,7 @@
         </div>
 
         <button type="submit" id="login-submit-btn" class="btn btn-primary"
-          style="width: 100%; justify-content: center; padding: 14px; font-size: 15px; border-radius: 10px; font-weight: 700;">
+          style="width: 100%; justify-content: center; padding: 14px; font-size: 15px; border-radius: 10px; font-weight: 700; background: linear-gradient(135deg, #0875E1, #082B65);">
           <i class="fa-solid fa-right-to-bracket"></i> <span data-i18n="login">Sign In</span>
         </button>
       </form>

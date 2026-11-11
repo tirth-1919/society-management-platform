@@ -1,0 +1,63 @@
+{# 
+  Reusable Apna Socity Brand Logo Component
+  Usage:
+    {% include "components/brand_logo.html" %} or with parameters:
+    {% with variant='auth', show_tagline=True %}
+      {% include "components/brand_logo.html" %}
+    {% endwith %}
+#}
+{% set current_variant = variant|default('default') %}
+{% set is_auth = (current_variant == 'auth') %}
+{% set is_sidebar = (current_variant == 'sidebar') %}
+{% set is_navbar = (current_variant == 'navbar') %}
+{% set is_compact = (current_variant == 'compact') %}
+
+{% if is_auth %}
+  <div class="apna-brand-container auth-brand-layout" style="text-align: center; margin-bottom: 20px;">
+    <a href="{{ url_for('main.index') if 'main.index' in url_for.__doc__ or true else '/' }}" style="display: inline-block; text-decoration: none;">
+      <img 
+        src="{{ url_for('static', filename='images/apna-socity-logo.png') }}" 
+        alt="Apna Socity — Our Society • Our Home" 
+        class="apna-brand-logo-img"
+        style="max-height: 85px; width: auto; object-fit: contain; display: inline-block; filter: drop-shadow(0 2px 8px rgba(8, 43, 101, 0.08));"
+      >
+    </a>
+    {% if show_tagline|default(true) %}
+      <div class="brand-tagline-pill" style="margin-top: 6px; display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: #082B65; background: #edf6ff; padding: 4px 14px; border-radius: 9999px; letter-spacing: 0.3px;">
+        <i class="fa-solid fa-house-chimney-user" style="color: #0875E1; font-size: 11px;"></i>
+        <span>Our Society &bull; Our Home</span>
+      </div>
+    {% endif %}
+  </div>
+
+{% elif is_sidebar %}
+  <a href="{{ url_for('main.dashboard') }}" class="sidebar-brand-link" title="Apna Socity — Our Society • Our Home">
+    <img 
+      src="{{ url_for('static', filename='images/apna-socity-logo.png') }}" 
+      alt="Apna Socity" 
+      class="brand-logo-img"
+      style="height: 42px; width: auto; max-width: 175px; object-fit: contain;"
+    >
+  </a>
+
+{% elif is_navbar %}
+  <div class="navbar-brand-wrapper" style="display: flex; align-items: center; gap: 10px;">
+    <a href="{{ url_for('main.dashboard') }}" style="display: flex; align-items: center; text-decoration: none;">
+      <img 
+        src="{{ url_for('static', filename='images/apna-socity-logo.png') }}" 
+        alt="Apna Socity" 
+        style="height: 34px; width: auto; object-fit: contain;"
+      >
+    </a>
+  </div>
+
+{% else %}
+  <div class="apna-brand-inline" style="display: inline-flex; align-items: center; gap: 8px;">
+    <img 
+      src="{{ url_for('static', filename='images/apna-socity-logo.png') }}" 
+      alt="Apna Socity" 
+      style="height: {{ logo_height|default('36px') }}; width: auto; object-fit: contain;"
+    >
+  </div>
+{% endif %}
+

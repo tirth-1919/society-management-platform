@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard · Society SaaS{% endblock %}
+{% block title %}Dashboard · Apna Socity{% endblock %}
 
 {% block content %}
 <div class="page-heading">
@@ -151,7 +151,7 @@
         </div>
     </div>
     <div class="metric-card">
-        <div class="metric-icon" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6;"><i class="fa-solid fa-building"></i></div>
+        <div class="metric-icon" style="background: rgba(8, 117, 225, 0.15); color: #0875E1;"><i class="fa-solid fa-building"></i></div>
         <div>
             <div class="metric-val">{{ flats_count or 0 }}</div>
             <div class="metric-lbl" data-i18n="total_flats">Total Flats</div>
@@ -384,10 +384,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 datasets: [{
                     label: 'Maintenance Collected (₹)',
                     data: {{ monthly_chart_data | tojson }},
-                    borderColor: '#4f46e5',
-                    backgroundColor: 'rgba(79, 70, 229, 0.08)',
+                    borderColor: '#0875E1',
+                    backgroundColor: 'rgba(8, 117, 225, 0.08)',
                     fill: true, tension: 0.35, borderWidth: 2.5,
-                    pointRadius: 4, pointBackgroundColor: '#4f46e5'
+                    pointRadius: 4, pointBackgroundColor: '#0875E1'
                 }]
             },
             options: {
@@ -413,7 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
             type: 'doughnut',
             data: {
                 labels: labels,
-                datasets: [{ data: values, backgroundColor: ['#4f46e5','#06b6d4','#10b981','#f59e0b','#8b5cf6','#ef4444'], borderWidth: 0 }]
+                datasets: [{ data: values, backgroundColor: ['#0875E1','#082B65','#10b981','#f59e0b','#06b6d4','#ef4444'], borderWidth: 0 }]
             },
             options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
         });

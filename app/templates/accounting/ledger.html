@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% block title %}General Ledger - Accounting{% endblock %}
 {% block content %}
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
@@ -10,21 +10,21 @@
     <div class="metric-card">
         <div class="metric-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--success);"><i class="fa-solid fa-arrow-down-left"></i></div>
         <div>
-            <div class="metric-val">₹{{ "{:,.2f}".format(summary.total_income) }}</div>
+            <div class="metric-val">?{{ "{:,.2f}".format(summary.total_income) }}</div>
             <div class="metric-lbl">Total Credit (Income)</div>
         </div>
     </div>
     <div class="metric-card">
         <div class="metric-icon" style="background: rgba(239, 68, 68, 0.15); color: var(--danger);"><i class="fa-solid fa-arrow-up-right"></i></div>
         <div>
-            <div class="metric-val">₹{{ "{:,.2f}".format(summary.total_expense) }}</div>
+            <div class="metric-val">?{{ "{:,.2f}".format(summary.total_expense) }}</div>
             <div class="metric-lbl">Total Debit (Expense)</div>
         </div>
     </div>
     <div class="metric-card">
         <div class="metric-icon" style="background: rgba(79, 70, 229, 0.15); color: var(--primary);"><i class="fa-solid fa-scale-balanced"></i></div>
         <div>
-            <div class="metric-val">₹{{ "{:,.2f}".format(summary.net_surplus) }}</div>
+            <div class="metric-val">?{{ "{:,.2f}".format(summary.net_surplus) }}</div>
             <div class="metric-lbl">Net Surplus</div>
         </div>
     </div>
@@ -52,7 +52,7 @@
                             {{ e.entry_type }}
                         </span>
                     </td>
-                    <td><strong>₹{{ "{:,.2f}".format(e.amount) }}</strong></td>
+                    <td><strong>?{{ "{:,.2f}".format(e.amount) }}</strong></td>
                     <td>{{ e.narration }}</td>
                 </tr>
                 {% else %}
